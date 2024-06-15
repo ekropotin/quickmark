@@ -4,12 +4,12 @@ use crate::{
 };
 use comrak::nodes::{Ast, NodeHeading, NodeValue};
 
-pub(crate) struct QM001Linter {
+pub(crate) struct MD001Linter {
     context: Context,
     current_heading_level: u8,
 }
 
-impl QM001Linter {
+impl MD001Linter {
     pub fn new(context: Context) -> Self {
         Self {
             context,
@@ -18,13 +18,13 @@ impl QM001Linter {
     }
 }
 
-impl RuleLinter for QM001Linter {
+impl RuleLinter for MD001Linter {
     fn feed(&mut self, node: &Ast) -> Option<RuleViolation> {
         if let NodeValue::Heading(NodeHeading { level, setext: _ }) = node.value {
             if self.current_heading_level > 0 && level as i8 - self.current_heading_level as i8 > 1
             {
                 return Option::Some(RuleViolation::new(
-                    &QM001,
+                    &MD001,
                     RuleViolationSeverity::Error,
                     self.context.file_path.clone(),
                     &(node.sourcepos),
@@ -36,12 +36,12 @@ impl RuleLinter for QM001Linter {
     }
 }
 
-pub const QM001: Rule = Rule {
-    id: "QM001",
+pub const MD001: Rule = Rule {
+    id: "MD001",
     alias: "heading-increment",
     tags: &["headings"],
     description: "Heading levels should only increment by one level at a time",
-    new_linter: |context| Box::new(QM001Linter::new(context)),
+    new_linter: |context| Box::new(MD001Linter::new(context)),
 };
 
 #[cfg(test)]
@@ -54,7 +54,7 @@ mod test {
     use crate::rules::Context;
 
     use super::super::RuleLinter;
-    use super::QM001;
+    use super::MD001;
 
     fn lint_content(input: &str, linter: &mut Box<dyn RuleLinter>) -> Vec<RuleViolation> {
         parse_document(&Arena::new(), input, &Options::default())
@@ -83,7 +83,7 @@ foobar
 ### Heading level 3
 ";
 
-        let violations = lint_content(input, &mut (QM001.new_linter)(test_context()));
+        let violations = lint_content(input, &mut (MD001.new_linter)(test_context()));
         assert_eq!(2, violations.len());
         let mut iter = violations.iter();
         let range1 = &iter.next().unwrap().location.range;
@@ -113,7 +113,7 @@ foobar
 ###### Heading level 6
 ";
 
-        let violations = lint_content(input, &mut (QM001.new_linter)(test_context()));
+        let violations = lint_content(input, &mut (MD001.new_linter)(test_context()));
         assert_eq!(0, violations.len());
     }
 
@@ -131,7 +131,7 @@ foobar
 # level 1
 ";
 
-        let violations = lint_content(input, &mut (QM001.new_linter)(test_context()));
+        let violations = lint_content(input, &mut (MD001.new_linter)(test_context()));
         assert_eq!(0, violations.len());
     }
 }

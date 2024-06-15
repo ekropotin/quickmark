@@ -1,6 +1,6 @@
 use crate::linter::{Context, RuleLinter};
 
-pub mod qm001;
+pub mod md001;
 
 #[derive(Debug)]
 pub struct Rule {
