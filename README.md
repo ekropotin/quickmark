@@ -45,4 +45,4 @@ TBD
 ## Rules
 
 - **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
-
+- **[MD003](docs/rules/md003.md)** *heading-style* - Heading style
