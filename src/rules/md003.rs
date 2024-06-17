@@ -1,3 +1,5 @@
+use core::fmt;
+
 use comrak::nodes::{Ast, NodeHeading, NodeValue};
 
 use crate::linter::{Context, HeadingStyle, RuleLinter, RuleViolation, RuleViolationSeverity};
@@ -8,6 +10,15 @@ use super::Rule;
 enum Style {
     Setext,
     Atx,
+}
+
+impl fmt::Display for Style {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Style::Setext => write!(f, "setext"),
+            Style::Atx => write!(f, "atx"),
+        }
+    }
 }
 
 pub(crate) struct MD003Linter {
@@ -44,6 +55,10 @@ impl RuleLinter for MD003Linter {
                 if style != *enforced_style {
                     return Option::Some(RuleViolation::new(
                         &MD003,
+                        format!(
+                            "{} [Expected: {}; Actual: {}]",
+                            MD003.description, enforced_style, style
+                        ),
                         RuleViolationSeverity::Error,
                         self.context.file_path.clone(),
                         &node.sourcepos,
@@ -84,7 +99,8 @@ mod test {
         };
         let mut linter = (MD003.new_linter)(context);
 
-        let input = "Setext level 1
+        let input = "
+Setext level 1
 --------------
 Setext level 2
 ==============
@@ -105,7 +121,8 @@ Setext level 2
         };
         let mut linter = (MD003.new_linter)(context);
 
-        let input = "Setext level 1
+        let input = "
+Setext level 1
 --------------
 Setext level 2
 ==============
@@ -124,9 +141,94 @@ Setext level 2
         };
         let mut linter = (MD003.new_linter)(context);
 
-        let input = "# Atx heading 1
+        let input = "
+# Atx heading 1
 ## Atx heading 2
 ### Atx heading 3
+";
+        let violations = lint_content(input, &mut linter);
+        assert_eq!(violations.len(), 0);
+    }
+
+    #[test]
+    fn test_heading_style_atx_positive() {
+        let context = Context {
+            file_path: PathBuf::from("test.md"),
+            settings: Settings {
+                heading_style: HeadingStyle::Atx,
+            },
+        };
+        let mut linter = (MD003.new_linter)(context);
+
+        let input = "
+Setext heading 1
+----------------
+Setext heading 2
+================
+### Atx heading 3
+";
+        let violations = lint_content(input, &mut linter);
+        assert_eq!(violations.len(), 2);
+    }
+
+    #[test]
+    fn test_heading_style_atx_negative() {
+        let context = Context {
+            file_path: PathBuf::from("test.md"),
+            settings: Settings {
+                heading_style: HeadingStyle::Atx,
+            },
+        };
+        let mut linter = (MD003.new_linter)(context);
+
+        let input = "
+# Atx heading 1
+## Atx heading 2
+### Atx heading 3
+";
+        let violations = lint_content(input, &mut linter);
+        assert_eq!(violations.len(), 0);
+    }
+
+    #[test]
+    fn test_heading_style_setext_positive() {
+        let context = Context {
+            file_path: PathBuf::from("test.md"),
+            settings: Settings {
+                heading_style: HeadingStyle::Setext,
+            },
+        };
+        let mut linter = (MD003.new_linter)(context);
+
+        let input = "
+# Atx heading 1
+Setext heading 1
+----------------
+Setext heading 2
+================
+### Atx heading 3
+";
+        let violations = lint_content(input, &mut linter);
+        assert_eq!(violations.len(), 2);
+    }
+
+    #[test]
+    fn test_heading_style_setext_negative() {
+        let context = Context {
+            file_path: PathBuf::from("test.md"),
+            settings: Settings {
+                heading_style: HeadingStyle::Setext,
+            },
+        };
+        let mut linter = (MD003.new_linter)(context);
+
+        let input = "
+Setext heading 1
+----------------
+Setext heading 2
+================
+Setext heading 2
+================
 ";
         let violations = lint_content(input, &mut linter);
         assert_eq!(violations.len(), 0);

@@ -43,13 +43,14 @@ pub struct RuleViolation {
 impl RuleViolation {
     pub fn new(
         rule: &'static Rule,
+        message: String,
         severity: RuleViolationSeverity,
         file_path: PathBuf,
         pos: &Sourcepos,
     ) -> Self {
         Self {
             rule,
-            message: rule.description.to_string(),
+            message,
             severity,
             location: Location {
                 file_path,

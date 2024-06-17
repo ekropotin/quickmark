@@ -18,7 +18,10 @@ fn main() -> anyhow::Result<()> {
     let file_content = fs::read_to_string(&file_path)
         .context(format!("Can't read file {}", &file_path.to_string_lossy()))?;
 
-    let rules = vec![quickmark::rules::md001::MD001];
+    let rules = vec![
+        quickmark::rules::md001::MD001,
+        quickmark::rules::md003::MD003,
+    ];
 
     let context = quickmark::linter::Context {
         file_path: file_path.clone(),
@@ -33,14 +36,14 @@ fn main() -> anyhow::Result<()> {
         .lint(&file_content)
         .iter()
         .fold((0, 0), |(warns, errs), v| {
-            eprint!("{}", v);
+            eprintln!("{}", v);
             match &v.severity {
                 Error => (warns, errs + 1),
                 _ => (warns + 1, errs),
             }
         });
 
-    println!("\n\nErrors: {}", errs);
+    println!("\nErrors: {}", errs);
     println!("Warnings: {}", warns);
 
     let exit_code = min(errs, 1);

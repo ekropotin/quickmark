@@ -25,6 +25,12 @@ impl RuleLinter for MD001Linter {
             {
                 return Option::Some(RuleViolation::new(
                     &MD001,
+                    format!(
+                        "{} [Expected: h{}; Actual: h{}]",
+                        MD001.description,
+                        self.current_heading_level + 1,
+                        level
+                    ),
                     RuleViolationSeverity::Error,
                     self.context.file_path.clone(),
                     &(node.sourcepos),
