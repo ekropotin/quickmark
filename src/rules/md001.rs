@@ -48,25 +48,17 @@ pub const MD001: Rule = Rule {
 mod test {
     use std::path::PathBuf;
 
-    use comrak::{parse_document, Arena, Options};
-
-    use crate::linter::{RuleViolation, Settings};
+    use crate::linter::{lint_content, HeadingStyle, Settings};
     use crate::rules::Context;
 
-    use super::super::RuleLinter;
     use super::MD001;
-
-    fn lint_content(input: &str, linter: &mut Box<dyn RuleLinter>) -> Vec<RuleViolation> {
-        parse_document(&Arena::new(), input, &Options::default())
-            .descendants()
-            .filter_map(|node| linter.feed(&node.data.borrow()))
-            .collect()
-    }
 
     fn test_context() -> Context {
         Context {
             file_path: PathBuf::from("test.md"),
-            settings: Settings {},
+            settings: Settings {
+                heading_style: HeadingStyle::Consistent,
+            },
         }
     }
 

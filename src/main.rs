@@ -22,7 +22,9 @@ fn main() -> anyhow::Result<()> {
 
     let context = quickmark::linter::Context {
         file_path: file_path.clone(),
-        settings: Settings {},
+        settings: Settings {
+            heading_style: quickmark::linter::HeadingStyle::Consistent,
+        },
     };
 
     let mut linter = MultiRuleLinter::new(&rules, context);
