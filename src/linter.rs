@@ -82,10 +82,16 @@ impl Display for RuleViolation {
         )
     }
 }
+#[derive(Clone, Debug)]
+pub enum HeadingStyle {
+    Atx,
+    Consistent,
+    Setext,
+}
 
 #[derive(Clone)]
 pub struct Settings {
-    //TBD
+    pub heading_style: HeadingStyle,
 }
 #[derive(Clone)]
 pub struct Context {
@@ -121,4 +127,11 @@ impl<'a> MultiRuleLinter {
             })
             .collect()
     }
+}
+
+pub fn lint_content(input: &str, linter: &mut Box<dyn RuleLinter>) -> Vec<RuleViolation> {
+    parse_document(&Arena::new(), input, &Options::default())
+        .descendants()
+        .filter_map(|node| linter.feed(&node.data.borrow()))
+        .collect()
 }
