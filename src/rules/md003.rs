@@ -94,4 +94,41 @@ Setext level 2
         let violations = lint_content(input, &mut linter);
         assert_eq!(violations.len(), 2);
     }
+
+    #[test]
+    fn test_heading_style_consistent_negative_setext() {
+        let context = Context {
+            file_path: PathBuf::from("test.md"),
+            settings: Settings {
+                heading_style: HeadingStyle::Consistent,
+            },
+        };
+        let mut linter = (MD003.new_linter)(context);
+
+        let input = "Setext level 1
+--------------
+Setext level 2
+==============
+";
+        let violations = lint_content(input, &mut linter);
+        assert_eq!(violations.len(), 0);
+    }
+
+    #[test]
+    fn test_heading_style_consistent_negative_atx() {
+        let context = Context {
+            file_path: PathBuf::from("test.md"),
+            settings: Settings {
+                heading_style: HeadingStyle::Consistent,
+            },
+        };
+        let mut linter = (MD003.new_linter)(context);
+
+        let input = "# Atx heading 1
+## Atx heading 2
+### Atx heading 3
+";
+        let violations = lint_content(input, &mut linter);
+        assert_eq!(violations.len(), 0);
+    }
 }
