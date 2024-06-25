@@ -2,7 +2,10 @@ use core::fmt;
 
 use comrak::nodes::{Ast, NodeHeading, NodeValue};
 
-use crate::linter::{Context, HeadingStyle, RuleLinter, RuleViolation, RuleViolationSeverity};
+use crate::{
+    config::HeadingStyle,
+    linter::{Context, RuleLinter, RuleViolation, RuleViolationSeverity},
+};
 
 use super::Rule;
 
@@ -28,8 +31,8 @@ pub(crate) struct MD003Linter {
 
 impl MD003Linter {
     pub fn new(context: Context) -> Self {
-        let enforced_style = match context.settings.heading_style {
-            HeadingStyle::Atx => Some(Style::Atx),
+        let enforced_style = match context.config.linters.settings.heading_style.style {
+            HeadingStyle::ATX => Some(Style::Atx),
             HeadingStyle::Setext => Some(Style::Setext),
             _ => None,
         };
@@ -82,21 +85,38 @@ pub const MD003: Rule = Rule {
 
 #[cfg(test)]
 mod test {
+    use std::collections::HashMap;
     use std::path::PathBuf;
 
-    use crate::linter::{lint_content, HeadingStyle, Settings};
+    use crate::config::{
+        HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, QuickmarkConfig,
+        RuleSeverity,
+    };
+    use crate::linter::lint_content;
     use crate::rules::Context;
 
     use super::MD003;
 
+    fn test_context(style: HeadingStyle) -> Context {
+        let severity: HashMap<_, _> = vec![("heading-style".to_string(), RuleSeverity::Error)]
+            .into_iter()
+            .collect();
+        Context {
+            file_path: PathBuf::from("test.md"),
+            config: QuickmarkConfig {
+                linters: LintersTable {
+                    severity,
+                    settings: LintersSettingsTable {
+                        heading_style: MD003HeadingStyleTable { style },
+                    },
+                },
+            },
+        }
+    }
+
     #[test]
     fn test_heading_style_consistent_positive() {
-        let context = Context {
-            file_path: PathBuf::from("test.md"),
-            settings: Settings {
-                heading_style: HeadingStyle::Consistent,
-            },
-        };
+        let context = test_context(HeadingStyle::Consistent);
         let mut linter = (MD003.new_linter)(context);
 
         let input = "
@@ -113,12 +133,7 @@ Setext level 2
 
     #[test]
     fn test_heading_style_consistent_negative_setext() {
-        let context = Context {
-            file_path: PathBuf::from("test.md"),
-            settings: Settings {
-                heading_style: HeadingStyle::Consistent,
-            },
-        };
+        let context = test_context(HeadingStyle::Consistent);
         let mut linter = (MD003.new_linter)(context);
 
         let input = "
@@ -133,12 +148,7 @@ Setext level 2
 
     #[test]
     fn test_heading_style_consistent_negative_atx() {
-        let context = Context {
-            file_path: PathBuf::from("test.md"),
-            settings: Settings {
-                heading_style: HeadingStyle::Consistent,
-            },
-        };
+        let context = test_context(HeadingStyle::Consistent);
         let mut linter = (MD003.new_linter)(context);
 
         let input = "
@@ -152,12 +162,7 @@ Setext level 2
 
     #[test]
     fn test_heading_style_atx_positive() {
-        let context = Context {
-            file_path: PathBuf::from("test.md"),
-            settings: Settings {
-                heading_style: HeadingStyle::Atx,
-            },
-        };
+        let context = test_context(HeadingStyle::ATX);
         let mut linter = (MD003.new_linter)(context);
 
         let input = "
@@ -173,12 +178,7 @@ Setext heading 2
 
     #[test]
     fn test_heading_style_atx_negative() {
-        let context = Context {
-            file_path: PathBuf::from("test.md"),
-            settings: Settings {
-                heading_style: HeadingStyle::Atx,
-            },
-        };
+        let context = test_context(HeadingStyle::ATX);
         let mut linter = (MD003.new_linter)(context);
 
         let input = "
@@ -192,12 +192,7 @@ Setext heading 2
 
     #[test]
     fn test_heading_style_setext_positive() {
-        let context = Context {
-            file_path: PathBuf::from("test.md"),
-            settings: Settings {
-                heading_style: HeadingStyle::Setext,
-            },
-        };
+        let context = test_context(HeadingStyle::Setext);
         let mut linter = (MD003.new_linter)(context);
 
         let input = "
@@ -214,12 +209,7 @@ Setext heading 2
 
     #[test]
     fn test_heading_style_setext_negative() {
-        let context = Context {
-            file_path: PathBuf::from("test.md"),
-            settings: Settings {
-                heading_style: HeadingStyle::Setext,
-            },
-        };
+        let context = test_context(HeadingStyle::Setext);
         let mut linter = (MD003.new_linter)(context);
 
         let input = "

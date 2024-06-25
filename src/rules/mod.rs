@@ -11,3 +11,5 @@ pub struct Rule {
     pub description: &'static str,
     pub new_linter: fn(Context) -> Box<dyn RuleLinter>,
 }
+
+pub const ALL_RULES: &[Rule] = &[md001::MD001, md003::MD003];

@@ -5,7 +5,10 @@ use comrak::{
     parse_document, Arena, Options,
 };
 
-use crate::rules::Rule;
+use crate::{
+    config::{QuickmarkConfig, RuleSeverity},
+    rules::{Rule, ALL_RULES},
+};
 
 #[derive(Debug)]
 pub struct CharPosition {
@@ -83,21 +86,11 @@ impl Display for RuleViolation {
         )
     }
 }
-#[derive(Clone, Debug)]
-pub enum HeadingStyle {
-    Atx,
-    Consistent,
-    Setext,
-}
 
-#[derive(Clone)]
-pub struct Settings {
-    pub heading_style: HeadingStyle,
-}
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Context {
     pub file_path: PathBuf,
-    pub settings: Settings,
+    pub config: QuickmarkConfig,
 }
 
 pub trait RuleLinter {
@@ -108,14 +101,18 @@ pub struct MultiRuleLinter {
 }
 
 impl<'a> MultiRuleLinter {
-    pub fn new(rules: &'a [Rule], context: Context) -> Self {
+    pub fn new(context: Context) -> Self {
         Self {
-            linters: rules
+            linters: ALL_RULES
                 .iter()
-                .map(|r| (r.new_linter)(context.clone()))
+                .filter(|r| {
+                    *context.config.linters.severity.get(r.alias).unwrap() != RuleSeverity::Off
+                })
+                .map(|r| ((r.new_linter)(context.clone())))
                 .collect(),
         }
     }
+
     pub fn lint(&mut self, document: &str) -> Vec<RuleViolation> {
         let arena = Arena::new();
         parse_document(&arena, document, &Options::default())

@@ -52,18 +52,33 @@ pub const MD001: Rule = Rule {
 
 #[cfg(test)]
 mod test {
+    use std::collections::HashMap;
     use std::path::PathBuf;
 
-    use crate::linter::{lint_content, HeadingStyle, Settings};
+    use crate::config::{
+        HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, QuickmarkConfig,
+        RuleSeverity,
+    };
+    use crate::linter::lint_content;
     use crate::rules::Context;
 
     use super::MD001;
 
     fn test_context() -> Context {
+        let severity: HashMap<_, _> = vec![("heading-style".to_string(), RuleSeverity::Error)]
+            .into_iter()
+            .collect();
         Context {
             file_path: PathBuf::from("test.md"),
-            settings: Settings {
-                heading_style: HeadingStyle::Consistent,
+            config: QuickmarkConfig {
+                linters: LintersTable {
+                    severity,
+                    settings: LintersSettingsTable {
+                        heading_style: MD003HeadingStyleTable {
+                            style: HeadingStyle::Consistent,
+                        },
+                    },
+                },
             },
         }
     }
