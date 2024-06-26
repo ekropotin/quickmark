@@ -1,8 +1,9 @@
 use anyhow::Context;
 use clap::Parser;
-use quickmark::linter::RuleViolationSeverity::Error;
-use quickmark::linter::{MultiRuleLinter, Settings};
+use quickmark::config::config_in_path_or_default;
+use quickmark::linter::{print_linting_errors, MultiRuleLinter};
 use std::cmp::min;
+use std::env;
 use std::{fs, path::PathBuf, process::exit};
 #[derive(Parser, Debug)]
 #[command(version, about = "Quickmark: An extremely fast CommonMark linter")]
@@ -18,34 +19,18 @@ fn main() -> anyhow::Result<()> {
     let file_content = fs::read_to_string(&file_path)
         .context(format!("Can't read file {}", &file_path.to_string_lossy()))?;
 
-    let rules = vec![
-        quickmark::rules::md001::MD001,
-        quickmark::rules::md003::MD003,
-    ];
+    let pwd = env::current_dir()?;
+    let config = config_in_path_or_default(&pwd)?;
 
     let context = quickmark::linter::Context {
         file_path: file_path.clone(),
-        settings: Settings {
-            heading_style: quickmark::linter::HeadingStyle::Consistent,
-        },
+        config: config.clone(),
     };
 
-    let mut linter = MultiRuleLinter::new(&rules, context);
+    let mut linter = MultiRuleLinter::new(context);
 
-    let (warns, errs) = linter
-        .lint(&file_content)
-        .iter()
-        .fold((0, 0), |(warns, errs), v| {
-            eprintln!("{}", v);
-            match &v.severity {
-                Error => (warns, errs + 1),
-                _ => (warns + 1, errs),
-            }
-        });
-
-    println!("\nErrors: {}", errs);
-    println!("Warnings: {}", warns);
-
+    let lint_res = linter.lint(&file_content);
+    let (errs, _) = print_linting_errors(&lint_res, &config);
     let exit_code = min(errs, 1);
     exit(exit_code);
 }
