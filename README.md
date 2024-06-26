@@ -40,7 +40,20 @@ quickmark /path/to/file.md
 
 ### Configuration
 
-TBD
+Quickmark looks up for `quickmark.toml` configuration file in the current working directory. If the file was not found, the default is used.
+
+Below is a full configuration with default values:
+
+```toml
+[linters.severity]
+# possible values are: 'warn', 'err' and 'off'
+heading-increment = 'err'
+heading-style = 'err'
+
+# see a specific rule's doc for details of configuration
+[linters.settings.heading-style]
+style = 'consistent'
+```
 
 ## Rules
 

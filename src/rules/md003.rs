@@ -4,7 +4,7 @@ use comrak::nodes::{Ast, NodeHeading, NodeValue};
 
 use crate::{
     config::HeadingStyle,
-    linter::{Context, RuleLinter, RuleViolation, RuleViolationSeverity},
+    linter::{Context, RuleLinter, RuleViolation},
 };
 
 use super::Rule;
@@ -62,7 +62,6 @@ impl RuleLinter for MD003Linter {
                             "{} [Expected: {}; Actual: {}]",
                             MD003.description, enforced_style, style
                         ),
-                        RuleViolationSeverity::Error,
                         self.context.file_path.clone(),
                         &node.sourcepos,
                     ));

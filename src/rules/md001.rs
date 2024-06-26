@@ -1,5 +1,5 @@
 use crate::{
-    linter::{RuleViolation, RuleViolationSeverity},
+    linter::RuleViolation,
     rules::{Context, Rule, RuleLinter},
 };
 use comrak::nodes::{Ast, NodeHeading, NodeValue};
@@ -31,7 +31,6 @@ impl RuleLinter for MD001Linter {
                         self.current_heading_level + 1,
                         level
                     ),
-                    RuleViolationSeverity::Error,
                     self.context.file_path.clone(),
                     &(node.sourcepos),
                 ));
