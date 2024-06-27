@@ -71,7 +71,7 @@ impl Display for RuleViolation {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Context {
     pub file_path: PathBuf,
     pub config: QuickmarkConfig,
