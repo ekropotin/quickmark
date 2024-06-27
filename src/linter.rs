@@ -1,4 +1,4 @@
-use std::{fmt::Display, path::PathBuf};
+use std::{fmt::Display, path::PathBuf, rc::Rc};
 
 use comrak::{
     nodes::{Ast, Sourcepos},
@@ -71,7 +71,7 @@ impl Display for RuleViolation {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Context {
     pub file_path: PathBuf,
     pub config: QuickmarkConfig,
@@ -85,7 +85,7 @@ pub struct MultiRuleLinter {
 }
 
 impl MultiRuleLinter {
-    pub fn new(context: Context) -> Self {
+    pub fn new(context: Rc<Context>) -> Self {
         Self {
             linters: ALL_RULES
                 .iter()

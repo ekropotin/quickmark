@@ -1,4 +1,5 @@
 use core::fmt;
+use std::rc::Rc;
 
 use comrak::nodes::{Ast, NodeHeading, NodeValue};
 
@@ -25,12 +26,12 @@ impl fmt::Display for Style {
 }
 
 pub(crate) struct MD003Linter {
-    context: Context,
+    context: Rc<Context>,
     enforced_style: Option<Style>,
 }
 
 impl MD003Linter {
-    pub fn new(context: Context) -> Self {
+    pub fn new(context: Rc<Context>) -> Self {
         let enforced_style = match context.config.linters.settings.heading_style.style {
             HeadingStyle::ATX => Some(Style::Atx),
             HeadingStyle::Setext => Some(Style::Setext),
@@ -86,6 +87,7 @@ pub const MD003: Rule = Rule {
 mod test {
     use std::collections::HashMap;
     use std::path::PathBuf;
+    use std::rc::Rc;
 
     use crate::config::{
         HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, QuickmarkConfig,
@@ -96,7 +98,7 @@ mod test {
 
     use super::MD003;
 
-    fn test_context(style: HeadingStyle) -> Context {
+    fn test_context(style: HeadingStyle) -> Rc<Context> {
         let severity: HashMap<_, _> = vec![("heading-style".to_string(), RuleSeverity::Error)]
             .into_iter()
             .collect();
@@ -111,6 +113,7 @@ mod test {
                 },
             },
         }
+        .into()
     }
 
     #[test]

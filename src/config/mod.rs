@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::rules::ALL_RULES;
-#[derive(Deserialize, Debug, PartialEq, Clone)]
+#[derive(Deserialize, Debug, PartialEq)]
 pub enum RuleSeverity {
     #[serde(rename = "err")]
     Error,
@@ -16,7 +16,7 @@ pub enum RuleSeverity {
     Off,
 }
 
-#[derive(Deserialize, Debug, PartialEq, Clone)]
+#[derive(Deserialize, Debug, PartialEq)]
 pub enum HeadingStyle {
     #[serde(rename = "consistent")]
     Consistent,
@@ -26,7 +26,7 @@ pub enum HeadingStyle {
     Setext,
 }
 
-#[derive(Deserialize, Debug, PartialEq, Clone)]
+#[derive(Deserialize, Debug, PartialEq)]
 pub struct MD003HeadingStyleTable {
     pub style: HeadingStyle,
 }
@@ -39,19 +39,19 @@ impl Default for MD003HeadingStyleTable {
     }
 }
 
-#[derive(Deserialize, Debug, Default, PartialEq, Clone)]
+#[derive(Deserialize, Debug, Default, PartialEq)]
 pub struct LintersSettingsTable {
     #[serde(rename = "heading-style")]
     pub heading_style: MD003HeadingStyleTable,
 }
 
-#[derive(Deserialize, Debug, Default, PartialEq, Clone)]
+#[derive(Deserialize, Debug, Default, PartialEq)]
 pub struct LintersTable {
     pub severity: HashMap<String, RuleSeverity>,
     pub settings: LintersSettingsTable,
 }
 
-#[derive(Deserialize, Debug, Default, PartialEq, Clone)]
+#[derive(Deserialize, Debug, Default, PartialEq)]
 pub struct QuickmarkConfig {
     pub linters: LintersTable,
 }
