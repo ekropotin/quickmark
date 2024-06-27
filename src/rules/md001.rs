@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::{
     linter::RuleViolation,
     rules::{Context, Rule, RuleLinter},
@@ -5,12 +7,12 @@ use crate::{
 use comrak::nodes::{Ast, NodeHeading, NodeValue};
 
 pub(crate) struct MD001Linter {
-    context: Context,
+    context: Rc<Context>,
     current_heading_level: u8,
 }
 
 impl MD001Linter {
-    pub fn new(context: Context) -> Self {
+    pub fn new(context: Rc<Context>) -> Self {
         Self {
             context,
             current_heading_level: 0,
@@ -53,6 +55,7 @@ pub const MD001: Rule = Rule {
 mod test {
     use std::collections::HashMap;
     use std::path::PathBuf;
+    use std::rc::Rc;
 
     use crate::config::{
         HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, QuickmarkConfig,
@@ -63,7 +66,7 @@ mod test {
 
     use super::MD001;
 
-    fn test_context() -> Context {
+    fn test_context() -> Rc<Context> {
         let severity: HashMap<_, _> = vec![("heading-style".to_string(), RuleSeverity::Error)]
             .into_iter()
             .collect();
@@ -80,6 +83,7 @@ mod test {
                 },
             },
         }
+        .into()
     }
 
     #[test]

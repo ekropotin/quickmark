@@ -1,4 +1,4 @@
-use std::{fmt::Display, path::PathBuf};
+use std::{fmt::Display, path::PathBuf, rc::Rc};
 
 use comrak::{
     nodes::{Ast, Sourcepos},
@@ -85,7 +85,7 @@ pub struct MultiRuleLinter {
 }
 
 impl MultiRuleLinter {
-    pub fn new(context: Context) -> Self {
+    pub fn new(context: Rc<Context>) -> Self {
         Self {
             linters: ALL_RULES
                 .iter()

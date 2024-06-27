@@ -4,6 +4,7 @@ use quickmark::config::config_in_path_or_default;
 use quickmark::linter::{print_linting_errors, MultiRuleLinter};
 use std::cmp::min;
 use std::env;
+use std::rc::Rc;
 use std::{fs, path::PathBuf, process::exit};
 #[derive(Parser, Debug)]
 #[command(version, about = "Quickmark: An extremely fast CommonMark linter")]
@@ -22,15 +23,12 @@ fn main() -> anyhow::Result<()> {
     let pwd = env::current_dir()?;
     let config = config_in_path_or_default(&pwd)?;
 
-    let context = quickmark::linter::Context {
-        file_path: file_path.clone(),
-        config: config.clone(),
-    };
+    let context = Rc::new(quickmark::linter::Context { file_path, config });
 
-    let mut linter = MultiRuleLinter::new(context);
+    let mut linter = MultiRuleLinter::new(context.clone());
 
     let lint_res = linter.lint(&file_content);
-    let (errs, _) = print_linting_errors(&lint_res, &config);
+    let (errs, _) = print_linting_errors(&lint_res, &context.config);
     let exit_code = min(errs, 1);
     exit(exit_code);
 }
