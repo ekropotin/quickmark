@@ -1,10 +1,11 @@
 use std::rc::Rc;
 
+use tree_sitter::Node;
+
 use crate::{
     linter::RuleViolation,
     rules::{Context, Rule, RuleLinter},
 };
-use comrak::nodes::{Ast, NodeHeading, NodeValue};
 
 pub(crate) struct MD001Linter {
     context: Rc<Context>,
@@ -20,12 +21,44 @@ impl MD001Linter {
     }
 }
 
+fn extract_heading_level(node: &Node) -> u8 {
+    match node.kind() {
+        "atx_heading" => {
+            // Same as before: look for atx_hX_marker
+            for i in 0..node.child_count() {
+                let child = node.child(i).unwrap();
+                if child.kind().starts_with("atx_h") && child.kind().ends_with("_marker") {
+                    // "atx_h3_marker" => 3
+                    return child.kind().chars().nth(5).unwrap().to_digit(10).unwrap() as u8;
+                }
+            }
+            1 // fallback
+        }
+        "setext_heading" => {
+            // Setext: look for setext_h1_underline or setext_h2_underline
+            for i in 0..node.child_count() {
+                let child = node.child(i).unwrap();
+                if child.kind() == "setext_h1_underline" {
+                    return 1;
+                } else if child.kind() == "setext_h2_underline" {
+                    return 2;
+                }
+            }
+            1 // fallback
+        }
+        _ => 1,
+    }
+}
+
 impl RuleLinter for MD001Linter {
-    fn feed(&mut self, node: &Ast) -> Option<RuleViolation> {
-        if let NodeValue::Heading(NodeHeading { level, setext: _ }) = node.value {
-            if self.current_heading_level > 0 && level as i8 - self.current_heading_level as i8 > 1
+    fn feed(&mut self, node: &Node) -> Option<RuleViolation> {
+        if node.kind() == "atx_heading" || node.kind() == "setext_heading" {
+            let level = extract_heading_level(node);
+
+            if self.current_heading_level > 0
+                && (level as i8 - self.current_heading_level as i8) > 1
             {
-                return Option::Some(RuleViolation::new(
+                return Some(RuleViolation::new(
                     &MD001,
                     format!(
                         "{} [Expected: h{}; Actual: h{}]",
@@ -34,7 +67,7 @@ impl RuleLinter for MD001Linter {
                         level
                     ),
                     self.context.file_path.clone(),
-                    &(node.sourcepos),
+                    &(node.range()),
                 ));
             }
             self.current_heading_level = level;
@@ -61,15 +94,16 @@ mod test {
         HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, QuickmarkConfig,
         RuleSeverity,
     };
-    use crate::linter::lint_content;
+    use crate::linter::MultiRuleLinter;
     use crate::rules::Context;
 
-    use super::MD001;
-
     fn test_context() -> Rc<Context> {
-        let severity: HashMap<_, _> = vec![("heading-style".to_string(), RuleSeverity::Error)]
-            .into_iter()
-            .collect();
+        let severity: HashMap<_, _> = vec![
+            ("heading-style".to_string(), RuleSeverity::Off),
+            ("heading-increment".to_string(), RuleSeverity::Error),
+        ]
+        .into_iter()
+        .collect();
         Context {
             file_path: PathBuf::from("test.md"),
             config: QuickmarkConfig {
@@ -87,7 +121,7 @@ mod test {
     }
 
     #[test]
-    fn test_positive() {
+    fn test_atx_positive() {
         let input = "# Heading level 1
 some text
 `some code`
@@ -99,24 +133,25 @@ foobar
 ### Heading level 3
 ";
 
-        let violations = lint_content(input, &mut (MD001.new_linter)(test_context()));
+        let mut linter = MultiRuleLinter::new(test_context());
+        let violations = linter.lint(input);
         assert_eq!(2, violations.len());
         let mut iter = violations.iter();
         let range1 = &iter.next().unwrap().location.range;
-        assert_eq!(6, range1.start.line);
-        assert_eq!(1, range1.start.character);
+        assert_eq!(5, range1.start.line);
+        assert_eq!(0, range1.start.character);
         assert_eq!(6, range1.end.line);
-        assert_eq!(22, range1.end.character);
+        assert_eq!(0, range1.end.character);
 
         let range2 = &iter.next().unwrap().location.range;
-        assert_eq!(8, range2.start.line);
-        assert_eq!(1, range2.start.character);
+        assert_eq!(7, range2.start.line);
+        assert_eq!(0, range2.start.character);
         assert_eq!(8, range2.end.line);
-        assert_eq!(20, range2.end.character);
+        assert_eq!(0, range2.end.character);
     }
 
     #[test]
-    fn test_negative() {
+    fn test_atx_negative() {
         let input = "# Heading level 1
 some text
 `some code`
@@ -129,12 +164,13 @@ foobar
 ###### Heading level 6
 ";
 
-        let violations = lint_content(input, &mut (MD001.new_linter)(test_context()));
+        let mut linter = MultiRuleLinter::new(test_context());
+        let violations = linter.lint(input);
         assert_eq!(0, violations.len());
     }
 
     #[test]
-    fn test_negative_starts_not_with_level_1() {
+    fn test_atx_negative_starts_not_with_level_1() {
         let input = "## Heading level 2
 some text
 `some code`
@@ -147,7 +183,46 @@ foobar
 # level 1
 ";
 
-        let violations = lint_content(input, &mut (MD001.new_linter)(test_context()));
+        let mut linter = MultiRuleLinter::new(test_context());
+        let violations = linter.lint(input);
+        assert_eq!(0, violations.len());
+    }
+
+    #[test]
+    fn test_setext_positive() {
+        let input = "
+Heading level 1
+===============
+some text
+`some code`
+### Heading level 3
+some other text
+         ";
+
+        let mut linter = MultiRuleLinter::new(test_context());
+        let violations = linter.lint(input);
+        // Should trigger a violation: setext h1 -> atx h3 (skips h2)
+        assert_eq!(1, violations.len());
+        let range = &violations[0].location.range;
+        // The violation should be on the h3 heading
+        assert_eq!(5, range.start.line);
+        assert_eq!(0, range.start.character);
+    }
+
+    #[test]
+    fn test_setext_negative() {
+        let input = "
+Heading level 1
+===============
+some text
+Heading level 2
+---------------
+some other text
+";
+
+        let mut linter = MultiRuleLinter::new(test_context());
+        let violations = linter.lint(input);
+        // Should be no violations: setext h1 -> setext h2
         assert_eq!(0, violations.len());
     }
 }
