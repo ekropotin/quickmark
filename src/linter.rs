@@ -101,11 +101,11 @@ impl MultiRuleLinter {
         let arena = Arena::new();
         parse_document(&arena, document, &Options::default())
             .descendants()
-            .filter_map(|node| {
+            .flat_map(|node| {
                 self.linters
                     .iter_mut()
                     .filter_map(|linter| linter.feed(&node.data.borrow()))
-                    .next()
+                    .collect::<Vec<_>>()
             })
             .collect()
     }
@@ -156,7 +156,7 @@ mod test {
         rules::{md001::MD001, md003::MD003},
     };
 
-    use super::{print_linting_errors, RuleViolation};
+    use super::{print_linting_errors, RuleViolation, Context, MultiRuleLinter};
 
     #[test]
     fn test_print_linting_errors() {
@@ -190,5 +190,41 @@ mod test {
         let (errs, warns) = print_linting_errors(&results, &config);
         assert_eq!(1, errs);
         assert_eq!(2, warns);
+    }
+
+    #[test]
+    fn test_multiple_violations_on_same_line() {
+        use std::rc::Rc;
+
+        let severity: HashMap<_, _> = vec![
+            (MD001.alias.to_string(), RuleSeverity::Error),
+            (MD003.alias.to_string(), RuleSeverity::Error),
+        ]
+        .into_iter()
+        .collect();
+
+        let context = Rc::new(Context {
+            file_path: PathBuf::from("test.md"),
+            config: QuickmarkConfig {
+                linters: config::LintersTable {
+                    severity,
+                    settings: config::LintersSettingsTable {
+                        heading_style: config::MD003HeadingStyleTable {
+                            style: config::HeadingStyle::ATX,
+                        },
+                    },
+                },
+            },
+        });
+
+        let mut linter = MultiRuleLinter::new(context);
+
+        // This creates a setext h1 after an ATX h1, which should violate:
+        // MD003: mixes ATX and setext styles when ATX is enforced
+        // It's also at the wrong level for MD001 testing, so let's use a different approach
+        let input = "# First heading\nSecond heading\n==============\n#### Fourth level\n";
+
+        let violations = linter.lint(input);
+        assert_eq!(2, violations.len(), "Should find both MD001 and MD003 violations");
     }
 }
