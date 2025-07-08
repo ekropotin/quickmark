@@ -198,7 +198,7 @@ mod test {
     }
 
     #[test]
-    fn test_multiple_violations_on_same_line() {
+    fn test_multiple_violations() {
         use std::rc::Rc;
 
         let severity: HashMap<_, _> = vec![
@@ -227,7 +227,12 @@ mod test {
         // This creates a setext h1 after an ATX h1, which should violate:
         // MD003: mixes ATX and setext styles when ATX is enforced
         // It's also at the wrong level for MD001 testing, so let's use a different approach
-        let input = "# First heading\nSecond heading\n==============\n#### Fourth level\n";
+        let input = "
+# First heading
+Second heading
+==============
+#### Fourth level
+";
 
         let violations = linter.lint(input);
         assert_eq!(
@@ -235,5 +240,9 @@ mod test {
             violations.len(),
             "Should find both MD001 and MD003 violations"
         );
+        assert_eq!(MD003.id, violations[0].rule.id);
+        assert_eq!(2, violations[0].location.range.start.line);
+        assert_eq!(MD001.id, violations[1].rule.id);
+        assert_eq!(4, violations[1].location.range.start.line);
     }
 }
