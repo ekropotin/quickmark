@@ -32,7 +32,7 @@ QuickMark is a lightning-fast Markdown/CommonMark linter written in Rust. It's i
 - `MultiRuleLinter`: Orchestrates multiple rule linters
 - `RuleViolation`: Represents a linting error with location and message
 - `Context`: Shared context containing file path and configuration
-- Uses comrak crate for CommonMark AST parsing
+- Uses tree-sitter for Markdown parsing with tree-sitter-md grammar
 - Filters rules based on severity configuration (off/warn/err)
 
 **Configuration System** (`src/config/mod.rs`):
@@ -58,6 +58,6 @@ QuickMark is a lightning-fast Markdown/CommonMark linter written in Rust. It's i
 
 **Shared Context**: `Rc<Context>` is passed to all rule linters, containing file path and configuration.
 
-**AST Traversal**: Uses comrak's AST node iteration with each rule's `feed` method processing nodes.
+**AST Traversal**: Uses tree-sitter node iteration with each rule's `feed` method processing nodes.
 
 **Configuration-Driven**: Rule severity and settings are externally configurable via TOML files.

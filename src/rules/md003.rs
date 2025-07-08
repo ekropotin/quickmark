@@ -1,7 +1,6 @@
 use core::fmt;
 use std::rc::Rc;
-
-use comrak::nodes::{Ast, NodeHeading, NodeValue};
+use tree_sitter::Node;
 
 use crate::{
     config::HeadingStyle,
@@ -44,28 +43,38 @@ impl MD003Linter {
     }
 }
 
-fn heading_style(heading: &NodeHeading) -> Style {
-    match heading.setext {
-        true => Style::Setext,
-        false => Style::Atx,
-    }
-}
-
 impl RuleLinter for MD003Linter {
-    fn feed(&mut self, node: &Ast) -> Option<RuleViolation> {
-        if let NodeValue::Heading(heading) = node.value {
-            let style = heading_style(&heading);
+    fn feed(&mut self, node: &Node) -> Option<RuleViolation> {
+        let style = match node.kind() {
+            "atx_heading" => Some(Style::Atx),
+            "setext_heading" => Some(Style::Setext),
+            _ => None,
+        };
+        if let Some(style) = style {
             if let Some(enforced_style) = &self.enforced_style {
                 if style != *enforced_style {
-                    return Option::Some(RuleViolation::new(
-                        &MD003,
-                        format!(
+                    let start = node.start_position();
+                    let end = node.end_position();
+                    return Some(RuleViolation {
+                        rule: &MD003,
+                        message: format!(
                             "{} [Expected: {}; Actual: {}]",
                             MD003.description, enforced_style, style
                         ),
-                        self.context.file_path.clone(),
-                        &node.sourcepos,
-                    ));
+                        location: crate::linter::Location {
+                            file_path: self.context.file_path.clone(),
+                            range: crate::linter::Range {
+                                start: crate::linter::CharPosition {
+                                    line: start.row,
+                                    character: start.column,
+                                },
+                                end: crate::linter::CharPosition {
+                                    line: end.row,
+                                    character: end.column,
+                                },
+                            },
+                        },
+                    });
                 }
             } else {
                 self.enforced_style = Some(style);
@@ -93,15 +102,17 @@ mod test {
         HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, QuickmarkConfig,
         RuleSeverity,
     };
-    use crate::linter::lint_content;
+    use crate::linter::MultiRuleLinter;
     use crate::rules::Context;
 
-    use super::MD003;
 
     fn test_context(style: HeadingStyle) -> Rc<Context> {
-        let severity: HashMap<_, _> = vec![("heading-style".to_string(), RuleSeverity::Error)]
-            .into_iter()
-            .collect();
+        let severity: HashMap<_, _> = vec![
+            ("heading-style".to_string(), RuleSeverity::Error),
+            ("heading-increment".to_string(), RuleSeverity::Off),
+        ]
+        .into_iter()
+        .collect();
         Context {
             file_path: PathBuf::from("test.md"),
             config: QuickmarkConfig {
@@ -119,7 +130,6 @@ mod test {
     #[test]
     fn test_heading_style_consistent_positive() {
         let context = test_context(HeadingStyle::Consistent);
-        let mut linter = (MD003.new_linter)(context);
 
         let input = "
 Setext level 1
@@ -129,14 +139,14 @@ Setext level 2
 ### ATX header level 3
 #### ATX header level 4
 ";
-        let violations = lint_content(input, &mut linter);
+        let mut linter = MultiRuleLinter::new(context);
+        let violations = linter.lint(input);
         assert_eq!(violations.len(), 2);
     }
 
     #[test]
     fn test_heading_style_consistent_negative_setext() {
         let context = test_context(HeadingStyle::Consistent);
-        let mut linter = (MD003.new_linter)(context);
 
         let input = "
 Setext level 1
@@ -144,28 +154,28 @@ Setext level 1
 Setext level 2
 ==============
 ";
-        let violations = lint_content(input, &mut linter);
+        let mut linter = MultiRuleLinter::new(context);
+        let violations = linter.lint(input);
         assert_eq!(violations.len(), 0);
     }
 
     #[test]
     fn test_heading_style_consistent_negative_atx() {
         let context = test_context(HeadingStyle::Consistent);
-        let mut linter = (MD003.new_linter)(context);
 
         let input = "
 # Atx heading 1
 ## Atx heading 2
 ### Atx heading 3
 ";
-        let violations = lint_content(input, &mut linter);
+        let mut linter = MultiRuleLinter::new(context);
+        let violations = linter.lint(input);
         assert_eq!(violations.len(), 0);
     }
 
     #[test]
     fn test_heading_style_atx_positive() {
         let context = test_context(HeadingStyle::ATX);
-        let mut linter = (MD003.new_linter)(context);
 
         let input = "
 Setext heading 1
@@ -174,28 +184,28 @@ Setext heading 2
 ================
 ### Atx heading 3
 ";
-        let violations = lint_content(input, &mut linter);
+        let mut linter = MultiRuleLinter::new(context);
+        let violations = linter.lint(input);
         assert_eq!(violations.len(), 2);
     }
 
     #[test]
     fn test_heading_style_atx_negative() {
         let context = test_context(HeadingStyle::ATX);
-        let mut linter = (MD003.new_linter)(context);
 
         let input = "
 # Atx heading 1
 ## Atx heading 2
 ### Atx heading 3
 ";
-        let violations = lint_content(input, &mut linter);
+        let mut linter = MultiRuleLinter::new(context);
+        let violations = linter.lint(input);
         assert_eq!(violations.len(), 0);
     }
 
     #[test]
     fn test_heading_style_setext_positive() {
         let context = test_context(HeadingStyle::Setext);
-        let mut linter = (MD003.new_linter)(context);
 
         let input = "
 # Atx heading 1
@@ -205,14 +215,14 @@ Setext heading 2
 ================
 ### Atx heading 3
 ";
-        let violations = lint_content(input, &mut linter);
+        let mut linter = MultiRuleLinter::new(context);
+        let violations = linter.lint(input);
         assert_eq!(violations.len(), 2);
     }
 
     #[test]
     fn test_heading_style_setext_negative() {
         let context = test_context(HeadingStyle::Setext);
-        let mut linter = (MD003.new_linter)(context);
 
         let input = "
 Setext heading 1
@@ -222,7 +232,8 @@ Setext heading 2
 Setext heading 2
 ================
 ";
-        let violations = lint_content(input, &mut linter);
+        let mut linter = MultiRuleLinter::new(context);
+        let violations = linter.lint(input);
         assert_eq!(violations.len(), 0);
     }
 }

@@ -1,13 +1,11 @@
 use std::{fmt::Display, path::PathBuf, rc::Rc};
-
-use comrak::{
-    nodes::{Ast, Sourcepos},
-    parse_document, Arena, Options,
-};
+use tree_sitter::{Node, Parser};
+use tree_sitter_md::LANGUAGE;
 
 use crate::{
     config::{QuickmarkConfig, RuleSeverity},
     rules::{Rule, ALL_RULES},
+    tree_sitter_walker::TreeSitterWalker,
 };
 
 #[derive(Debug)]
@@ -35,7 +33,12 @@ pub struct RuleViolation {
 }
 
 impl RuleViolation {
-    pub fn new(rule: &'static Rule, message: String, file_path: PathBuf, pos: &Sourcepos) -> Self {
+    pub fn new(
+        rule: &'static Rule,
+        message: String,
+        file_path: PathBuf,
+        pos: &tree_sitter::Range,
+    ) -> Self {
         Self {
             rule,
             message,
@@ -43,12 +46,12 @@ impl RuleViolation {
                 file_path,
                 range: Range {
                     start: CharPosition {
-                        line: pos.start.line,
-                        character: pos.start.column,
+                        line: pos.start_point.row,
+                        character: pos.start_point.column,
                     },
                     end: CharPosition {
-                        line: pos.end.line,
-                        character: pos.end.column,
+                        line: pos.end_point.row,
+                        character: pos.end_point.column,
                     },
                 },
             },
@@ -78,7 +81,7 @@ pub struct Context {
 }
 
 pub trait RuleLinter {
-    fn feed(&mut self, node: &Ast) -> Option<RuleViolation>;
+    fn feed(&mut self, node: &Node) -> Option<RuleViolation>;
 }
 pub struct MultiRuleLinter {
     linters: Vec<Box<dyn RuleLinter>>,
@@ -98,24 +101,24 @@ impl MultiRuleLinter {
     }
 
     pub fn lint(&mut self, document: &str) -> Vec<RuleViolation> {
-        let arena = Arena::new();
-        parse_document(&arena, document, &Options::default())
-            .descendants()
-            .flat_map(|node| {
-                self.linters
-                    .iter_mut()
-                    .filter_map(|linter| linter.feed(&node.data.borrow()))
-                    .collect::<Vec<_>>()
-            })
-            .collect()
-    }
-}
+        let mut parser = Parser::new();
+        parser
+            .set_language(&LANGUAGE.into())
+            .expect("Error loading Markdown grammar");
+        let tree = parser.parse(document, None).expect("Parse failed");
 
-pub fn lint_content(input: &str, linter: &mut Box<dyn RuleLinter>) -> Vec<RuleViolation> {
-    parse_document(&Arena::new(), input, &Options::default())
-        .descendants()
-        .filter_map(|node| linter.feed(&node.data.borrow()))
-        .collect()
+        let mut violations = Vec::new();
+        let walker = TreeSitterWalker::new(&tree);
+        walker.walk(|_node| {
+            let node_violations = self
+                .linters
+                .iter_mut()
+                .filter_map(|linter| linter.feed(&_node))
+                .collect::<Vec<_>>();
+            violations.extend(node_violations);
+        });
+        violations
+    }
 }
 
 pub fn print_linting_errors(results: &[RuleViolation], config: &QuickmarkConfig) -> (i32, i32) {
@@ -149,14 +152,14 @@ pub fn print_linting_errors(results: &[RuleViolation], config: &QuickmarkConfig)
 mod test {
     use std::{collections::HashMap, path::PathBuf};
 
-    use comrak::nodes::Sourcepos;
+    use tree_sitter::Range;
 
     use crate::{
         config::{self, QuickmarkConfig, RuleSeverity},
         rules::{md001::MD001, md003::MD003},
     };
 
-    use super::{print_linting_errors, RuleViolation, Context, MultiRuleLinter};
+    use super::{print_linting_errors, Context, MultiRuleLinter, RuleViolation};
 
     #[test]
     fn test_print_linting_errors() {
@@ -176,9 +179,11 @@ mod test {
                 },
             },
         };
-        let pos = Sourcepos {
-            start: comrak::nodes::LineColumn { line: 1, column: 1 },
-            end: comrak::nodes::LineColumn { line: 1, column: 5 },
+        let pos = Range {
+            start_byte: 0,
+            end_byte: 4,
+            start_point: tree_sitter::Point { row: 1, column: 1 },
+            end_point: tree_sitter::Point { row: 1, column: 5 },
         };
         let file = PathBuf::default();
         let results = vec![
@@ -193,7 +198,7 @@ mod test {
     }
 
     #[test]
-    fn test_multiple_violations_on_same_line() {
+    fn test_multiple_violations() {
         use std::rc::Rc;
 
         let severity: HashMap<_, _> = vec![
@@ -222,9 +227,22 @@ mod test {
         // This creates a setext h1 after an ATX h1, which should violate:
         // MD003: mixes ATX and setext styles when ATX is enforced
         // It's also at the wrong level for MD001 testing, so let's use a different approach
-        let input = "# First heading\nSecond heading\n==============\n#### Fourth level\n";
+        let input = "
+# First heading
+Second heading
+==============
+#### Fourth level
+";
 
         let violations = linter.lint(input);
-        assert_eq!(2, violations.len(), "Should find both MD001 and MD003 violations");
+        assert_eq!(
+            2,
+            violations.len(),
+            "Should find both MD001 and MD003 violations"
+        );
+        assert_eq!(MD003.id, violations[0].rule.id);
+        assert_eq!(2, violations[0].location.range.start.line);
+        assert_eq!(MD001.id, violations[1].rule.id);
+        assert_eq!(4, violations[1].location.range.start.line);
     }
 }
