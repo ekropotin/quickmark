@@ -1,0 +1,6 @@
+[linters.severity]
+heading-increment = 'warn'
+heading-style = 'off'
+
+[linters.settings.heading-style]
+style = 'atx'
