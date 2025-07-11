@@ -1,0 +1,9 @@
+[package]
+name = "quickmark_linter"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.86"
+tree-sitter = "0.25.6"
+tree-sitter-md = "0.3.2"

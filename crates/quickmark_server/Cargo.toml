@@ -1,0 +1,9 @@
+[package]
+name = "quickmark_server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.86"
+quickmark_config = { path = "../quickmark_config" }
+quickmark_linter = { path = "../quickmark_linter" }

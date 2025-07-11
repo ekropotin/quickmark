@@ -1,0 +1,10 @@
+[package]
+name = "quickmark"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.86"
+clap = { version = "4.5.4", features = ["derive"] }
+quickmark_config = { path = "../quickmark_config" }
+quickmark_linter = { path = "../quickmark_linter" }
