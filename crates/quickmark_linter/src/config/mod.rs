@@ -14,6 +14,9 @@ pub enum HeadingStyle {
     Consistent,
     ATX,
     Setext,
+    ATXClosed,
+    SetextWithATX,
+    SetextWithATXClosed,
 }
 
 #[derive(Debug, PartialEq, Clone)]

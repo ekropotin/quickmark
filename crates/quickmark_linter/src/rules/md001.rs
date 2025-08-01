@@ -51,7 +51,7 @@ fn extract_heading_level(node: &Node) -> u8 {
 }
 
 impl RuleLinter for MD001Linter {
-    fn feed(&mut self, node: &Node) -> Option<RuleViolation> {
+    fn feed(&mut self, node: &Node, _source: &str) -> Option<RuleViolation> {
         if node.kind() == "atx_heading" || node.kind() == "setext_heading" {
             let level = extract_heading_level(node);
 
