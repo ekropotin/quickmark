@@ -22,9 +22,15 @@ enum TomlHeadingStyle {
     #[serde(rename = "consistent")]
     Consistent,
     #[serde(rename = "atx")]
-    ATX,
+    Atx,
     #[serde(rename = "setext")]
     Setext,
+    #[serde(rename = "atx_closed")]
+    ATXClosed,
+    #[serde(rename = "setext_with_atx")]
+    SetextWithATX,
+    #[serde(rename = "setext_with_atx_closed")]
+    SetextWithATXClosed,
 }
 
 #[derive(Deserialize)]
@@ -33,12 +39,14 @@ struct TomlMD003HeadingStyleTable {
 }
 
 #[derive(Deserialize)]
+#[derive(Default)]
 struct TomlLintersSettingsTable {
     #[serde(rename = "heading-style")]
     heading_style: TomlMD003HeadingStyleTable,
 }
 
 #[derive(Deserialize)]
+#[derive(Default)]
 struct TomlLintersTable {
     #[serde(default)]
     severity: HashMap<String, TomlRuleSeverity>,
@@ -60,23 +68,6 @@ impl Default for TomlMD003HeadingStyleTable {
     }
 }
 
-impl Default for TomlLintersSettingsTable {
-    fn default() -> Self {
-        Self {
-            heading_style: TomlMD003HeadingStyleTable::default(),
-        }
-    }
-}
-
-impl Default for TomlLintersTable {
-    fn default() -> Self {
-        Self {
-            severity: HashMap::new(),
-            settings: TomlLintersSettingsTable::default(),
-        }
-    }
-}
-
 fn convert_toml_severity(toml_severity: TomlRuleSeverity) -> RuleSeverity {
     match toml_severity {
         TomlRuleSeverity::Error => RuleSeverity::Error,
@@ -88,8 +79,11 @@ fn convert_toml_severity(toml_severity: TomlRuleSeverity) -> RuleSeverity {
 fn convert_toml_heading_style(toml_style: TomlHeadingStyle) -> HeadingStyle {
     match toml_style {
         TomlHeadingStyle::Consistent => HeadingStyle::Consistent,
-        TomlHeadingStyle::ATX => HeadingStyle::ATX,
+        TomlHeadingStyle::Atx => HeadingStyle::ATX,
         TomlHeadingStyle::Setext => HeadingStyle::Setext,
+        TomlHeadingStyle::ATXClosed => HeadingStyle::ATXClosed,
+        TomlHeadingStyle::SetextWithATX => HeadingStyle::SetextWithATX,
+        TomlHeadingStyle::SetextWithATXClosed => HeadingStyle::SetextWithATXClosed,
     }
 }
 
@@ -197,6 +191,57 @@ mod tests {
         assert_eq!(
             HeadingStyle::Consistent,
             config.linters.settings.heading_style.style
+        );
+    }
+
+    #[test]
+    fn test_parse_toml_config_atx_closed() {
+        let config_str = r#"
+        [linters.severity]
+        heading-style = 'err'
+
+        [linters.settings.heading-style]
+        style = 'atx_closed'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            HeadingStyle::ATXClosed,
+            parsed.linters.settings.heading_style.style
+        );
+    }
+
+    #[test]
+    fn test_parse_toml_config_setext_with_atx() {
+        let config_str = r#"
+        [linters.severity]
+        heading-style = 'err'
+
+        [linters.settings.heading-style]
+        style = 'setext_with_atx'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            HeadingStyle::SetextWithATX,
+            parsed.linters.settings.heading_style.style
+        );
+    }
+
+    #[test]
+    fn test_parse_toml_config_setext_with_atx_closed() {
+        let config_str = r#"
+        [linters.severity]
+        heading-style = 'err'
+
+        [linters.settings.heading-style]
+        style = 'setext_with_atx_closed'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            HeadingStyle::SetextWithATXClosed,
+            parsed.linters.settings.heading_style.style
         );
     }
 }

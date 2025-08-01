@@ -81,7 +81,7 @@ pub struct Context {
 }
 
 pub trait RuleLinter {
-    fn feed(&mut self, node: &Node) -> Option<RuleViolation>;
+    fn feed(&mut self, node: &Node, source: &str) -> Option<RuleViolation>;
 }
 pub struct MultiRuleLinter {
     linters: Vec<Box<dyn RuleLinter>>,
@@ -113,7 +113,7 @@ impl MultiRuleLinter {
             let node_violations = self
                 .linters
                 .iter_mut()
-                .filter_map(|linter| linter.feed(&_node))
+                .filter_map(|linter| linter.feed(&_node, document))
                 .collect::<Vec<_>>();
             violations.extend(node_violations);
         });
