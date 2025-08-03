@@ -140,10 +140,8 @@ impl RuleLinter for MD003Linter {
                         if style != Style::Setext {
                             return self.create_violation(node, "setext", &style);
                         }
-                    } else {
-                        if style != Style::Atx {
-                            return self.create_violation(node, "atx", &style);
-                        }
+                    } else if style != Style::Atx {
+                        return self.create_violation(node, "atx", &style);
                     }
                 },
                 HeadingStyle::SetextWithATXClosed => {
@@ -152,10 +150,8 @@ impl RuleLinter for MD003Linter {
                         if style != Style::Setext {
                             return self.create_violation(node, "setext", &style);
                         }
-                    } else {
-                        if style != Style::AtxClosed {
-                            return self.create_violation(node, "atx_closed", &style);
-                        }
+                    } else if style != Style::AtxClosed {
+                        return self.create_violation(node, "atx_closed", &style);
                     }
                 },
                 _ => {

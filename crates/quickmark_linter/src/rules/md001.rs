@@ -3,7 +3,7 @@ use std::rc::Rc;
 use tree_sitter::Node;
 
 use crate::{
-    linter::RuleViolation,
+    linter::{range_from_tree_sitter, RuleViolation},
     rules::{Context, Rule, RuleLinter},
 };
 
@@ -67,7 +67,7 @@ impl RuleLinter for MD001Linter {
                         level
                     ),
                     self.context.file_path.clone(),
-                    &(node.range()),
+                    range_from_tree_sitter(&node.range()),
                 ));
             }
             self.current_heading_level = level;

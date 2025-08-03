@@ -8,13 +8,13 @@ use crate::{
     tree_sitter_walker::TreeSitterWalker,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CharPosition {
     pub line: usize,
     pub character: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Range {
     pub start: CharPosition,
     pub end: CharPosition,
@@ -37,25 +37,30 @@ impl RuleViolation {
         rule: &'static Rule,
         message: String,
         file_path: PathBuf,
-        pos: &tree_sitter::Range,
+        range: Range,
     ) -> Self {
         Self {
             rule,
             message,
             location: Location {
                 file_path,
-                range: Range {
-                    start: CharPosition {
-                        line: pos.start_point.row,
-                        character: pos.start_point.column,
-                    },
-                    end: CharPosition {
-                        line: pos.end_point.row,
-                        character: pos.end_point.column,
-                    },
-                },
+                range,
             },
         }
+    }
+}
+
+/// Convert from tree-sitter range to library range
+pub fn range_from_tree_sitter(ts_range: &tree_sitter::Range) -> Range {
+    Range {
+        start: CharPosition {
+            line: ts_range.start_point.row,
+            character: ts_range.start_point.column,
+        },
+        end: CharPosition {
+            line: ts_range.end_point.row,
+            character: ts_range.end_point.column,
+        },
     }
 }
 
@@ -121,81 +126,17 @@ impl MultiRuleLinter {
     }
 }
 
-pub fn print_linting_errors(results: &[RuleViolation], config: &QuickmarkConfig) -> (i32, i32) {
-    let severities = &config.linters.severity;
-
-    let res = results.iter().fold((0, 0), |(errs, warns), v| {
-        let severity = severities.get(v.rule.alias).unwrap();
-        let prefix;
-        let mut new_err = errs;
-        let mut new_warns = warns;
-        match severity {
-            RuleSeverity::Error => {
-                prefix = "ERR";
-                new_err += 1;
-            }
-            _ => {
-                prefix = "WARN";
-                new_warns += 1;
-            }
-        };
-        eprintln!("{}: {}", prefix, v);
-        (new_err, new_warns)
-    });
-
-    println!("\nErrors: {}", res.0);
-    println!("Warnings: {}", res.1);
-    res
-}
 
 #[cfg(test)]
 mod test {
     use std::{collections::HashMap, path::PathBuf};
-
-    use tree_sitter::Range;
 
     use crate::{
         config::{self, QuickmarkConfig, RuleSeverity},
         rules::{md001::MD001, md003::MD003},
     };
 
-    use super::{print_linting_errors, Context, MultiRuleLinter, RuleViolation};
-
-    #[test]
-    fn test_print_linting_errors() {
-        let severity: HashMap<_, _> = vec![
-            (MD001.alias.to_string(), RuleSeverity::Error),
-            (MD003.alias.to_string(), RuleSeverity::Warning),
-        ]
-        .into_iter()
-        .collect();
-        let config = QuickmarkConfig {
-            linters: config::LintersTable {
-                severity,
-                settings: config::LintersSettingsTable {
-                    heading_style: config::MD003HeadingStyleTable {
-                        style: config::HeadingStyle::Consistent,
-                    },
-                },
-            },
-        };
-        let pos = Range {
-            start_byte: 0,
-            end_byte: 4,
-            start_point: tree_sitter::Point { row: 1, column: 1 },
-            end_point: tree_sitter::Point { row: 1, column: 5 },
-        };
-        let file = PathBuf::default();
-        let results = vec![
-            RuleViolation::new(&MD001, "all is bad".to_string(), file.clone(), &pos),
-            RuleViolation::new(&MD003, "all is even worse".to_string(), file.clone(), &pos),
-            RuleViolation::new(&MD003, "all is even worse2".to_string(), file.clone(), &pos),
-        ];
-
-        let (errs, warns) = print_linting_errors(&results, &config);
-        assert_eq!(1, errs);
-        assert_eq!(2, warns);
-    }
+    use super::{Context, MultiRuleLinter};
 
     #[test]
     fn test_multiple_violations() {
