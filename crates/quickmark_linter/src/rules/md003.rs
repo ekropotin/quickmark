@@ -4,7 +4,7 @@ use tree_sitter::Node;
 
 use crate::{
     config::HeadingStyle,
-    linter::{Context, RuleLinter, RuleViolation},
+    linter::{range_from_tree_sitter, Context, RuleLinter, RuleViolation},
 };
 
 use super::Rule;
@@ -89,28 +89,15 @@ impl MD003Linter {
     }
 
     fn create_violation(&self, node: &Node, expected: &str, actual: &Style) -> Option<RuleViolation> {
-        let start = node.start_position();
-        let end = node.end_position();
-        Some(RuleViolation {
-            rule: &MD003,
-            message: format!(
+        Some(RuleViolation::new(
+            &MD003,
+            format!(
                 "{} [Expected: {}; Actual: {}]",
                 MD003.description, expected, actual
             ),
-            location: crate::linter::Location {
-                file_path: self.context.file_path.clone(),
-                range: crate::linter::Range {
-                    start: crate::linter::CharPosition {
-                        line: start.row,
-                        character: start.column,
-                    },
-                    end: crate::linter::CharPosition {
-                        line: end.row,
-                        character: end.column,
-                    },
-                },
-            },
-        })
+            self.context.file_path.clone(),
+            range_from_tree_sitter(&node.range()),
+        ))
     }
 }
 
@@ -140,10 +127,8 @@ impl RuleLinter for MD003Linter {
                         if style != Style::Setext {
                             return self.create_violation(node, "setext", &style);
                         }
-                    } else {
-                        if style != Style::Atx {
-                            return self.create_violation(node, "atx", &style);
-                        }
+                    } else if style != Style::Atx {
+                        return self.create_violation(node, "atx", &style);
                     }
                 },
                 HeadingStyle::SetextWithATXClosed => {
@@ -152,10 +137,8 @@ impl RuleLinter for MD003Linter {
                         if style != Style::Setext {
                             return self.create_violation(node, "setext", &style);
                         }
-                    } else {
-                        if style != Style::AtxClosed {
-                            return self.create_violation(node, "atx_closed", &style);
-                        }
+                    } else if style != Style::AtxClosed {
+                        return self.create_violation(node, "atx_closed", &style);
                     }
                 },
                 _ => {
@@ -439,10 +422,10 @@ Setext heading 2
         assert_eq!(violations.len(), 4);
 
         // Check specific violation messages
-        assert!(violations[0].message.contains("Expected: setext; Actual: atx"));
-        assert!(violations[1].message.contains("Expected: setext; Actual: atx"));
-        assert!(violations[2].message.contains("Expected: atx; Actual: atx_closed"));
-        assert!(violations[3].message.contains("Expected: atx; Actual: atx_closed"));
+        assert!(violations[0].message().contains("Expected: setext; Actual: atx"));
+        assert!(violations[1].message().contains("Expected: setext; Actual: atx"));
+        assert!(violations[2].message().contains("Expected: atx; Actual: atx_closed"));
+        assert!(violations[3].message().contains("Expected: atx; Actual: atx_closed"));
     }
 
     #[test]
@@ -484,10 +467,10 @@ Subtitle
         assert_eq!(violations.len(), 4);
 
         // Check specific violation messages
-        assert!(violations[0].message.contains("Expected: setext; Actual: atx"));
-        assert!(violations[1].message.contains("Expected: setext; Actual: atx"));
-        assert!(violations[2].message.contains("Expected: atx_closed; Actual: atx"));
-        assert!(violations[3].message.contains("Expected: atx_closed; Actual: atx"));
+        assert!(violations[0].message().contains("Expected: setext; Actual: atx"));
+        assert!(violations[1].message().contains("Expected: setext; Actual: atx"));
+        assert!(violations[2].message().contains("Expected: atx_closed; Actual: atx"));
+        assert!(violations[3].message().contains("Expected: atx_closed; Actual: atx"));
     }
 
     #[test]
@@ -530,7 +513,7 @@ Subtitle
         assert_eq!(violations.len(), 3);
 
         for violation in &violations {
-            assert!(violation.message.contains("Expected: atx_closed; Actual: atx"));
+            assert!(violation.message().contains("Expected: atx_closed; Actual: atx"));
         }
     }
 
@@ -551,8 +534,8 @@ Setext heading
         // Expect 2 violations: closed ATX and setext (both different from first open ATX)
         assert_eq!(violations.len(), 2);
 
-        assert!(violations[0].message.contains("Expected: atx; Actual: atx_closed"));
-        assert!(violations[1].message.contains("Expected: atx; Actual: setext"));
+        assert!(violations[0].message().contains("Expected: atx; Actual: atx_closed"));
+        assert!(violations[1].message().contains("Expected: atx; Actual: setext"));
     }
 
     #[test]
@@ -571,7 +554,7 @@ Final setext heading
         assert_eq!(violations.len(), 2); // Only ATX headings violate setext rule
 
         for violation in &violations {
-            assert!(violation.message.contains("Expected: setext; Actual: atx"));
+            assert!(violation.message().contains("Expected: setext; Actual: atx"));
         }
     }
 
@@ -632,7 +615,7 @@ Final setext heading
         assert_eq!(violations.len(), 3);
 
         for violation in &violations {
-            assert!(violation.message.contains("Expected: atx_closed; Actual: atx"));
+            assert!(violation.message().contains("Expected: atx_closed; Actual: atx"));
         }
     }
 
@@ -655,7 +638,7 @@ Final setext heading
         assert_eq!(violations.len(), 4);
 
         for violation in &violations {
-            assert!(violation.message.contains("Expected: atx; Actual: atx_closed"));
+            assert!(violation.message().contains("Expected: atx; Actual: atx_closed"));
         }
     }
 
@@ -676,7 +659,7 @@ Final setext heading
         assert_eq!(violations.len(), 2);
 
         for violation in &violations {
-            assert!(violation.message.contains("Expected: atx_closed; Actual: atx"));
+            assert!(violation.message().contains("Expected: atx_closed; Actual: atx"));
         }
     }
 
@@ -700,7 +683,7 @@ Setext Level 2
         assert_eq!(violations.len(), 2);
 
         for violation in &violations {
-            assert!(violation.message.contains("Expected: setext; Actual: atx_closed"));
+            assert!(violation.message().contains("Expected: setext; Actual: atx_closed"));
         }
     }
 }

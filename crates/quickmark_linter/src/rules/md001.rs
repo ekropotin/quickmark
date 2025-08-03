@@ -3,7 +3,7 @@ use std::rc::Rc;
 use tree_sitter::Node;
 
 use crate::{
-    linter::RuleViolation,
+    linter::{range_from_tree_sitter, RuleViolation},
     rules::{Context, Rule, RuleLinter},
 };
 
@@ -67,7 +67,7 @@ impl RuleLinter for MD001Linter {
                         level
                     ),
                     self.context.file_path.clone(),
-                    &(node.range()),
+                    range_from_tree_sitter(&node.range()),
                 ));
             }
             self.current_heading_level = level;
@@ -137,13 +137,13 @@ foobar
         let violations = linter.lint(input);
         assert_eq!(2, violations.len());
         let mut iter = violations.iter();
-        let range1 = &iter.next().unwrap().location.range;
+        let range1 = &iter.next().unwrap().location().range;
         assert_eq!(5, range1.start.line);
         assert_eq!(0, range1.start.character);
         assert_eq!(6, range1.end.line);
         assert_eq!(0, range1.end.character);
 
-        let range2 = &iter.next().unwrap().location.range;
+        let range2 = &iter.next().unwrap().location().range;
         assert_eq!(7, range2.start.line);
         assert_eq!(0, range2.start.character);
         assert_eq!(8, range2.end.line);
@@ -203,7 +203,7 @@ some other text
         let violations = linter.lint(input);
         // Should trigger a violation: setext h1 -> atx h3 (skips h2)
         assert_eq!(1, violations.len());
-        let range = &violations[0].location.range;
+        let range = &violations[0].location().range;
         // The violation should be on the h3 heading
         assert_eq!(5, range.start.line);
         assert_eq!(0, range.start.character);
