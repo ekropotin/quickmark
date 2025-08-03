@@ -55,7 +55,6 @@ quickmark/
 
 - QuickMark looks for `quickmark.toml` in the current working directory
 - If not found, default configuration is used
-- See `crates/quickmark_linter/tests/fixtures/quickmark.toml` for example configuration
 
 ## Architecture
 
