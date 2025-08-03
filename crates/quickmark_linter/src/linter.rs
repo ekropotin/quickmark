@@ -27,9 +27,9 @@ pub struct Location {
 
 #[derive(Debug)]
 pub struct RuleViolation {
-    pub location: Location,
-    pub message: String,
-    pub rule: &'static Rule,
+    location: Location,
+    message: String,
+    rule: &'static Rule,
 }
 
 impl RuleViolation {
@@ -47,6 +47,18 @@ impl RuleViolation {
                 range,
             },
         }
+    }
+
+    pub fn location(&self) -> &Location {
+        &self.location
+    }
+
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+
+    pub fn rule(&self) -> &'static Rule {
+        self.rule
     }
 }
 
@@ -69,12 +81,12 @@ impl Display for RuleViolation {
         write!(
             f,
             "{}:{}:{} {}/{} {}",
-            self.location.file_path.to_string_lossy(),
-            self.location.range.start.line,
-            self.location.range.start.character,
-            self.rule.id,
-            self.rule.alias,
-            self.message
+            self.location().file_path.to_string_lossy(),
+            self.location().range.start.line,
+            self.location().range.start.character,
+            self.rule().id,
+            self.rule().alias,
+            self.message()
         )
     }
 }
@@ -181,9 +193,9 @@ Second heading
             violations.len(),
             "Should find both MD001 and MD003 violations"
         );
-        assert_eq!(MD003.id, violations[0].rule.id);
-        assert_eq!(2, violations[0].location.range.start.line);
-        assert_eq!(MD001.id, violations[1].rule.id);
-        assert_eq!(4, violations[1].location.range.start.line);
+        assert_eq!(MD003.id, violations[0].rule().id);
+        assert_eq!(2, violations[0].location().range.start.line);
+        assert_eq!(MD001.id, violations[1].rule().id);
+        assert_eq!(4, violations[1].location().range.start.line);
     }
 }

@@ -21,7 +21,7 @@ fn print_cli_errors(results: &[RuleViolation], config: &QuickmarkConfig) -> (i32
     let severities = &config.linters.severity;
 
     let res = results.iter().fold((0, 0), |(errs, warns), v| {
-        let severity = severities.get(v.rule.alias).unwrap();
+        let severity = severities.get(v.rule().alias).unwrap();
         let prefix;
         let mut new_err = errs;
         let mut new_warns = warns;
@@ -39,12 +39,12 @@ fn print_cli_errors(results: &[RuleViolation], config: &QuickmarkConfig) -> (i32
         eprintln!(
             "{}: {}:{}:{} {}/{} {}",
             prefix,
-            v.location.file_path.to_string_lossy(),
-            v.location.range.start.line + 1,
-            v.location.range.start.character,
-            v.rule.id,
-            v.rule.alias,
-            v.message
+            v.location().file_path.to_string_lossy(),
+            v.location().range.start.line + 1,
+            v.location().range.start.character,
+            v.rule().id,
+            v.rule().alias,
+            v.message()
         );
         (new_err, new_warns)
     });
