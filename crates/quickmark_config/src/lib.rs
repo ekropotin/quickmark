@@ -1,6 +1,6 @@
 use anyhow::Result;
 use quickmark_linter::config::{
-    normalize_severities, HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
+    normalize_severities, HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD013LineLengthTable,
     QuickmarkConfig, RuleSeverity,
 };
 use serde::Deserialize;
@@ -40,9 +40,40 @@ struct TomlMD003HeadingStyleTable {
 
 #[derive(Deserialize)]
 #[derive(Default)]
+struct TomlMD013LineLengthTable {
+    #[serde(default = "default_line_length")]
+    line_length: usize,
+    #[serde(default = "default_code_block_line_length")]
+    code_block_line_length: usize,
+    #[serde(default = "default_heading_line_length")]
+    heading_line_length: usize,
+    #[serde(default = "default_true")]
+    code_blocks: bool,
+    #[serde(default = "default_true")]
+    headings: bool,
+    #[serde(default = "default_true")]
+    tables: bool,
+    #[serde(default = "default_false")]
+    strict: bool,
+    #[serde(default = "default_false")]
+    stern: bool,
+}
+
+fn default_line_length() -> usize { 80 }
+fn default_code_block_line_length() -> usize { 80 }
+fn default_heading_line_length() -> usize { 80 }
+fn default_true() -> bool { true }
+fn default_false() -> bool { false }
+
+#[derive(Deserialize)]
+#[derive(Default)]
 struct TomlLintersSettingsTable {
     #[serde(rename = "heading-style")]
+    #[serde(default)]
     heading_style: TomlMD003HeadingStyleTable,
+    #[serde(rename = "line-length")]
+    #[serde(default)]
+    line_length: TomlMD013LineLengthTable,
 }
 
 #[derive(Deserialize)]
@@ -104,6 +135,16 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
         settings: LintersSettingsTable {
             heading_style: MD003HeadingStyleTable {
                 style: convert_toml_heading_style(toml_config.linters.settings.heading_style.style),
+            },
+            line_length: MD013LineLengthTable {
+                line_length: toml_config.linters.settings.line_length.line_length,
+                code_block_line_length: toml_config.linters.settings.line_length.code_block_line_length,
+                heading_line_length: toml_config.linters.settings.line_length.heading_line_length,
+                code_blocks: toml_config.linters.settings.line_length.code_blocks,
+                headings: toml_config.linters.settings.line_length.headings,
+                tables: toml_config.linters.settings.line_length.tables,
+                strict: toml_config.linters.settings.line_length.strict,
+                stern: toml_config.linters.settings.line_length.stern,
             },
         },
     }))
@@ -243,5 +284,17 @@ mod tests {
             HeadingStyle::SetextWithATXClosed,
             parsed.linters.settings.heading_style.style
         );
+    }
+
+    #[test]
+    fn test_parse_toml_config_with_line_length() {
+        let config_str = r#"
+        [linters.settings.line-length]
+        line_length = 50
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(50, parsed.linters.settings.line_length.line_length);
+        assert_eq!(80, parsed.linters.settings.line_length.code_block_line_length); // default
     }
 }

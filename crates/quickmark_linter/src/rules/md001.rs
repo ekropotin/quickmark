@@ -4,7 +4,7 @@ use tree_sitter::Node;
 
 use crate::{
     linter::{range_from_tree_sitter, RuleViolation},
-    rules::{Context, Rule, RuleLinter},
+    rules::{Context, Rule, RuleLinter, RuleType},
 };
 
 pub(crate) struct MD001Linter {
@@ -51,7 +51,7 @@ fn extract_heading_level(node: &Node) -> u8 {
 }
 
 impl RuleLinter for MD001Linter {
-    fn feed(&mut self, node: &Node, _source: &str) -> Option<RuleViolation> {
+    fn feed(&mut self, node: &Node) -> Option<RuleViolation> {
         if node.kind() == "atx_heading" || node.kind() == "setext_heading" {
             let level = extract_heading_level(node);
 
@@ -81,6 +81,8 @@ pub const MD001: Rule = Rule {
     alias: "heading-increment",
     tags: &["headings"],
     description: "Heading levels should only increment by one level at a time",
+    rule_type: RuleType::Token,
+    required_nodes: &["atx_heading", "setext_heading"],
     new_linter: |context| Box::new(MD001Linter::new(context)),
 };
 
@@ -88,36 +90,31 @@ pub const MD001: Rule = Rule {
 mod test {
     use std::collections::HashMap;
     use std::path::PathBuf;
-    use std::rc::Rc;
 
     use crate::config::{
-        HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, QuickmarkConfig,
+        HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD013LineLengthTable, QuickmarkConfig,
         RuleSeverity,
     };
     use crate::linter::MultiRuleLinter;
-    use crate::rules::Context;
 
-    fn test_context() -> Rc<Context> {
+    fn test_config() -> QuickmarkConfig {
         let severity: HashMap<_, _> = vec![
             ("heading-style".to_string(), RuleSeverity::Off),
             ("heading-increment".to_string(), RuleSeverity::Error),
         ]
         .into_iter()
         .collect();
-        Context {
-            file_path: PathBuf::from("test.md"),
-            config: QuickmarkConfig {
-                linters: LintersTable {
-                    severity,
-                    settings: LintersSettingsTable {
-                        heading_style: MD003HeadingStyleTable {
-                            style: HeadingStyle::Consistent,
-                        },
+        QuickmarkConfig {
+            linters: LintersTable {
+                severity,
+                settings: LintersSettingsTable {
+                    heading_style: MD003HeadingStyleTable {
+                        style: HeadingStyle::Consistent,
                     },
+                    line_length: MD013LineLengthTable::default(),
                 },
             },
         }
-        .into()
     }
 
     #[test]
@@ -133,8 +130,9 @@ foobar
 ### Heading level 3
 ";
 
-        let mut linter = MultiRuleLinter::new(test_context());
-        let violations = linter.lint(input);
+        let config = test_config();
+        let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
+        let violations = linter.analyze();
         assert_eq!(2, violations.len());
         let mut iter = violations.iter();
         let range1 = &iter.next().unwrap().location().range;
@@ -164,8 +162,9 @@ foobar
 ###### Heading level 6
 ";
 
-        let mut linter = MultiRuleLinter::new(test_context());
-        let violations = linter.lint(input);
+        let config = test_config();
+        let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
+        let violations = linter.analyze();
         assert_eq!(0, violations.len());
     }
 
@@ -183,8 +182,9 @@ foobar
 # level 1
 ";
 
-        let mut linter = MultiRuleLinter::new(test_context());
-        let violations = linter.lint(input);
+        let config = test_config();
+        let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
+        let violations = linter.analyze();
         assert_eq!(0, violations.len());
     }
 
@@ -199,8 +199,9 @@ some text
 some other text
          ";
 
-        let mut linter = MultiRuleLinter::new(test_context());
-        let violations = linter.lint(input);
+        let config = test_config();
+        let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
+        let violations = linter.analyze();
         // Should trigger a violation: setext h1 -> atx h3 (skips h2)
         assert_eq!(1, violations.len());
         let range = &violations[0].location().range;
@@ -220,8 +221,9 @@ Heading level 2
 some other text
 ";
 
-        let mut linter = MultiRuleLinter::new(test_context());
-        let violations = linter.lint(input);
+        let config = test_config();
+        let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
+        let violations = linter.analyze();
         // Should be no violations: setext h1 -> setext h2
         assert_eq!(0, violations.len());
     }

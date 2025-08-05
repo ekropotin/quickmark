@@ -1,11 +1,10 @@
 use anyhow::Context;
 use clap::Parser;
 use quickmark_config::config_in_path_or_default;
-use quickmark_linter::linter::{Context as LintContext, MultiRuleLinter, RuleViolation};
+use quickmark_linter::linter::{MultiRuleLinter, RuleViolation};
 use quickmark_linter::config::{QuickmarkConfig, RuleSeverity};
 use std::cmp::min;
 use std::env;
-use std::rc::Rc;
 use std::{fs, path::PathBuf, process::exit};
 
 #[derive(Parser, Debug)]
@@ -63,12 +62,10 @@ fn main() -> anyhow::Result<()> {
     let pwd = env::current_dir()?;
     let config = config_in_path_or_default(&pwd)?;
 
-    let context = Rc::new(LintContext { file_path, config });
+    let mut linter = MultiRuleLinter::new_for_document(file_path, config.clone(), &file_content);
 
-    let mut linter = MultiRuleLinter::new(context.clone());
-
-    let lint_res = linter.lint(&file_content);
-    let (errs, _) = print_cli_errors(&lint_res, &context.config);
+    let lint_res = linter.analyze();
+    let (errs, _) = print_cli_errors(&lint_res, &config);
     let exit_code = min(errs, 1);
     exit(exit_code);
 }
@@ -78,7 +75,7 @@ mod tests {
     use super::*;
     use std::collections::HashMap;
     use std::path::PathBuf;
-    use quickmark_linter::config::{HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable};
+    use quickmark_linter::config::{HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD013LineLengthTable};
     use quickmark_linter::linter::{CharPosition, Range};
     use quickmark_linter::rules::{md001::MD001, md003::MD003};
 
@@ -97,6 +94,7 @@ mod tests {
                     heading_style: MD003HeadingStyleTable {
                         style: HeadingStyle::Consistent,
                     },
+                    line_length: MD013LineLengthTable::default(),
                 },
             },
         };
