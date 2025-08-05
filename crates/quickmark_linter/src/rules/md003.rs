@@ -194,6 +194,7 @@ mod test {
                 settings: LintersSettingsTable {
                     heading_style: MD003HeadingStyleTable { style },
                     line_length: MD013LineLengthTable::default(),
+                    link_fragments: crate::config::MD051LinkFragmentsTable::default(),
                 },
             },
         }

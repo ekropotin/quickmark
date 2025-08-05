@@ -59,10 +59,26 @@ impl Default for MD013LineLengthTable {
     }
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub struct MD051LinkFragmentsTable {
+    pub ignore_case: bool,
+    pub ignored_pattern: String,
+}
+
+impl Default for MD051LinkFragmentsTable {
+    fn default() -> Self {
+        Self {
+            ignore_case: false,
+            ignored_pattern: String::new(),
+        }
+    }
+}
+
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct LintersSettingsTable {
     pub heading_style: MD003HeadingStyleTable,
     pub line_length: MD013LineLengthTable,
+    pub link_fragments: MD051LinkFragmentsTable,
 }
 
 #[derive(Debug, Default, PartialEq, Clone)]
@@ -103,7 +119,7 @@ mod test {
     use std::collections::HashMap;
 
     use crate::config::{
-        HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD013LineLengthTable, RuleSeverity,
+        HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD013LineLengthTable, MD051LinkFragmentsTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -160,6 +176,7 @@ mod test {
                     style: HeadingStyle::ATX,
                 },
                 line_length: MD013LineLengthTable::default(),
+                link_fragments: MD051LinkFragmentsTable::default(),
             },
         });
 

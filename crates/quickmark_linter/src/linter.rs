@@ -363,6 +363,7 @@ mod test {
                         style: config::HeadingStyle::ATX,
                     },
                     line_length: config::MD013LineLengthTable::default(),
+                    link_fragments: config::MD051LinkFragmentsTable::default(),
                 },
             },
         };
