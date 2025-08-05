@@ -245,6 +245,7 @@ mod test {
                         style: HeadingStyle::Consistent,
                     },
                     line_length: MD013LineLengthTable::default(),
+                    link_fragments: crate::config::MD051LinkFragmentsTable::default(),
                 },
             },
         }
@@ -266,6 +267,7 @@ mod test {
                         style: HeadingStyle::Consistent,
                     },
                     line_length: line_length_config,
+                    link_fragments: crate::config::MD051LinkFragmentsTable::default(),
                 },
             },
         }

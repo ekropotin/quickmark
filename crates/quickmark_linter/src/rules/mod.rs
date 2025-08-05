@@ -5,6 +5,7 @@ use crate::linter::{Context, RuleLinter};
 pub mod md001;
 pub mod md003;
 pub mod md013;
+pub mod md051;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RuleType {
@@ -27,4 +28,4 @@ pub struct Rule {
     pub new_linter: fn(Rc<Context>) -> Box<dyn RuleLinter>,
 }
 
-pub const ALL_RULES: &[Rule] = &[md001::MD001, md003::MD003, md013::MD013];
+pub const ALL_RULES: &[Rule] = &[md001::MD001, md003::MD003, md013::MD013, md051::MD051];

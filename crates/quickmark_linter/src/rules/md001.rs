@@ -112,6 +112,7 @@ mod test {
                         style: HeadingStyle::Consistent,
                     },
                     line_length: MD013LineLengthTable::default(),
+                    link_fragments: crate::config::MD051LinkFragmentsTable::default(),
                 },
             },
         }

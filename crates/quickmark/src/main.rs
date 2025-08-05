@@ -95,6 +95,7 @@ mod tests {
                         style: HeadingStyle::Consistent,
                     },
                     line_length: MD013LineLengthTable::default(),
+                    link_fragments: quickmark_linter::config::MD051LinkFragmentsTable::default(),
                 },
             },
         };

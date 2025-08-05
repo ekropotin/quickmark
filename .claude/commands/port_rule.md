@@ -1,5 +1,0 @@
-The goal is to port $ARGEMENTS rule implementation from the original markdownlinter.
-Think hard to create an implementation plan. It must include writing comprehensive unit-tests covering as much as possible combinations of rule's settings as possible. Embrace TDD approach. This means, start with writing minimum set of data structurs needed for a test, refrain from writing actual logic for linting at this stage. When, write unit tests. Confirm they are failing. When keep implementing/refining the logic until tests are green.
-You'd also need to create new samples for that rule in `test-samples` directory, following existing naming conventions.
-Finally, you must validate that the implementation is consistent with markdownlinter. This can be done via running both linters against test samples and when analyzing the output. If any inconsistencies found - you must fix them. Assume markdownlinter is already installed on this machine locally. For any found actual inconsistency, add unit test.
-At the end, copy original rule documentation in `docs/rules`

@@ -1,7 +1,6 @@
 use anyhow::Result;
 use quickmark_linter::config::{
-    normalize_severities, HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD013LineLengthTable,
-    QuickmarkConfig, RuleSeverity,
+    normalize_severities, HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD013LineLengthTable, QuickmarkConfig, RuleSeverity,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -64,6 +63,15 @@ fn default_code_block_line_length() -> usize { 80 }
 fn default_heading_line_length() -> usize { 80 }
 fn default_true() -> bool { true }
 fn default_false() -> bool { false }
+fn default_empty_string() -> String { String::new() }
+
+#[derive(Deserialize, Default)]
+struct TomlMD051LinkFragmentsTable {
+    #[serde(default = "default_false")]
+    ignore_case: bool,
+    #[serde(default = "default_empty_string")]
+    ignored_pattern: String,
+}
 
 #[derive(Deserialize)]
 #[derive(Default)]
@@ -74,6 +82,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "line-length")]
     #[serde(default)]
     line_length: TomlMD013LineLengthTable,
+    #[serde(rename = "link-fragments")]
+    #[serde(default)]
+    link_fragments: TomlMD051LinkFragmentsTable,
 }
 
 #[derive(Deserialize)]
@@ -145,6 +156,10 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
                 tables: toml_config.linters.settings.line_length.tables,
                 strict: toml_config.linters.settings.line_length.strict,
                 stern: toml_config.linters.settings.line_length.stern,
+            },
+            link_fragments: quickmark_linter::config::MD051LinkFragmentsTable {
+                ignore_case: toml_config.linters.settings.link_fragments.ignore_case,
+                ignored_pattern: toml_config.linters.settings.link_fragments.ignored_pattern,
             },
         },
     }))
