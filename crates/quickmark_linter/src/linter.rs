@@ -118,7 +118,7 @@ pub struct NodeInfo {
 }
 
 impl Context {
-    pub fn new_enhanced(file_path: PathBuf, config: QuickmarkConfig, source: &str, root_node: &Node) -> Self {
+    pub fn new(file_path: PathBuf, config: QuickmarkConfig, source: &str, root_node: &Node) -> Self {
         let lines: Vec<String> = source.lines().map(|s| s.to_string()).collect();
         let node_cache = Self::build_node_cache(root_node);
 
@@ -284,7 +284,7 @@ impl MultiRuleLinter {
         let tree = parser.parse(document, None).expect("Parse failed");
 
         // Create context with pre-initialized cache
-        let context = Rc::new(Context::new_enhanced(
+        let context = Rc::new(Context::new(
             file_path,
             config,
             document,
