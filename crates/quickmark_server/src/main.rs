@@ -15,7 +15,7 @@ fn main() -> anyhow::Result<()> {
 
     // Show some config details
     for (rule, severity) in &config.linters.severity {
-        println!("Rule '{}' is set to {:?}", rule, severity);
+        println!("Rule '{rule}' is set to {severity:?}");
     }
 
     println!("Server would run with this configuration...");

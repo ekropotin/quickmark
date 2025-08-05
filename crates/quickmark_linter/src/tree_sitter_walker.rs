@@ -33,12 +33,14 @@ impl<'a> TreeSitterWalker<'a> {
 
     }
 
+    #[allow(clippy::only_used_in_recursion)]
     fn walk_pre_order(&self, node: Node, callback: &mut impl FnMut(Node)) {
         callback(node);
         for child in node.children(&mut node.walk()) {
             self.walk_pre_order(child, callback);
         }
     }
+    #[allow(clippy::only_used_in_recursion)]
     fn walk_post_order(&self, node: Node, callback: &mut impl FnMut(Node)) {
         for child in node.children(&mut node.walk()) {
             self.walk_post_order(child, callback);

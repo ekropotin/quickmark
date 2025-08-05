@@ -32,9 +32,37 @@ impl Default for MD003HeadingStyleTable {
     }
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub struct MD013LineLengthTable {
+    pub line_length: usize,
+    pub code_block_line_length: usize,
+    pub heading_line_length: usize,
+    pub code_blocks: bool,
+    pub headings: bool,
+    pub tables: bool,
+    pub strict: bool,
+    pub stern: bool,
+}
+
+impl Default for MD013LineLengthTable {
+    fn default() -> Self {
+        Self {
+            line_length: 80,
+            code_block_line_length: 80,
+            heading_line_length: 80,
+            code_blocks: true,
+            headings: true,
+            tables: true,
+            strict: false,
+            stern: false,
+        }
+    }
+}
+
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct LintersSettingsTable {
     pub heading_style: MD003HeadingStyleTable,
+    pub line_length: MD013LineLengthTable,
 }
 
 #[derive(Debug, Default, PartialEq, Clone)]
@@ -75,7 +103,7 @@ mod test {
     use std::collections::HashMap;
 
     use crate::config::{
-        HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, RuleSeverity,
+        HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD013LineLengthTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -131,6 +159,7 @@ mod test {
                 heading_style: MD003HeadingStyleTable {
                     style: HeadingStyle::ATX,
                 },
+                line_length: MD013LineLengthTable::default(),
             },
         });
 
