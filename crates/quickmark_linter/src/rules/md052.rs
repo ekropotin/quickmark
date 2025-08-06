@@ -29,7 +29,7 @@ static REFERENCE_DEFINITION_PATTERN: Lazy<Regex> = Lazy::new(|| {
 #[derive(Debug, Clone)]
 struct ReferenceLink {
     label: String,
-    node: Node<'static>,
+    range: tree_sitter::Range,
     is_shortcut: bool,
 }
 
@@ -141,10 +141,7 @@ impl RuleLinter for MD052Linter {
                 for (label, is_shortcut) in links {
                     self.references.push(ReferenceLink {
                         label,
-                        // SAFETY: This transmute extends the lifetime of the Node.
-                        // It's safe because the node is only used during document analysis
-                        // and the MultiRuleLinter ensures the tree lives as long as the linter.
-                        node: unsafe { std::mem::transmute::<tree_sitter::Node<'_>, tree_sitter::Node<'_>>(*node) },
+                        range: node.range(),
                         is_shortcut,
                     });
                 }
@@ -155,10 +152,7 @@ impl RuleLinter for MD052Linter {
                 for (label, is_shortcut) in links {
                     self.references.push(ReferenceLink {
                         label,
-                        // SAFETY: This transmute extends the lifetime of the Node.
-                        // It's safe because the node is only used during document analysis
-                        // and the MultiRuleLinter ensures the tree lives as long as the linter.
-                        node: unsafe { std::mem::transmute::<tree_sitter::Node<'_>, tree_sitter::Node<'_>>(*node) },
+                        range: node.range(),
                         is_shortcut,
                     });
                 }
@@ -199,7 +193,7 @@ impl RuleLinter for MD052Linter {
                     &MD052,
                     format!("Missing link or image reference definition: \"{}\"", reference.label),
                     self.context.file_path.clone(),
-                    range_from_tree_sitter(&reference.node.range()),
+                    range_from_tree_sitter(&reference.range),
                 ));
             }
         }

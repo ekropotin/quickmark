@@ -13,7 +13,7 @@ use crate::{
 #[derive(Debug, Clone)]
 struct LinkFragment {
     fragment: String,
-    node: Node<'static>,
+    range: tree_sitter::Range,
 }
 
 // Pre-compiled regex patterns for performance
@@ -270,10 +270,7 @@ impl RuleLinter for MD051Linter {
                     // we'd need to handle the lifetime properly
                     self.link_fragments.push(LinkFragment {
                         fragment,
-                        // SAFETY: This transmute extends the lifetime of the Node.
-                        // It's safe because the node is only used during document analysis
-                        // and the MultiRuleLinter ensures the tree lives as long as the linter.
-                        node: unsafe { std::mem::transmute::<tree_sitter::Node<'_>, tree_sitter::Node<'_>>(*node) },
+                        range: node.range(),
                     });
                 }
             }
@@ -327,7 +324,7 @@ impl RuleLinter for MD051Linter {
                     &MD051,
                     format!("Link fragment '{fragment}' does not match any heading or anchor in the document"),
                     self.context.file_path.clone(),
-                    range_from_tree_sitter(&link_fragment.node.range()),
+                    range_from_tree_sitter(&link_fragment.range),
                 ));
             }
         }
