@@ -13,7 +13,7 @@ use crate::{
 #[derive(Debug, Clone)]
 struct LinkFragment {
     fragment: String,
-    node: Node<'static>,
+    range: tree_sitter::Range,
 }
 
 // Pre-compiled regex patterns for performance
@@ -220,7 +220,7 @@ impl MD051Linter {
 }
 
 impl RuleLinter for MD051Linter {
-    fn feed(&mut self, node: &Node) -> Option<RuleViolation> {
+    fn feed(&mut self, node: &Node) {
         match node.kind() {
             "atx_heading" | "setext_heading" => {
                 if let Some(heading_text) = self.extract_heading_text(node) {
@@ -229,7 +229,7 @@ impl RuleLinter for MD051Linter {
                         self.valid_fragments.insert(custom_anchor.clone());
                         self.valid_fragments_lowercase.insert(custom_anchor.to_lowercase());
                         // Also generate the default fragment from the heading text without the anchor
-                        let clean_text = heading_text.replace(&format!("{{#{}}}", custom_anchor), "").trim().to_string();
+                        let clean_text = heading_text.replace(&format!("{{#{custom_anchor}}}"), "").trim().to_string();
                         if !clean_text.is_empty() {
                             let fragment = self.generate_github_fragment(&clean_text);
                             if !fragment.is_empty() {
@@ -245,7 +245,7 @@ impl RuleLinter for MD051Linter {
                             let mut unique_fragment = fragment.clone();
                             let mut counter = 1;
                             while self.valid_fragments.contains(&unique_fragment) {
-                                unique_fragment = format!("{}-{}", fragment, counter);
+                                unique_fragment = format!("{fragment}-{counter}");
                                 counter += 1;
                             }
                             self.valid_fragments.insert(unique_fragment.clone());
@@ -270,7 +270,7 @@ impl RuleLinter for MD051Linter {
                     // we'd need to handle the lifetime properly
                     self.link_fragments.push(LinkFragment {
                         fragment,
-                        node: unsafe { std::mem::transmute(*node) }, // Unsafe transmute for lifetime
+                        range: node.range(),
                     });
                 }
             }
@@ -278,7 +278,6 @@ impl RuleLinter for MD051Linter {
                 // For other nodes, do nothing to avoid duplicates
             }
         }
-        None
     }
 
     fn finalize(&mut self) -> Vec<RuleViolation> {
@@ -287,10 +286,7 @@ impl RuleLinter for MD051Linter {
         
         // Compile ignored pattern regex if provided
         let ignored_regex = if !config.ignored_pattern.is_empty() {
-            match Regex::new(&config.ignored_pattern) {
-                Ok(regex) => Some(regex),
-                Err(_) => None, // Invalid regex, ignore the pattern
-            }
+            Regex::new(&config.ignored_pattern).ok()
         } else {
             None
         };
@@ -326,9 +322,9 @@ impl RuleLinter for MD051Linter {
             if !is_valid {
                 violations.push(RuleViolation::new(
                     &MD051,
-                    format!("Link fragment '{}' does not match any heading or anchor in the document", fragment),
+                    format!("Link fragment '{fragment}' does not match any heading or anchor in the document"),
                     self.context.file_path.clone(),
-                    range_from_tree_sitter(&link_fragment.node.range()),
+                    range_from_tree_sitter(&link_fragment.range),
                 ));
             }
         }
@@ -349,63 +345,29 @@ pub const MD051: Rule = Rule {
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
     use std::path::PathBuf;
 
-    use crate::config::{
-        HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, 
-        MD013LineLengthTable, MD051LinkFragmentsTable, QuickmarkConfig, RuleSeverity,
-    };
+    use crate::config::{LintersSettingsTable, MD051LinkFragmentsTable, RuleSeverity};
     use crate::linter::MultiRuleLinter;
+    use crate::test_utils::test_helpers::test_config_with_rules;
 
-    fn test_config() -> QuickmarkConfig {
-        let severity: HashMap<_, _> = vec![
-            ("heading-style".to_string(), RuleSeverity::Off),
-            ("heading-increment".to_string(), RuleSeverity::Off),
-            ("line-length".to_string(), RuleSeverity::Off),
-            ("link-fragments".to_string(), RuleSeverity::Error),
-        ]
-        .into_iter()
-        .collect();
-        QuickmarkConfig {
-            linters: LintersTable {
-                severity,
-                settings: LintersSettingsTable {
-                    heading_style: MD003HeadingStyleTable {
-                        style: HeadingStyle::Consistent,
-                    },
-                    line_length: MD013LineLengthTable::default(),
-                    link_fragments: MD051LinkFragmentsTable::default(),
-                },
-            },
-        }
+    fn test_config() -> crate::config::QuickmarkConfig {
+        test_config_with_rules(vec![("link-fragments", RuleSeverity::Error)])
     }
 
-    fn test_config_with_settings(ignore_case: bool, ignored_pattern: String) -> QuickmarkConfig {
-        let severity: HashMap<_, _> = vec![
-            ("heading-style".to_string(), RuleSeverity::Off),
-            ("heading-increment".to_string(), RuleSeverity::Off),
-            ("line-length".to_string(), RuleSeverity::Off),
-            ("link-fragments".to_string(), RuleSeverity::Error),
-        ]
-        .into_iter()
-        .collect();
-        QuickmarkConfig {
-            linters: LintersTable {
-                severity,
-                settings: LintersSettingsTable {
-                    heading_style: MD003HeadingStyleTable {
-                        style: HeadingStyle::Consistent,
-                    },
-                    line_length: MD013LineLengthTable::default(),
-                    link_fragments: MD051LinkFragmentsTable {
-                        ignore_case,
-                        ignored_pattern,
-                    },
+    fn test_config_with_settings(ignore_case: bool, ignored_pattern: String) -> crate::config::QuickmarkConfig {
+        crate::test_utils::test_helpers::test_config_with_settings(
+            vec![("link-fragments", RuleSeverity::Error)],
+            LintersSettingsTable {
+                link_fragments: MD051LinkFragmentsTable {
+                    ignore_case,
+                    ignored_pattern,
                 },
+                ..Default::default()
             },
-        }
+        )
     }
+
 
     #[test]
     fn test_basic_valid_fragment() {

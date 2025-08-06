@@ -73,32 +73,26 @@ fn main() -> anyhow::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::HashMap;
     use std::path::PathBuf;
-    use quickmark_linter::config::{HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD013LineLengthTable};
+    use quickmark_linter::config::{HeadingStyle, LintersSettingsTable, MD003HeadingStyleTable};
     use quickmark_linter::linter::{CharPosition, Range};
     use quickmark_linter::rules::{md001::MD001, md003::MD003};
+    use quickmark_linter::test_utils::test_helpers::test_config_with_settings;
 
     #[test]
     fn test_print_cli_errors() {
-        let severity: HashMap<_, _> = vec![
-            (MD001.alias.to_string(), RuleSeverity::Error),
-            (MD003.alias.to_string(), RuleSeverity::Warning),
-        ]
-        .into_iter()
-        .collect();
-        let config = QuickmarkConfig {
-            linters: LintersTable {
-                severity,
-                settings: LintersSettingsTable {
-                    heading_style: MD003HeadingStyleTable {
-                        style: HeadingStyle::Consistent,
-                    },
-                    line_length: MD013LineLengthTable::default(),
-                    link_fragments: quickmark_linter::config::MD051LinkFragmentsTable::default(),
+        let config = test_config_with_settings(
+            vec![
+                ("heading-increment", RuleSeverity::Error),
+                ("heading-style", RuleSeverity::Warning),
+            ],
+            LintersSettingsTable {
+                heading_style: MD003HeadingStyleTable {
+                    style: HeadingStyle::Consistent,
                 },
+                ..Default::default()
             },
-        };
+        );
         let range = Range {
             start: CharPosition { line: 1, character: 1 },
             end: CharPosition { line: 1, character: 5 },

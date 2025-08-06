@@ -191,15 +191,12 @@ impl MD013Linter {
 }
 
 impl RuleLinter for MD013Linter {
-    fn feed(&mut self, node: &Node) -> Option<RuleViolation> {
+    fn feed(&mut self, node: &Node) {
         // Analyze all lines when we see the document node
         // Context cache is already initialized by MultiRuleLinter
         if node.kind() == "document" {
             self.analyze_all_lines();
         }
-        
-        // Don't return violations during feed - save them for finalize
-        None
     }
     
     fn finalize(&mut self) -> Vec<RuleViolation> {
@@ -220,58 +217,34 @@ pub const MD013: Rule = Rule {
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
     use std::path::PathBuf;
 
-    use crate::config::{
-        HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD013LineLengthTable, QuickmarkConfig,
-        RuleSeverity,
-    };
+    use crate::config::{LintersSettingsTable, MD013LineLengthTable, RuleSeverity};
     use crate::linter::MultiRuleLinter;
+    use crate::test_utils::test_helpers::{test_config_with_rules, test_config_with_settings};
 
-    fn test_config() -> QuickmarkConfig {
-        let severity: HashMap<_, _> = vec![
-            ("heading-style".to_string(), RuleSeverity::Off),
-            ("heading-increment".to_string(), RuleSeverity::Off),
-            ("line-length".to_string(), RuleSeverity::Error),
-        ]
-        .into_iter()
-        .collect();
-        QuickmarkConfig {
-            linters: LintersTable {
-                severity,
-                settings: LintersSettingsTable {
-                    heading_style: MD003HeadingStyleTable {
-                        style: HeadingStyle::Consistent,
-                    },
-                    line_length: MD013LineLengthTable::default(),
-                    link_fragments: crate::config::MD051LinkFragmentsTable::default(),
-                },
-            },
-        }
+    fn test_config() -> crate::config::QuickmarkConfig {
+        test_config_with_rules(vec![
+            ("line-length", RuleSeverity::Error),
+            ("heading-style", RuleSeverity::Off),
+            ("heading-increment", RuleSeverity::Off),
+        ])
     }
 
-    fn test_config_with_line_length(line_length_config: MD013LineLengthTable) -> QuickmarkConfig {
-        let severity: HashMap<_, _> = vec![
-            ("heading-style".to_string(), RuleSeverity::Off),
-            ("heading-increment".to_string(), RuleSeverity::Off),
-            ("line-length".to_string(), RuleSeverity::Error),
-        ]
-        .into_iter()
-        .collect();
-        QuickmarkConfig {
-            linters: LintersTable {
-                severity,
-                settings: LintersSettingsTable {
-                    heading_style: MD003HeadingStyleTable {
-                        style: HeadingStyle::Consistent,
-                    },
-                    line_length: line_length_config,
-                    link_fragments: crate::config::MD051LinkFragmentsTable::default(),
-                },
+    fn test_config_with_line_length(line_length_config: MD013LineLengthTable) -> crate::config::QuickmarkConfig {
+        test_config_with_settings(
+            vec![
+                ("line-length", RuleSeverity::Error),
+                ("heading-style", RuleSeverity::Off),
+                ("heading-increment", RuleSeverity::Off),
+            ],
+            LintersSettingsTable {
+                line_length: line_length_config,
+                ..Default::default()
             },
-        }
+        )
     }
+
 
     #[test]
     fn test_line_length_violation() {
@@ -466,7 +439,7 @@ mod test {
             let mut default_linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), default_full_config, input);
             let default_violations = default_linter.analyze();
             assert_eq!(expect_default, !default_violations.is_empty(), 
-                "Default mode failed for: {}", input);
+                "Default mode failed for: {input}");
             
             // Stern mode
             let stern_config = MD013LineLengthTable {
@@ -477,7 +450,7 @@ mod test {
             let mut stern_linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), stern_full_config, input);
             let stern_violations = stern_linter.analyze();
             assert_eq!(expect_stern, !stern_violations.is_empty(),
-                "Stern mode failed for: {}", input);
+                "Stern mode failed for: {input}");
             
             // Strict mode
             let strict_config = MD013LineLengthTable {
@@ -488,7 +461,7 @@ mod test {
             let mut strict_linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), strict_full_config, input);
             let strict_violations = strict_linter.analyze();
             assert_eq!(expect_strict, !strict_violations.is_empty(),
-                "Strict mode failed for: {}", input);
+                "Strict mode failed for: {input}");
         }
     }
 
@@ -552,7 +525,7 @@ Another short line.";
             node_count += 1;
         });
         
-        println!("Even a 3-line minimal document creates {} AST nodes", node_count);
+        println!("Even a 3-line minimal document creates {node_count} AST nodes");
         println!("This explains why our MD013 implementation works correctly");
         
         // Even this tiny document creates multiple nodes (document, paragraph, text nodes, etc.)
@@ -585,7 +558,7 @@ Another short line.";
         walker.walk(|_node| {
             node_count += 1;
         });
-        println!("Total AST nodes: {}", node_count);
+        println!("Total AST nodes: {node_count}");
         
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, &input);

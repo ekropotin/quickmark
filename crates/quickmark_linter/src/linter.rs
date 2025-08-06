@@ -119,7 +119,7 @@ pub struct NodeInfo {
 
 impl Context {
     pub fn new(file_path: PathBuf, config: QuickmarkConfig, source: &str, root_node: &Node) -> Self {
-        let lines: Vec<String> = source.lines().map(|s| s.to_string()).collect();
+        let lines: Vec<String> = source.lines().map(String::from).collect();
         let node_cache = Self::build_node_cache(root_node);
 
         Self {
@@ -145,22 +145,24 @@ impl Context {
     }
 
     fn collect_nodes_recursive(node: &Node, cache: &mut HashMap<String, Vec<NodeInfo>>) {
+        let kind = node.kind();
+        let kind_string = kind.to_string();
         let node_info = NodeInfo {
             line_start: node.start_position().row,
             line_end: node.end_position().row,
-            kind: node.kind().to_string(),
+            kind: kind_string.clone(),
         };
 
         // Add to cache for this node type
-        cache.entry(node.kind().to_string())
+        cache.entry(kind_string)
             .or_default()
             .push(node_info.clone());
 
         // Add to cache for pattern-based lookups (e.g., all heading types)
-        if node.kind().contains("heading") {
+        if kind.contains("heading") {
             cache.entry("*heading*".to_string())
                 .or_default()
-                .push(node_info.clone());
+                .push(node_info);
         }
 
         // Recursively process children
@@ -237,20 +239,17 @@ impl Context {
 /// let violations2 = linter2.analyze(); // Fresh linter, no contamination
 /// ```
 pub trait RuleLinter {
-    /// Process a single AST node and potentially return a violation.
+    /// Process a single AST node and accumulate state for violation detection.
     ///
     /// **CONTRACT**: This method will be called exactly once per AST node
     /// for a single document analysis session. Rule linters have access to the
     /// document content and parsed data through their initialized Context.
-    fn feed(&mut self, node: &Node) -> Option<RuleViolation>;
+    fn feed(&mut self, node: &Node);
 
-    /// Called after all nodes have been processed to collect any remaining violations.
-    /// This is essential for rules that generate more violations than there are AST nodes.
+    /// Called after all nodes have been processed to return all violations found.
     ///
     /// **CONTRACT**: This method will be called exactly once at the end of document analysis.
-    fn finalize(&mut self) -> Vec<RuleViolation> {
-        Vec::new() // Default implementation for rules that don't need finalization
-    }
+    fn finalize(&mut self) -> Vec<RuleViolation>;
 }
 /// **SINGLE-USE CONTRACT**: MultiRuleLinter instances are designed for one-time use only.
 ///
@@ -310,22 +309,20 @@ impl MultiRuleLinter {
     /// **SINGLE-USE CONTRACT**: This method should be called exactly once.
     /// After calling this method, the linter instance should be discarded.
     pub fn analyze(&mut self) -> Vec<RuleViolation> {
-        let mut violations = Vec::new();
         let walker = TreeSitterWalker::new(&self.tree);
 
+        // Feed all nodes to all linters
         walker.walk(|node| {
-            let node_violations = self
-                .linters
-                .iter_mut()
-                .filter_map(|linter| linter.feed(&node))
-                .collect::<Vec<_>>();
-            violations.extend(node_violations);
+            for linter in &mut self.linters {
+                linter.feed(&node);
+            }
         });
 
-        // Collect any remaining violations from finalize
+        // Collect all violations from finalize
+        let mut violations = Vec::new();
         for linter in &mut self.linters {
-            let remaining_violations = linter.finalize();
-            violations.extend(remaining_violations);
+            let linter_violations = linter.finalize();
+            violations.extend(linter_violations);
         }
 
         violations
@@ -364,6 +361,7 @@ mod test {
                     },
                     line_length: config::MD013LineLengthTable::default(),
                     link_fragments: config::MD051LinkFragmentsTable::default(),
+                    reference_links_images: config::MD052ReferenceLinksImagesTable::default(),
                 },
             },
         };
@@ -385,9 +383,9 @@ Second heading
             violations.len(),
             "Should find both MD001 and MD003 violations"
         );
-        assert_eq!(MD003.id, violations[0].rule().id);
-        assert_eq!(2, violations[0].location().range.start.line);
-        assert_eq!(MD001.id, violations[1].rule().id);
-        assert_eq!(4, violations[1].location().range.start.line);
+        assert_eq!(MD001.id, violations[0].rule().id);
+        assert_eq!(4, violations[0].location().range.start.line);
+        assert_eq!(MD003.id, violations[1].rule().id);
+        assert_eq!(2, violations[1].location().range.start.line);
     }
 }

@@ -29,6 +29,7 @@ impl fmt::Display for Style {
 pub(crate) struct MD003Linter {
     context: Rc<Context>,
     enforced_style: Option<Style>,
+    violations: Vec<RuleViolation>,
 }
 
 impl MD003Linter {
@@ -44,6 +45,7 @@ impl MD003Linter {
         Self {
             context,
             enforced_style,
+            violations: Vec::new(),
         }
     }
 
@@ -90,8 +92,8 @@ impl MD003Linter {
         trimmed.ends_with('#')
     }
 
-    fn create_violation(&self, node: &Node, expected: &str, actual: &Style) -> Option<RuleViolation> {
-        Some(RuleViolation::new(
+    fn add_violation(&mut self, node: &Node, expected: &str, actual: &Style) {
+        self.violations.push(RuleViolation::new(
             &MD003,
             format!(
                 "{} [Expected: {}; Actual: {}]",
@@ -99,12 +101,12 @@ impl MD003Linter {
             ),
             self.context.file_path.clone(),
             range_from_tree_sitter(&node.range()),
-        ))
+        ));
     }
 }
 
 impl RuleLinter for MD003Linter {
-    fn feed(&mut self, node: &Node) -> Option<RuleViolation> {
+    fn feed(&mut self, node: &Node) {
         let style = match node.kind() {
             "atx_heading" => {
                 // Check if it's closed (has closing hashes)
@@ -127,27 +129,27 @@ impl RuleLinter for MD003Linter {
                     // Levels 1-2: must be setext, Levels 3+: must be atx (open), not atx_closed
                     if level <= 2 {
                         if style != Style::Setext {
-                            return self.create_violation(node, "setext", &style);
+                            self.add_violation(node, "setext", &style);
                         }
                     } else if style != Style::Atx {
-                        return self.create_violation(node, "atx", &style);
+                        self.add_violation(node, "atx", &style);
                     }
                 },
                 HeadingStyle::SetextWithATXClosed => {
                     // Levels 1-2: must be setext, Levels 3+: must be atx_closed, not plain atx
                     if level <= 2 {
                         if style != Style::Setext {
-                            return self.create_violation(node, "setext", &style);
+                            self.add_violation(node, "setext", &style);
                         }
                     } else if style != Style::AtxClosed {
-                        return self.create_violation(node, "atx_closed", &style);
+                        self.add_violation(node, "atx_closed", &style);
                     }
                 },
                 _ => {
                     // For single-style configurations, check against enforced style
                     if let Some(enforced_style) = &self.enforced_style {
                         if style != *enforced_style {
-                            return self.create_violation(node, &enforced_style.to_string(), &style);
+                            self.add_violation(node, &enforced_style.to_string(), &style);
                         }
                     } else {
                         self.enforced_style = Some(style);
@@ -155,7 +157,10 @@ impl RuleLinter for MD003Linter {
                 }
             }
         }
-        None
+    }
+
+    fn finalize(&mut self) -> Vec<RuleViolation> {
+        std::mem::take(&mut self.violations)
     }
 }
 
@@ -171,33 +176,23 @@ pub const MD003: Rule = Rule {
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
     use std::path::PathBuf;
 
-    use crate::config::{
-        HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD013LineLengthTable, QuickmarkConfig,
-        RuleSeverity,
-    };
+    use crate::config::{HeadingStyle, LintersSettingsTable, MD003HeadingStyleTable, RuleSeverity};
     use crate::linter::MultiRuleLinter;
+    use crate::test_utils::test_helpers::test_config_with_settings;
 
-
-    fn test_config(style: HeadingStyle) -> QuickmarkConfig {
-        let severity: HashMap<_, _> = vec![
-            ("heading-style".to_string(), RuleSeverity::Error),
-            ("heading-increment".to_string(), RuleSeverity::Off),
-        ]
-        .into_iter()
-        .collect();
-        QuickmarkConfig {
-            linters: LintersTable {
-                severity,
-                settings: LintersSettingsTable {
-                    heading_style: MD003HeadingStyleTable { style },
-                    line_length: MD013LineLengthTable::default(),
-                    link_fragments: crate::config::MD051LinkFragmentsTable::default(),
-                },
+    fn test_config(style: HeadingStyle) -> crate::config::QuickmarkConfig {
+        test_config_with_settings(
+            vec![
+                ("heading-style", RuleSeverity::Error),
+                ("heading-increment", RuleSeverity::Off),
+            ],
+            LintersSettingsTable {
+                heading_style: MD003HeadingStyleTable { style },
+                ..Default::default()
             },
-        }
+        )
     }
 
     #[test]

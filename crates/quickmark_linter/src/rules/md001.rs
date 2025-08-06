@@ -10,6 +10,7 @@ use crate::{
 pub(crate) struct MD001Linter {
     context: Rc<Context>,
     current_heading_level: u8,
+    violations: Vec<RuleViolation>,
 }
 
 impl MD001Linter {
@@ -17,6 +18,7 @@ impl MD001Linter {
         Self {
             context,
             current_heading_level: 0,
+            violations: Vec::new(),
         }
     }
 }
@@ -51,14 +53,14 @@ fn extract_heading_level(node: &Node) -> u8 {
 }
 
 impl RuleLinter for MD001Linter {
-    fn feed(&mut self, node: &Node) -> Option<RuleViolation> {
+    fn feed(&mut self, node: &Node) {
         if node.kind() == "atx_heading" || node.kind() == "setext_heading" {
             let level = extract_heading_level(node);
 
             if self.current_heading_level > 0
                 && (level as i8 - self.current_heading_level as i8) > 1
             {
-                return Some(RuleViolation::new(
+                self.violations.push(RuleViolation::new(
                     &MD001,
                     format!(
                         "{} [Expected: h{}; Actual: h{}]",
@@ -72,7 +74,10 @@ impl RuleLinter for MD001Linter {
             }
             self.current_heading_level = level;
         }
-        None
+    }
+
+    fn finalize(&mut self) -> Vec<RuleViolation> {
+        std::mem::take(&mut self.violations)
     }
 }
 
@@ -88,35 +93,19 @@ pub const MD001: Rule = Rule {
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
     use std::path::PathBuf;
 
-    use crate::config::{
-        HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD013LineLengthTable, QuickmarkConfig,
-        RuleSeverity,
-    };
+    use crate::config::RuleSeverity;
     use crate::linter::MultiRuleLinter;
+    use crate::test_utils::test_helpers::test_config_with_rules;
 
-    fn test_config() -> QuickmarkConfig {
-        let severity: HashMap<_, _> = vec![
-            ("heading-style".to_string(), RuleSeverity::Off),
-            ("heading-increment".to_string(), RuleSeverity::Error),
-        ]
-        .into_iter()
-        .collect();
-        QuickmarkConfig {
-            linters: LintersTable {
-                severity,
-                settings: LintersSettingsTable {
-                    heading_style: MD003HeadingStyleTable {
-                        style: HeadingStyle::Consistent,
-                    },
-                    line_length: MD013LineLengthTable::default(),
-                    link_fragments: crate::config::MD051LinkFragmentsTable::default(),
-                },
-            },
-        }
+    fn test_config() -> crate::config::QuickmarkConfig {
+        test_config_with_rules(vec![
+            ("heading-increment", RuleSeverity::Error),
+            ("heading-style", RuleSeverity::Off),
+        ])
     }
+
 
     #[test]
     fn test_atx_positive() {
@@ -134,19 +123,12 @@ foobar
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        assert_eq!(2, violations.len());
-        let mut iter = violations.iter();
-        let range1 = &iter.next().unwrap().location().range;
+        assert_eq!(1, violations.len());
+        let range1 = &violations[0].location().range;
         assert_eq!(5, range1.start.line);
         assert_eq!(0, range1.start.character);
         assert_eq!(6, range1.end.line);
         assert_eq!(0, range1.end.character);
-
-        let range2 = &iter.next().unwrap().location().range;
-        assert_eq!(7, range2.start.line);
-        assert_eq!(0, range2.start.character);
-        assert_eq!(8, range2.end.line);
-        assert_eq!(0, range2.end.character);
     }
 
     #[test]

@@ -73,6 +73,16 @@ struct TomlMD051LinkFragmentsTable {
     ignored_pattern: String,
 }
 
+fn default_ignored_labels() -> Vec<String> { vec!["x".to_string()] }
+
+#[derive(Deserialize, Default)]
+struct TomlMD052ReferenceLinksImagesTable {
+    #[serde(default = "default_false")]
+    shortcut_syntax: bool,
+    #[serde(default = "default_ignored_labels")]
+    ignored_labels: Vec<String>,
+}
+
 #[derive(Deserialize)]
 #[derive(Default)]
 struct TomlLintersSettingsTable {
@@ -85,6 +95,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "link-fragments")]
     #[serde(default)]
     link_fragments: TomlMD051LinkFragmentsTable,
+    #[serde(rename = "reference-links-images")]
+    #[serde(default)]
+    reference_links_images: TomlMD052ReferenceLinksImagesTable,
 }
 
 #[derive(Deserialize)]
@@ -161,6 +174,10 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
                 ignore_case: toml_config.linters.settings.link_fragments.ignore_case,
                 ignored_pattern: toml_config.linters.settings.link_fragments.ignored_pattern,
             },
+            reference_links_images: quickmark_linter::config::MD052ReferenceLinksImagesTable {
+                shortcut_syntax: toml_config.linters.settings.reference_links_images.shortcut_syntax,
+                ignored_labels: toml_config.linters.settings.reference_links_images.ignored_labels,
+            },
         },
     }))
 }
@@ -231,6 +248,29 @@ mod tests {
             *parsed.linters.severity.get("heading-style").unwrap()
         );
         assert_eq!(None, parsed.linters.severity.get("some-invalid-rule"));
+    }
+
+    #[test]
+    fn test_parse_md052_config() {
+        let config_str = r#"
+        [linters.severity]
+        reference-links-images = 'err'
+
+        [linters.settings.reference-links-images]
+        shortcut_syntax = true
+        ignored_labels = ["custom", "another"]
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("reference-links-images").unwrap()
+        );
+        assert!(parsed.linters.settings.reference_links_images.shortcut_syntax);
+        assert_eq!(
+            vec!["custom".to_string(), "another".to_string()],
+            parsed.linters.settings.reference_links_images.ignored_labels
+        );
     }
 
     #[test]
