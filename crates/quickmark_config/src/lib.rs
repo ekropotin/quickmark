@@ -1,6 +1,7 @@
 use anyhow::Result;
 use quickmark_linter::config::{
-    normalize_severities, HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD013LineLengthTable, QuickmarkConfig, RuleSeverity,
+    normalize_severities, HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
+    MD013LineLengthTable, QuickmarkConfig, RuleSeverity,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -37,8 +38,7 @@ struct TomlMD003HeadingStyleTable {
     style: TomlHeadingStyle,
 }
 
-#[derive(Deserialize)]
-#[derive(Default)]
+#[derive(Deserialize, Default)]
 struct TomlMD013LineLengthTable {
     #[serde(default = "default_line_length")]
     line_length: usize,
@@ -58,12 +58,24 @@ struct TomlMD013LineLengthTable {
     stern: bool,
 }
 
-fn default_line_length() -> usize { 80 }
-fn default_code_block_line_length() -> usize { 80 }
-fn default_heading_line_length() -> usize { 80 }
-fn default_true() -> bool { true }
-fn default_false() -> bool { false }
-fn default_empty_string() -> String { String::new() }
+fn default_line_length() -> usize {
+    80
+}
+fn default_code_block_line_length() -> usize {
+    80
+}
+fn default_heading_line_length() -> usize {
+    80
+}
+fn default_true() -> bool {
+    true
+}
+fn default_false() -> bool {
+    false
+}
+fn default_empty_string() -> String {
+    String::new()
+}
 
 #[derive(Deserialize, Default)]
 struct TomlMD051LinkFragmentsTable {
@@ -73,7 +85,12 @@ struct TomlMD051LinkFragmentsTable {
     ignored_pattern: String,
 }
 
-fn default_ignored_labels() -> Vec<String> { vec!["x".to_string()] }
+fn default_ignored_labels() -> Vec<String> {
+    vec!["x".to_string()]
+}
+fn default_ignored_definitions() -> Vec<String> {
+    vec!["//".to_string()]
+}
 
 #[derive(Deserialize, Default)]
 struct TomlMD052ReferenceLinksImagesTable {
@@ -83,8 +100,13 @@ struct TomlMD052ReferenceLinksImagesTable {
     ignored_labels: Vec<String>,
 }
 
-#[derive(Deserialize)]
-#[derive(Default)]
+#[derive(Deserialize, Default)]
+struct TomlMD053LinkImageReferenceDefinitionsTable {
+    #[serde(default = "default_ignored_definitions")]
+    ignored_definitions: Vec<String>,
+}
+
+#[derive(Deserialize, Default)]
 struct TomlLintersSettingsTable {
     #[serde(rename = "heading-style")]
     #[serde(default)]
@@ -98,10 +120,12 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "reference-links-images")]
     #[serde(default)]
     reference_links_images: TomlMD052ReferenceLinksImagesTable,
+    #[serde(rename = "link-image-reference-definitions")]
+    #[serde(default)]
+    link_image_reference_definitions: TomlMD053LinkImageReferenceDefinitionsTable,
 }
 
-#[derive(Deserialize)]
-#[derive(Default)]
+#[derive(Deserialize, Default)]
 struct TomlLintersTable {
     #[serde(default)]
     severity: HashMap<String, TomlRuleSeverity>,
@@ -162,7 +186,11 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
             },
             line_length: MD013LineLengthTable {
                 line_length: toml_config.linters.settings.line_length.line_length,
-                code_block_line_length: toml_config.linters.settings.line_length.code_block_line_length,
+                code_block_line_length: toml_config
+                    .linters
+                    .settings
+                    .line_length
+                    .code_block_line_length,
                 heading_line_length: toml_config.linters.settings.line_length.heading_line_length,
                 code_blocks: toml_config.linters.settings.line_length.code_blocks,
                 headings: toml_config.linters.settings.line_length.headings,
@@ -175,9 +203,25 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
                 ignored_pattern: toml_config.linters.settings.link_fragments.ignored_pattern,
             },
             reference_links_images: quickmark_linter::config::MD052ReferenceLinksImagesTable {
-                shortcut_syntax: toml_config.linters.settings.reference_links_images.shortcut_syntax,
-                ignored_labels: toml_config.linters.settings.reference_links_images.ignored_labels,
+                shortcut_syntax: toml_config
+                    .linters
+                    .settings
+                    .reference_links_images
+                    .shortcut_syntax,
+                ignored_labels: toml_config
+                    .linters
+                    .settings
+                    .reference_links_images
+                    .ignored_labels,
             },
+            link_image_reference_definitions:
+                quickmark_linter::config::MD053LinkImageReferenceDefinitionsTable {
+                    ignored_definitions: toml_config
+                        .linters
+                        .settings
+                        .link_image_reference_definitions
+                        .ignored_definitions,
+                },
         },
     }))
 }
@@ -233,6 +277,7 @@ mod tests {
         line-length = 'err'
         link-fragments = 'warn'
         reference-links-images = 'err'
+        link-image-reference-definitions = 'warn'
 
         [linters.settings.heading-style]
         style = 'setext_with_atx_closed'
@@ -254,23 +299,59 @@ mod tests {
         [linters.settings.reference-links-images]
         shortcut_syntax = true
         ignored_labels = ["custom", "todo", "note"]
+
+        [linters.settings.link-image-reference-definitions]
+        ignored_definitions = ["//", "comment", "note"]
         "#;
 
         let parsed = parse_toml_config(config_str).unwrap();
 
         // Test all rule severities
-        assert_eq!(RuleSeverity::Warning, *parsed.linters.severity.get("heading-increment").unwrap());
-        assert_eq!(RuleSeverity::Error, *parsed.linters.severity.get("heading-style").unwrap());
-        assert_eq!(RuleSeverity::Error, *parsed.linters.severity.get("line-length").unwrap());
-        assert_eq!(RuleSeverity::Warning, *parsed.linters.severity.get("link-fragments").unwrap());
-        assert_eq!(RuleSeverity::Error, *parsed.linters.severity.get("reference-links-images").unwrap());
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("heading-increment").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("heading-style").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("line-length").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("link-fragments").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed
+                .linters
+                .severity
+                .get("reference-links-images")
+                .unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed
+                .linters
+                .severity
+                .get("link-image-reference-definitions")
+                .unwrap()
+        );
 
         // Test MD003 (heading-style) settings
-        assert_eq!(HeadingStyle::SetextWithATXClosed, parsed.linters.settings.heading_style.style);
+        assert_eq!(
+            HeadingStyle::SetextWithATXClosed,
+            parsed.linters.settings.heading_style.style
+        );
 
         // Test MD013 (line-length) settings
         assert_eq!(120, parsed.linters.settings.line_length.line_length);
-        assert_eq!(100, parsed.linters.settings.line_length.code_block_line_length);
+        assert_eq!(
+            100,
+            parsed.linters.settings.line_length.code_block_line_length
+        );
         assert_eq!(80, parsed.linters.settings.line_length.heading_line_length);
         assert!(!parsed.linters.settings.line_length.code_blocks);
         assert!(parsed.linters.settings.line_length.headings);
@@ -280,13 +361,36 @@ mod tests {
 
         // Test MD051 (link-fragments) settings
         assert!(parsed.linters.settings.link_fragments.ignore_case);
-        assert_eq!("external-.*", parsed.linters.settings.link_fragments.ignored_pattern);
+        assert_eq!(
+            "external-.*",
+            parsed.linters.settings.link_fragments.ignored_pattern
+        );
 
         // Test MD052 (reference-links-images) settings
-        assert!(parsed.linters.settings.reference_links_images.shortcut_syntax);
+        assert!(
+            parsed
+                .linters
+                .settings
+                .reference_links_images
+                .shortcut_syntax
+        );
         assert_eq!(
             vec!["custom".to_string(), "todo".to_string(), "note".to_string()],
-            parsed.linters.settings.reference_links_images.ignored_labels
+            parsed
+                .linters
+                .settings
+                .reference_links_images
+                .ignored_labels
+        );
+
+        // Test MD053 (link-image-reference-definitions) settings
+        assert_eq!(
+            vec!["//".to_string(), "comment".to_string(), "note".to_string()],
+            parsed
+                .linters
+                .settings
+                .link_image_reference_definitions
+                .ignored_definitions
         );
     }
 }

@@ -7,6 +7,7 @@ pub mod md003;
 pub mod md013;
 pub mod md051;
 pub mod md052;
+pub mod md053;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RuleType {
@@ -29,4 +30,11 @@ pub struct Rule {
     pub new_linter: fn(Rc<Context>) -> Box<dyn RuleLinter>,
 }
 
-pub const ALL_RULES: &[Rule] = &[md001::MD001, md003::MD003, md013::MD013, md051::MD051, md052::MD052];
+pub const ALL_RULES: &[Rule] = &[
+    md001::MD001,
+    md003::MD003,
+    md013::MD013,
+    md051::MD051,
+    md052::MD052,
+    md053::MD053,
+];

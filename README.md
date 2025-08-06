@@ -52,6 +52,7 @@ heading-style = 'err'
 line-length = 'err'
 link-fragments = 'warn'
 reference-links-images = 'err'
+link-image-reference-definitions = 'err'
 
 # see a specific rule's doc for details of configuration
 [linters.settings.heading-style]
@@ -72,11 +73,14 @@ ignored_pattern = ""
 [linters.settings.reference-links-images]
 shortcut_syntax = false
 ignored_labels = ["x"]
+
+[linters.settings.link-image-reference-definitions]
+ignored_definitions = ["//"]
 ```
 
 ## Rules
 
-**Implementation Progress: 5/48 rules completed (10.4%)**
+**Implementation Progress: 6/48 rules completed (12.5%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -125,4 +129,4 @@ ignored_labels = ["x"]
 - [ ] **MD050** *strong-style* - Strong style consistency
 - [x] **[MD051](docs/rules/md051.md)** *link-fragments* - Link fragments should be valid
 - [x] **[MD052](docs/rules/md052.md)** *reference-links-images* - Reference links should be defined
-- [ ] **MD053** *link-image-reference-definitions* - Reference definitions should be needed
+- [x] **[MD053](docs/rules/md053.md)** *link-image-reference-definitions* - Reference definitions should be needed

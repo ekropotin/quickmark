@@ -7,8 +7,7 @@ use std::path::PathBuf;
 /// Helper function to get the path to test sample files
 fn test_sample_path(filename: &str) -> String {
     // Use the CARGO_MANIFEST_DIR environment variable to find the project root
-    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR")
-        .expect("CARGO_MANIFEST_DIR not set");
+    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set");
 
     PathBuf::from(manifest_dir)
         .parent() // Go up from crates/quickmark
@@ -105,7 +104,8 @@ fn test_cli_error_format() {
 
     // Check that error format includes expected components:
     // ERR: file_path:line:column MD001/heading-increment message
-    let error_lines: Vec<&str> = stderr.lines()
+    let error_lines: Vec<&str> = stderr
+        .lines()
         .filter(|line| line.starts_with("ERR:") || line.starts_with("WARN:"))
         .collect();
 
@@ -162,7 +162,8 @@ fn test_cli_line_numbers_are_one_based() {
     let stderr = String::from_utf8_lossy(&output.stderr);
 
     // Find error lines and check line numbers
-    let error_lines: Vec<&str> = stderr.lines()
+    let error_lines: Vec<&str> = stderr
+        .lines()
         .filter(|line| line.starts_with("ERR:") || line.starts_with("WARN:"))
         .collect();
 
@@ -174,7 +175,10 @@ fn test_cli_line_numbers_are_one_based() {
                 let line_num_str = &after_file[..second_colon];
                 if let Ok(line_num) = line_num_str.parse::<u32>() {
                     // Line numbers should be 1-based, not 0-based
-                    assert!(line_num >= 1, "Line number should be 1-based, got: {line_num}");
+                    assert!(
+                        line_num >= 1,
+                        "Line number should be 1-based, got: {line_num}"
+                    );
                 }
             }
         }

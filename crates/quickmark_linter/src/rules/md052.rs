@@ -1,8 +1,8 @@
+use once_cell::sync::Lazy;
+use regex::Regex;
 use std::collections::HashSet;
 use std::rc::Rc;
 use tree_sitter::Node;
-use regex::Regex;
-use once_cell::sync::Lazy;
 
 use crate::{
     linter::{range_from_tree_sitter, RuleViolation},
@@ -10,21 +10,16 @@ use crate::{
 };
 
 // Pre-compiled regex patterns for performance
-static FULL_REFERENCE_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"\[([^\]]*)\]\[([^\]]*)\]").unwrap()
-});
+static FULL_REFERENCE_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"\[([^\]]*)\]\[([^\]]*)\]").unwrap());
 
-static COLLAPSED_REFERENCE_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"\[([^\]]+)\]\[\]").unwrap()
-});
+static COLLAPSED_REFERENCE_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"\[([^\]]+)\]\[\]").unwrap());
 
-static SHORTCUT_REFERENCE_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"\[([^\]]+)\]").unwrap()
-});
+static SHORTCUT_REFERENCE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"\[([^\]]+)\]").unwrap());
 
-static REFERENCE_DEFINITION_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?m)^\s*\[([^\]]+)\]:\s*").unwrap()
-});
+static REFERENCE_DEFINITION_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(?m)^\s*\[([^\]]+)\]:\s*").unwrap());
 
 #[derive(Debug, Clone)]
 struct ReferenceLink {
@@ -53,7 +48,11 @@ impl MD052Linter {
         // - Convert to lowercase
         // - Trim whitespace
         // - Collapse consecutive whitespace to single spaces
-        label.to_lowercase().split_whitespace().collect::<Vec<_>>().join(" ")
+        label
+            .to_lowercase()
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
     }
 
     fn extract_reference_definition(&self, node: &Node) -> Vec<String> {
@@ -63,7 +62,7 @@ impl MD052Linter {
         let end_byte = node.end_byte();
         let document_content = self.context.document_content.borrow();
         let content = &document_content[start_byte..end_byte];
-        
+
         let mut definitions = Vec::new();
         for cap in REFERENCE_DEFINITION_PATTERN.captures_iter(content) {
             if let Some(label) = cap.get(1) {
@@ -76,7 +75,7 @@ impl MD052Linter {
     fn extract_reference_links(&self, node: &Node) -> Vec<(String, bool)> {
         // Extract reference links in different formats:
         // Full: [text][label]
-        // Collapsed: [label][]  
+        // Collapsed: [label][]
         // Shortcut: [label]
         let start_byte = node.start_byte();
         let end_byte = node.end_byte();
@@ -135,7 +134,7 @@ impl RuleLinter for MD052Linter {
                 for definition in definitions {
                     self.definitions.insert(definition);
                 }
-                
+
                 // Also check for reference links in paragraphs
                 let links = self.extract_reference_links(node);
                 for (label, is_shortcut) in links {
@@ -146,7 +145,7 @@ impl RuleLinter for MD052Linter {
                     });
                 }
             }
-            // Handle reference links [text][label], [label][], [label]  
+            // Handle reference links [text][label], [label][], [label]
             "link" | "image" => {
                 let links = self.extract_reference_links(node);
                 for (label, is_shortcut) in links {
@@ -170,7 +169,9 @@ impl RuleLinter for MD052Linter {
     fn finalize(&mut self) -> Vec<RuleViolation> {
         let mut violations = Vec::new();
         let config = &self.context.config.linters.settings.reference_links_images;
-        let ignored_labels: HashSet<String> = config.ignored_labels.iter()
+        let ignored_labels: HashSet<String> = config
+            .ignored_labels
+            .iter()
             .map(|label| self.normalize_reference(label))
             .collect();
 
@@ -181,7 +182,7 @@ impl RuleLinter for MD052Linter {
             }
 
             let normalized_label = self.normalize_reference(&reference.label);
-            
+
             // Skip if label is in ignored list
             if ignored_labels.contains(&normalized_label) {
                 continue;
@@ -191,7 +192,10 @@ impl RuleLinter for MD052Linter {
             if !self.definitions.contains(&normalized_label) {
                 violations.push(RuleViolation::new(
                     &MD052,
-                    format!("Missing link or image reference definition: \"{}\"", reference.label),
+                    format!(
+                        "Missing link or image reference definition: \"{}\"",
+                        reference.label
+                    ),
                     self.context.file_path.clone(),
                     range_from_tree_sitter(&reference.range),
                 ));
@@ -224,7 +228,10 @@ mod test {
         test_config_with_rules(vec![("reference-links-images", RuleSeverity::Error)])
     }
 
-    fn test_config_with_settings(shortcut_syntax: bool, ignored_labels: Vec<String>) -> crate::config::QuickmarkConfig {
+    fn test_config_with_settings(
+        shortcut_syntax: bool,
+        ignored_labels: Vec<String>,
+    ) -> crate::config::QuickmarkConfig {
         crate::test_utils::test_helpers::test_config_with_settings(
             vec![("reference-links-images", RuleSeverity::Error)],
             LintersSettingsTable {
@@ -237,7 +244,6 @@ mod test {
         )
     }
 
-
     #[test]
     fn test_valid_full_reference() {
         let input = "[Good link][label]
@@ -248,7 +254,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - valid reference
         assert_eq!(0, violations.len());
     }
@@ -263,10 +269,12 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have 1 violation - missing reference definition
         assert_eq!(1, violations.len());
-        assert!(violations[0].message().contains("Missing link or image reference definition: \"missing\""));
+        assert!(violations[0]
+            .message()
+            .contains("Missing link or image reference definition: \"missing\""));
     }
 
     #[test]
@@ -279,7 +287,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - valid collapsed reference
         assert_eq!(0, violations.len());
     }
@@ -294,10 +302,12 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have 1 violation - missing reference definition
         assert_eq!(1, violations.len());
-        assert!(violations[0].message().contains("Missing link or image reference definition: \"missing\""));
+        assert!(violations[0]
+            .message()
+            .contains("Missing link or image reference definition: \"missing\""));
     }
 
     #[test]
@@ -310,7 +320,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - shortcut syntax ignored by default
         assert_eq!(0, violations.len());
     }
@@ -325,10 +335,12 @@ mod test {
         let config = test_config_with_settings(true, vec!["x".to_string()]);
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have 1 violation - shortcut syntax enabled and undefined
         assert_eq!(1, violations.len());
-        assert!(violations[0].message().contains("Missing link or image reference definition: \"undefined\""));
+        assert!(violations[0]
+            .message()
+            .contains("Missing link or image reference definition: \"undefined\""));
     }
 
     #[test]
@@ -341,7 +353,7 @@ mod test {
         let config = test_config_with_settings(true, vec!["x".to_string()]);
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - shortcut syntax enabled and defined
         assert_eq!(0, violations.len());
     }
@@ -356,7 +368,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - 'x' is ignored by default (GitHub task list)
         assert_eq!(0, violations.len());
     }
@@ -369,10 +381,11 @@ mod test {
 [label]: https://example.com
 ";
 
-        let config = test_config_with_settings(true, vec!["custom".to_string(), "another".to_string()]);
+        let config =
+            test_config_with_settings(true, vec!["custom".to_string(), "another".to_string()]);
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - custom labels are ignored
         assert_eq!(0, violations.len());
     }
@@ -387,7 +400,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - case insensitive matching per CommonMark
         assert_eq!(0, violations.len());
     }
@@ -402,7 +415,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - whitespace is normalized per CommonMark
         assert_eq!(0, violations.len());
     }
@@ -417,7 +430,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - valid image reference
         assert_eq!(0, violations.len());
     }
@@ -432,10 +445,12 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have 1 violation - missing image reference definition
         assert_eq!(1, violations.len());
-        assert!(violations[0].message().contains("Missing link or image reference definition: \"missing\""));
+        assert!(violations[0]
+            .message()
+            .contains("Missing link or image reference definition: \"missing\""));
     }
 
     #[test]
@@ -450,7 +465,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have 2 violations - two missing reference definitions
         assert_eq!(2, violations.len());
     }
@@ -473,7 +488,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - all references defined (shortcut ignored by default)
         assert_eq!(0, violations.len());
     }
@@ -489,7 +504,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - first definition wins per CommonMark spec
         assert_eq!(0, violations.len());
     }
