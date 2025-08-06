@@ -59,17 +59,23 @@ impl Default for MD013LineLengthTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct MD051LinkFragmentsTable {
     pub ignore_case: bool,
     pub ignored_pattern: String,
 }
 
-impl Default for MD051LinkFragmentsTable {
+#[derive(Debug, PartialEq, Clone)]
+pub struct MD052ReferenceLinksImagesTable {
+    pub shortcut_syntax: bool,
+    pub ignored_labels: Vec<String>,
+}
+
+impl Default for MD052ReferenceLinksImagesTable {
     fn default() -> Self {
         Self {
-            ignore_case: false,
-            ignored_pattern: String::new(),
+            shortcut_syntax: false,
+            ignored_labels: vec!["x".to_string()],
         }
     }
 }
@@ -79,6 +85,7 @@ pub struct LintersSettingsTable {
     pub heading_style: MD003HeadingStyleTable,
     pub line_length: MD013LineLengthTable,
     pub link_fragments: MD051LinkFragmentsTable,
+    pub reference_links_images: MD052ReferenceLinksImagesTable,
 }
 
 #[derive(Debug, Default, PartialEq, Clone)]
@@ -119,7 +126,7 @@ mod test {
     use std::collections::HashMap;
 
     use crate::config::{
-        HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD013LineLengthTable, MD051LinkFragmentsTable, RuleSeverity,
+        HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD013LineLengthTable, MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -177,6 +184,7 @@ mod test {
                 },
                 line_length: MD013LineLengthTable::default(),
                 link_fragments: MD051LinkFragmentsTable::default(),
+                reference_links_images: MD052ReferenceLinksImagesTable::default(),
             },
         });
 
