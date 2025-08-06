@@ -22,7 +22,7 @@ This file demonstrates correct heading increment following the MD001 rule.
 
 # Another Heading Level 1
 
-## Another Heading Level 2
+## Different Heading Level 2
 
 Some content here.
 

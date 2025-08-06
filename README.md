@@ -50,6 +50,7 @@ Below is a full configuration with default values:
 heading-increment = 'err'
 heading-style = 'err'
 line-length = 'err'
+no-duplicate-heading = 'err'
 link-fragments = 'warn'
 reference-links-images = 'err'
 link-image-reference-definitions = 'err'
@@ -66,6 +67,10 @@ tables = true
 strict = false
 stern = false
 
+[linters.settings.no-duplicate-heading]
+siblings_only = false
+allow_different_nesting = false
+
 [linters.settings.link-fragments]
 ignore_case = false
 ignored_pattern = ""
@@ -80,7 +85,7 @@ ignored_definitions = ["//"]
 
 ## Rules
 
-**Implementation Progress: 6/48 rules completed (12.5%)**
+**Implementation Progress: 7/48 rules completed (14.6%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -100,7 +105,7 @@ ignored_definitions = ["//"]
 - [ ] **MD021** *no-multiple-space-closed-atx* - Multiple spaces in closed ATX headings
 - [ ] **MD022** *blanks-around-headings* - Headings surrounded by blank lines
 - [ ] **MD023** *heading-start-left* - Headings start at beginning of line
-- [ ] **MD024** *no-duplicate-heading* - Multiple headings with same content
+- [x] **[MD024](docs/rules/md024.md)** *no-duplicate-heading* - Multiple headings with same content
 - [ ] **MD025** *single-title* - Multiple top-level headings
 - [ ] **MD026** *no-trailing-punctuation* - Trailing punctuation in headings
 - [ ] **MD027** *no-multiple-space-blockquote* - Multiple spaces after blockquote
