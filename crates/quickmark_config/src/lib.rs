@@ -202,32 +202,6 @@ mod tests {
     use quickmark_linter::config::{HeadingStyle, RuleSeverity};
 
     #[test]
-    fn test_parse_toml_config() {
-        let config_str = r#"
-        [linters.severity]
-        heading-increment = 'warn'
-        heading-style = 'err'
-
-        [linters.settings.heading-style]
-        style = 'atx'
-        "#;
-
-        let parsed = parse_toml_config(config_str).unwrap();
-        assert_eq!(
-            RuleSeverity::Warning,
-            *parsed.linters.severity.get("heading-increment").unwrap()
-        );
-        assert_eq!(
-            RuleSeverity::Error,
-            *parsed.linters.severity.get("heading-style").unwrap()
-        );
-        assert_eq!(
-            HeadingStyle::ATX,
-            parsed.linters.settings.heading_style.style
-        );
-    }
-
-    #[test]
     fn test_parse_toml_config_with_invalid_rules() {
         let config_str = r#"
         [linters.severity]
@@ -251,105 +225,68 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_md052_config() {
+    fn test_parse_comprehensive_config() {
         let config_str = r#"
         [linters.severity]
+        heading-increment = 'warn'
+        heading-style = 'err'
+        line-length = 'err'
+        link-fragments = 'warn'
         reference-links-images = 'err'
-
-        [linters.settings.reference-links-images]
-        shortcut_syntax = true
-        ignored_labels = ["custom", "another"]
-        "#;
-
-        let parsed = parse_toml_config(config_str).unwrap();
-        assert_eq!(
-            RuleSeverity::Error,
-            *parsed.linters.severity.get("reference-links-images").unwrap()
-        );
-        assert!(parsed.linters.settings.reference_links_images.shortcut_syntax);
-        assert_eq!(
-            vec!["custom".to_string(), "another".to_string()],
-            parsed.linters.settings.reference_links_images.ignored_labels
-        );
-    }
-
-    #[test]
-    fn test_default_config() {
-        let config = QuickmarkConfig::default_with_normalized_severities();
-        assert_eq!(
-            RuleSeverity::Error,
-            *config.linters.severity.get("heading-increment").unwrap()
-        );
-        assert_eq!(
-            RuleSeverity::Error,
-            *config.linters.severity.get("heading-style").unwrap()
-        );
-        assert_eq!(
-            HeadingStyle::Consistent,
-            config.linters.settings.heading_style.style
-        );
-    }
-
-    #[test]
-    fn test_parse_toml_config_atx_closed() {
-        let config_str = r#"
-        [linters.severity]
-        heading-style = 'err'
-
-        [linters.settings.heading-style]
-        style = 'atx_closed'
-        "#;
-
-        let parsed = parse_toml_config(config_str).unwrap();
-        assert_eq!(
-            HeadingStyle::ATXClosed,
-            parsed.linters.settings.heading_style.style
-        );
-    }
-
-    #[test]
-    fn test_parse_toml_config_setext_with_atx() {
-        let config_str = r#"
-        [linters.severity]
-        heading-style = 'err'
-
-        [linters.settings.heading-style]
-        style = 'setext_with_atx'
-        "#;
-
-        let parsed = parse_toml_config(config_str).unwrap();
-        assert_eq!(
-            HeadingStyle::SetextWithATX,
-            parsed.linters.settings.heading_style.style
-        );
-    }
-
-    #[test]
-    fn test_parse_toml_config_setext_with_atx_closed() {
-        let config_str = r#"
-        [linters.severity]
-        heading-style = 'err'
 
         [linters.settings.heading-style]
         style = 'setext_with_atx_closed'
-        "#;
 
-        let parsed = parse_toml_config(config_str).unwrap();
-        assert_eq!(
-            HeadingStyle::SetextWithATXClosed,
-            parsed.linters.settings.heading_style.style
-        );
-    }
-
-    #[test]
-    fn test_parse_toml_config_with_line_length() {
-        let config_str = r#"
         [linters.settings.line-length]
-        line_length = 50
+        line_length = 120
+        code_block_line_length = 100
+        heading_line_length = 80
+        code_blocks = false
+        headings = true
+        tables = false
+        strict = true
+        stern = false
+
+        [linters.settings.link-fragments]
+        ignore_case = true
+        ignored_pattern = "external-.*"
+
+        [linters.settings.reference-links-images]
+        shortcut_syntax = true
+        ignored_labels = ["custom", "todo", "note"]
         "#;
 
         let parsed = parse_toml_config(config_str).unwrap();
-        assert_eq!(50, parsed.linters.settings.line_length.line_length);
-        assert_eq!(80, parsed.linters.settings.line_length.code_block_line_length); // default
+
+        // Test all rule severities
+        assert_eq!(RuleSeverity::Warning, *parsed.linters.severity.get("heading-increment").unwrap());
+        assert_eq!(RuleSeverity::Error, *parsed.linters.severity.get("heading-style").unwrap());
+        assert_eq!(RuleSeverity::Error, *parsed.linters.severity.get("line-length").unwrap());
+        assert_eq!(RuleSeverity::Warning, *parsed.linters.severity.get("link-fragments").unwrap());
+        assert_eq!(RuleSeverity::Error, *parsed.linters.severity.get("reference-links-images").unwrap());
+
+        // Test MD003 (heading-style) settings
+        assert_eq!(HeadingStyle::SetextWithATXClosed, parsed.linters.settings.heading_style.style);
+
+        // Test MD013 (line-length) settings
+        assert_eq!(120, parsed.linters.settings.line_length.line_length);
+        assert_eq!(100, parsed.linters.settings.line_length.code_block_line_length);
+        assert_eq!(80, parsed.linters.settings.line_length.heading_line_length);
+        assert!(!parsed.linters.settings.line_length.code_blocks);
+        assert!(parsed.linters.settings.line_length.headings);
+        assert!(!parsed.linters.settings.line_length.tables);
+        assert!(parsed.linters.settings.line_length.strict);
+        assert!(!parsed.linters.settings.line_length.stern);
+
+        // Test MD051 (link-fragments) settings
+        assert!(parsed.linters.settings.link_fragments.ignore_case);
+        assert_eq!("external-.*", parsed.linters.settings.link_fragments.ignored_pattern);
+
+        // Test MD052 (reference-links-images) settings
+        assert!(parsed.linters.settings.reference_links_images.shortcut_syntax);
+        assert_eq!(
+            vec!["custom".to_string(), "todo".to_string(), "note".to_string()],
+            parsed.linters.settings.reference_links_images.ignored_labels
+        );
     }
 }

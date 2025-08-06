@@ -5,6 +5,7 @@ Besides other steps you may come up with, you must incorporate the steps below.
 ## 1. Unit tests
 
 Write comprehensive unit-tests covering as much as possible combinations of rule's settings as possible. Embrace TDD approach. This means, start with writing minimum set of data structures needed for a test, refrain from writing actual logic for linting at this stage. When, write unit tests. Confirm they are failing.
+Update existing config's deserialization tests with parameters for the rule.
 
 ## 2. Logic implementation
 
@@ -23,4 +24,4 @@ Assume markdownlinter is already installed on this machine locally. For any foun
 ## 5. Documentation update
 
 At the end, copy original rule documentation in `docs/rules`.
-Mark the corresponding rule as implemented in CLAUDE.md
+Update README.md file accordingly.
