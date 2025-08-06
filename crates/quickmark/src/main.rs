@@ -12,9 +12,6 @@ use std::{fs, path::PathBuf, process::exit};
 struct Cli {
     /// Path to the markdown file
     #[arg(required = true)]
-
-
-
     file: PathBuf,
 }
 
