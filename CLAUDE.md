@@ -121,99 +121,6 @@ quickmark/
 - Each rule implements `RuleLinter` trait with `feed` method
 - Rules are dynamically instantiated based on configuration
 
-### Rules Implementation Checklist
-
-This section tracks the progress of porting all markdownlint rules to QuickMark. Rules are categorized by their implementation requirements:
-
-#### Line-Based Rules (5 rules)
-
-*Work primarily with raw text lines - high performance, direct text analysis*
-
-- [ ] **MD009** (`no-trailing-spaces`): Trailing spaces at end of lines
-- [ ] **MD010** (`no-hard-tabs`): Hard tabs should not be used
-- [ ] **MD012** (`no-multiple-blanks`): Multiple consecutive blank lines
-- [x] **MD013** (`line-length`): Line length limits with configurable exceptions ✅
-- [ ] **MD047** (`single-trailing-newline`): Files should end with a single newline
-
-#### Token-Based Rules (32 rules)
-
-*Work with specific AST node types - cached node filtering for efficiency*
-
-**Heading Rules (8 rules):**
-
-- [x] **MD001** (`heading-increment`): Heading levels increment by one ✅
-- [x] **MD003** (`heading-style`): Consistent heading styles ✅
-- [ ] **MD018** (`no-missing-space-atx`): Space after hash in ATX headings
-- [ ] **MD019** (`no-multiple-space-atx`): Multiple spaces after hash in ATX headings
-- [ ] **MD020** (`no-missing-space-closed-atx`): Space inside closed ATX headings
-- [ ] **MD021** (`no-multiple-space-closed-atx`): Multiple spaces in closed ATX headings
-- [ ] **MD023** (`heading-start-left`): Headings start at beginning of line
-- [ ] **MD026** (`no-trailing-punctuation`): Trailing punctuation in headings
-
-**List Rules (6 rules):**
-
-- [ ] **MD004** (`ul-style`): Unordered list style consistency
-- [ ] **MD005** (`list-indent`): List item indentation at same level
-- [ ] **MD006** (`ul-start-left`): Bulleted lists start at beginning of line
-- [ ] **MD007** (`ul-indent`): Unordered list indentation consistency
-- [ ] **MD029** (`ol-prefix`): Ordered list item prefix consistency
-- [ ] **MD030** (`list-marker-space`): Spaces after list markers
-
-**Link Rules (3 rules):**
-
-- [ ] **MD011** (`no-reversed-links`): Reversed link syntax
-- [ ] **MD034** (`no-bare-urls`): Bare URLs without proper formatting
-- [ ] **MD042** (`no-empty-links`): Empty links
-
-**Code Rules (4 rules):**
-
-- [ ] **MD014** (`commands-show-output`): Dollar signs before shell commands
-- [ ] **MD040** (`fenced-code-language`): Language specified for fenced code blocks
-- [ ] **MD046** (`code-block-style`): Code block style consistency
-- [ ] **MD048** (`code-fence-style`): Code fence style consistency
-
-**Formatting Rules (11 rules):**
-
-- [ ] **MD027** (`no-multiple-space-blockquote`): Multiple spaces after blockquote
-- [ ] **MD028** (`no-blanks-blockquote`): Blank lines inside blockquotes
-- [ ] **MD033** (`no-inline-html`): Inline HTML usage
-- [ ] **MD035** (`hr-style`): Horizontal rule style consistency
-- [ ] **MD036** (`no-emphasis-as-heading`): Emphasis used instead of heading
-- [ ] **MD037** (`no-space-in-emphasis`): Spaces inside emphasis markers
-- [ ] **MD038** (`no-space-in-code`): Spaces inside code span elements
-- [ ] **MD039** (`no-space-in-links`): Spaces inside link text
-- [ ] **MD045** (`no-alt-text`): Images should have alternate text
-- [ ] **MD049** (`emphasis-style`): Emphasis style consistency
-- [ ] **MD050** (`strong-style`): Strong style consistency
-
-#### Document-Wide Rules (7 rules)
-
-*Require full document analysis - global state tracking*
-
-- [ ] **MD024** (`no-duplicate-heading`): Multiple headings with same content
-- [ ] **MD025** (`single-title`): Multiple top-level headings
-- [ ] **MD041** (`first-line-heading`): First line should be top-level heading
-- [ ] **MD043** (`required-headings`): Required heading structure
-- [x] **MD051** (`link-fragments`): Link fragments should be valid
-- [x] **MD052** (`reference-links-images`): Reference links should be defined ✅
-- [ ] **MD053** (`link-image-reference-definitions`): Reference definitions should be needed
-
-#### Hybrid Rules (3 rules)
-
-*Need both AST analysis and line context - structural elements with spacing*
-
-- [ ] **MD022** (`blanks-around-headings`): Headings surrounded by blank lines
-- [ ] **MD031** (`blanks-around-fences`): Fenced code blocks surrounded by blank lines
-- [ ] **MD032** (`blanks-around-lists`): Lists surrounded by blank lines
-
-#### Special Rules (1 rule)
-
-*Unique implementation requirements*
-
-- [ ] **MD044** (`proper-names`): Proper names with correct capitalization (requires external dictionaries)
-
-**Implementation Progress: 4/48 rules completed (8.33%)**
-
 ### Linting Architecture Evolution
 
 **Performance-Optimized Single-Pass Design**:
@@ -314,3 +221,57 @@ This architecture allows rules like MD013 to work efficiently with raw text whil
 1. Create conversion functions in `quickmark_config`
 2. Add new public functions following the pattern of `parse_toml_config`
 3. Both CLI and server applications can immediately use the new format
+
+## Code Guidelines
+
+### General principles
+
+1. **Follow idiomatic Rust**: Use the latest Rust best practices and conventions. Code should feel natural to an experienced Rust developer.
+2. **No unsafe unless required**: Do not use unsafe blocks unless absolutely necessary for performance or interoperability. If used, justify with a comment and encapsulate safely.
+3. **Zero compiler warnings**:
+   - Code must compile with `#![deny(warnings)]`.
+   - Suppress only known false positives with clearly scoped `#[allow(...)]` attributes and documented reasons.
+4. **Speed over memory**:
+   - Optimize for CPU performance, even at the cost of increased memory usage.
+   - Avoid unnecessary allocations, but favor speed in algorithms and data access patterns.
+5. **Cloning is expensive**: Avoid cloning (`.clone()`) unless it is proven to be more efficient than passing a reference or performing in-place mutation.
+6. **Use modern language features**:
+   - Prefer `let else`, `if let`, match ergonomics, Iterator combinators, `?` operator, and Result-based error handling.
+   - Consider `Cow` or `Arc` where applicable to avoid unnecessary clones.
+
+### Optimization practices
+
+1. **Prefer move semantics** when data is no longer needed.
+2. **Use references wisely**: Use `&T` or `&mut T` rather than `T` or `T.clone()` when ownership is not required.
+3. **Inline strategically**: Inline functions where beneficial using `#[inline]` (but measure if in doubt).
+4. **Use zero-cost abstractions**: From the standard library or crates like `itertools`, `smallvec`, `rayon` (for parallelism), etc.
+5. **Choose fast data structures**: For hot paths, prefer faster data structures, even if more memory is consumed (e.g., `HashMap` over `BTreeMap` when ordering is unnecessary).
+
+### Safety and correctness
+
+1. **Use strong typing**: Use the type system to enforce invariants.
+2. **Avoid panics**: In library code (`unwrap()`, `expect()`) unless in clearly unreachable branches.
+3. **Mark important results**: Use `#[must_use]` to mark important results when appropriate.
+4. **Document assumptions**: Document all `TODO`, `FIXME`, and assumptions in code.
+
+### Linting & Tooling
+
+**Code must pass**:
+
+1. `cargo check`
+2. `cargo clippy --all-targets --all-features -- -D warnings`
+3. `cargo fmt --check`
+4. `cargo test --all`
+
+**Additional practices**:
+
+1. **Use Clippy lints**: That enforce performance best practices (e.g., `clippy::redundant_clone`, `clippy::needless_collect`, `clippy::manual_memcpy`, etc.)
+2. **Use performance attributes**: `#[inline(always)]`, `#[cold]`, or `#[no_mangle]` where profiling/FFI suggests it makes sense — but only after benchmarking.
+
+### Testing & Validation
+
+**Tests must**:
+
+1. **Cover edge cases**: And performance regressions.
+2. **Use `#[should_panic]`**: Where panics are expected.
+3. **Prefer property-based testing**: Use `proptest` or fuzzing where inputs are highly variable.

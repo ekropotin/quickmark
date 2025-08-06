@@ -2,14 +2,14 @@ use tree_sitter::{Node, Tree};
 
 #[derive(Copy, Clone, Debug)]
 pub enum TraversalOrder {
-        PreOrder,
-        PostOrder,
+    PreOrder,
+    PostOrder,
 }
 
 #[derive(Debug)]
 pub struct TreeSitterWalker<'a> {
     pub order: TraversalOrder,
-    pub tree: &'a Tree
+    pub tree: &'a Tree,
 }
 
 impl<'a> TreeSitterWalker<'a> {
@@ -30,7 +30,6 @@ impl<'a> TreeSitterWalker<'a> {
             TraversalOrder::PreOrder => self.walk_pre_order(root, &mut callback),
             TraversalOrder::PostOrder => self.walk_post_order(root, &mut callback),
         }
-
     }
 
     #[allow(clippy::only_used_in_recursion)]

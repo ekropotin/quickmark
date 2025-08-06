@@ -1,7 +1,7 @@
+use once_cell::sync::Lazy;
+use regex::Regex;
 use std::collections::HashSet;
 use std::rc::Rc;
-use regex::Regex;
-use once_cell::sync::Lazy;
 
 use tree_sitter::Node;
 
@@ -17,21 +17,15 @@ struct LinkFragment {
 }
 
 // Pre-compiled regex patterns for performance
-static LINK_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"\[([^\]]*)\]\(([^)]*#[^)]*)\)").unwrap()
-});
+static LINK_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"\[([^\]]*)\]\(([^)]*#[^)]*)\)").unwrap());
 
-static RANGE_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^L\d+C\d+-L\d+C\d+$").unwrap()
-});
+static RANGE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^L\d+C\d+-L\d+C\d+$").unwrap());
 
-static ID_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"id\s*=\s*["']([^"']+)["']"#).unwrap()
-});
+static ID_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r#"id\s*=\s*["']([^"']+)["']"#).unwrap());
 
-static NAME_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"name\s*=\s*["']([^"']+)["']"#).unwrap()
-});
+static NAME_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r#"name\s*=\s*["']([^"']+)["']"#).unwrap());
 
 pub(crate) struct MD051Linter {
     context: Rc<Context>,
@@ -42,7 +36,7 @@ pub(crate) struct MD051Linter {
 
 impl MD051Linter {
     pub fn new(context: Rc<Context>) -> Self {
-        Self { 
+        Self {
             context,
             valid_fragments: HashSet::new(),
             valid_fragments_lowercase: HashSet::new(),
@@ -56,7 +50,7 @@ impl MD051Linter {
         let end_byte = node.end_byte();
         let document_content = self.context.document_content.borrow();
         let _heading_content = &document_content[start_byte..end_byte];
-        
+
         // For ATX headings, remove the # markers and trim
         if node.kind() == "atx_heading" {
             // Find the heading text by looking for inline content
@@ -70,7 +64,7 @@ impl MD051Linter {
                 }
             }
         }
-        
+
         // For setext headings, look for paragraph containing inline content
         if node.kind() == "setext_heading" {
             for i in 0..node.child_count() {
@@ -89,7 +83,7 @@ impl MD051Linter {
                 }
             }
         }
-        
+
         None
     }
 
@@ -99,22 +93,23 @@ impl MD051Linter {
         // 2. Remove punctuation (keep alphanumeric, spaces, hyphens)
         // 3. Replace spaces with hyphens
         // 4. Remove multiple consecutive hyphens
-        
+
         let mut result = heading_text.to_lowercase();
-        
+
         // Remove punctuation, keeping only alphanumeric, spaces, and hyphens
-        result = result.chars()
+        result = result
+            .chars()
             .filter(|c| c.is_alphanumeric() || c.is_whitespace() || *c == '-')
             .collect();
-        
+
         // Replace spaces with hyphens
         result = result.replace(' ', "-");
-        
+
         // Remove multiple consecutive hyphens efficiently
         let chars: Vec<char> = result.chars().collect();
         let mut filtered = Vec::new();
         let mut prev_was_dash = false;
-        
+
         for ch in chars {
             if ch == '-' {
                 if !prev_was_dash {
@@ -127,10 +122,10 @@ impl MD051Linter {
             }
         }
         result = filtered.into_iter().collect();
-        
+
         // Trim leading/trailing hyphens
         result = result.trim_matches('-').to_string();
-        
+
         result
     }
 
@@ -151,9 +146,9 @@ impl MD051Linter {
         let end_byte = node.end_byte();
         let document_content = self.context.document_content.borrow();
         let content = &document_content[start_byte..end_byte];
-        
+
         let mut fragments = Vec::new();
-        
+
         for cap in LINK_PATTERN.captures_iter(content) {
             if let Some(url_with_fragment) = cap.get(2) {
                 let url_text = url_with_fragment.as_str();
@@ -167,31 +162,34 @@ impl MD051Linter {
                 }
             }
         }
-        
+
         fragments
     }
 
     fn is_github_special_fragment(&self, fragment: &str) -> bool {
         // GitHub special fragments according to GitHub specification
         // Reference: https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-a-permanent-link-to-a-code-snippet
-        
+
         if fragment == "top" {
             return true;
         }
-        
+
         // Line number patterns: L followed by one or more digits (L123, L1, etc.)
-        if fragment.starts_with('L') && fragment.len() > 1 && fragment[1..].chars().all(|c| c.is_ascii_digit()) {
+        if fragment.starts_with('L')
+            && fragment.len() > 1
+            && fragment[1..].chars().all(|c| c.is_ascii_digit())
+        {
             return true;
         }
-        
+
         // Range patterns: L19C5-L21C11 (GitHub's official format for line ranges with column numbers)
         if RANGE_PATTERN.is_match(fragment) {
             return true;
         }
-        
+
         // Note: L10-L20 format is NOT valid according to GitHub spec
         // GitHub requires column numbers: L10C1-L20C5
-        
+
         false
     }
 
@@ -202,19 +200,19 @@ impl MD051Linter {
         let end_byte = node.end_byte();
         let document_content = self.context.document_content.borrow();
         let html_content = &document_content[start_byte..end_byte];
-        
+
         for cap in ID_PATTERN.captures_iter(html_content) {
             if let Some(id) = cap.get(1) {
                 ids.push(id.as_str().to_string());
             }
         }
-        
+
         for cap in NAME_PATTERN.captures_iter(html_content) {
             if let Some(name) = cap.get(1) {
                 ids.push(name.as_str().to_string());
             }
         }
-        
+
         ids
     }
 }
@@ -227,14 +225,19 @@ impl RuleLinter for MD051Linter {
                     // Check for custom anchor first
                     if let Some(custom_anchor) = self.extract_custom_anchor(&heading_text) {
                         self.valid_fragments.insert(custom_anchor.clone());
-                        self.valid_fragments_lowercase.insert(custom_anchor.to_lowercase());
+                        self.valid_fragments_lowercase
+                            .insert(custom_anchor.to_lowercase());
                         // Also generate the default fragment from the heading text without the anchor
-                        let clean_text = heading_text.replace(&format!("{{#{custom_anchor}}}"), "").trim().to_string();
+                        let clean_text = heading_text
+                            .replace(&format!("{{#{custom_anchor}}}"), "")
+                            .trim()
+                            .to_string();
                         if !clean_text.is_empty() {
                             let fragment = self.generate_github_fragment(&clean_text);
                             if !fragment.is_empty() {
                                 self.valid_fragments.insert(fragment.clone());
-                                self.valid_fragments_lowercase.insert(fragment.to_lowercase());
+                                self.valid_fragments_lowercase
+                                    .insert(fragment.to_lowercase());
                             }
                         }
                     } else {
@@ -249,7 +252,8 @@ impl RuleLinter for MD051Linter {
                                 counter += 1;
                             }
                             self.valid_fragments.insert(unique_fragment.clone());
-                            self.valid_fragments_lowercase.insert(unique_fragment.to_lowercase());
+                            self.valid_fragments_lowercase
+                                .insert(unique_fragment.to_lowercase());
                         }
                     }
                 }
@@ -261,8 +265,8 @@ impl RuleLinter for MD051Linter {
                     self.valid_fragments.insert(id.clone());
                     self.valid_fragments_lowercase.insert(id.to_lowercase());
                 }
-                
-                // Also look for links in inline content  
+
+                // Also look for links in inline content
                 let fragments = self.extract_link_fragments(node);
                 for fragment in fragments {
                     // We need to store the node for later violation reporting
@@ -283,23 +287,23 @@ impl RuleLinter for MD051Linter {
     fn finalize(&mut self) -> Vec<RuleViolation> {
         let mut violations = Vec::new();
         let config = &self.context.config.linters.settings.link_fragments;
-        
+
         // Compile ignored pattern regex if provided
         let ignored_regex = if !config.ignored_pattern.is_empty() {
             Regex::new(&config.ignored_pattern).ok()
         } else {
             None
         };
-        
+
         for link_fragment in &self.link_fragments {
             let fragment = &link_fragment.fragment;
             let mut is_valid = false;
-            
+
             // Check if it's a GitHub special fragment
             if self.is_github_special_fragment(fragment) {
                 is_valid = true;
             }
-            
+
             // Check if it matches ignored pattern
             if !is_valid {
                 if let Some(ref regex) = ignored_regex {
@@ -308,7 +312,7 @@ impl RuleLinter for MD051Linter {
                     }
                 }
             }
-            
+
             // Check if it matches any valid fragment
             if !is_valid {
                 if config.ignore_case {
@@ -318,7 +322,7 @@ impl RuleLinter for MD051Linter {
                     is_valid = self.valid_fragments.contains(fragment);
                 }
             }
-            
+
             if !is_valid {
                 violations.push(RuleViolation::new(
                     &MD051,
@@ -328,7 +332,7 @@ impl RuleLinter for MD051Linter {
                 ));
             }
         }
-        
+
         violations
     }
 }
@@ -355,7 +359,10 @@ mod test {
         test_config_with_rules(vec![("link-fragments", RuleSeverity::Error)])
     }
 
-    fn test_config_with_settings(ignore_case: bool, ignored_pattern: String) -> crate::config::QuickmarkConfig {
+    fn test_config_with_settings(
+        ignore_case: bool,
+        ignored_pattern: String,
+    ) -> crate::config::QuickmarkConfig {
         crate::test_utils::test_helpers::test_config_with_settings(
             vec![("link-fragments", RuleSeverity::Error)],
             LintersSettingsTable {
@@ -368,7 +375,6 @@ mod test {
         )
     }
 
-
     #[test]
     fn test_basic_valid_fragment() {
         let input = "# Test Heading
@@ -379,8 +385,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
-        
+
         // Should have no violations - valid fragment
         assert_eq!(0, violations.len());
     }
@@ -395,7 +400,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have 1 violation - invalid fragment
         assert_eq!(1, violations.len());
     }
@@ -410,7 +415,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have 1 violation - case mismatch
         assert_eq!(1, violations.len());
     }
@@ -425,7 +430,7 @@ mod test {
         let config = test_config_with_settings(true, String::new());
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - case ignored
         assert_eq!(0, violations.len());
     }
@@ -440,7 +445,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - punctuation correctly removed
         assert_eq!(0, violations.len());
     }
@@ -458,7 +463,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - both fragments are valid
         assert_eq!(0, violations.len());
     }
@@ -473,7 +478,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - custom anchor is valid
         assert_eq!(0, violations.len());
     }
@@ -490,7 +495,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - HTML id is valid
         assert_eq!(0, violations.len());
     }
@@ -507,7 +512,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - HTML name is valid
         assert_eq!(0, violations.len());
     }
@@ -522,7 +527,7 @@ mod test {
         let config = test_config_with_settings(false, "external-.*".to_string());
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - fragment matches ignored pattern
         assert_eq!(0, violations.len());
     }
@@ -540,7 +545,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have 1 violation - L10-L20 is invalid per GitHub spec
         assert_eq!(1, violations.len());
         assert!(violations[0].message().contains("Link fragment 'L10-L20'"));
@@ -558,7 +563,7 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have 2 violations - two invalid fragments
         assert_eq!(2, violations.len());
     }
@@ -578,7 +583,7 @@ Another Heading
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have no violations - both setext headings are valid
         assert_eq!(0, violations.len());
     }
@@ -597,7 +602,7 @@ Another Heading
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        
+
         // Should have 1 violation - only #L should be reported
         // Fragments with spaces and empty fragments are ignored (consistent with markdownlint)
         assert_eq!(1, violations.len());

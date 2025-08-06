@@ -33,19 +33,11 @@ pub struct RuleViolation {
 }
 
 impl RuleViolation {
-    pub fn new(
-        rule: &'static Rule,
-        message: String,
-        file_path: PathBuf,
-        range: Range,
-    ) -> Self {
+    pub fn new(rule: &'static Rule, message: String, file_path: PathBuf, range: Range) -> Self {
         Self {
             rule,
             message,
-            location: Location {
-                file_path,
-                range,
-            },
+            location: Location { file_path, range },
         }
     }
 
@@ -118,7 +110,12 @@ pub struct NodeInfo {
 }
 
 impl Context {
-    pub fn new(file_path: PathBuf, config: QuickmarkConfig, source: &str, root_node: &Node) -> Self {
+    pub fn new(
+        file_path: PathBuf,
+        config: QuickmarkConfig,
+        source: &str,
+        root_node: &Node,
+    ) -> Self {
         let lines: Vec<String> = source.lines().map(String::from).collect();
         let node_cache = Self::build_node_cache(root_node);
 
@@ -154,13 +151,15 @@ impl Context {
         };
 
         // Add to cache for this node type
-        cache.entry(kind_string)
+        cache
+            .entry(kind_string)
             .or_default()
             .push(node_info.clone());
 
         // Add to cache for pattern-based lookups (e.g., all heading types)
         if kind.contains("heading") {
-            cache.entry("*heading*".to_string())
+            cache
+                .entry("*heading*".to_string())
                 .or_default()
                 .push(node_info);
         }
@@ -204,7 +203,9 @@ impl Context {
             }
         }
 
-        best_match.map(|n| n.kind.clone()).unwrap_or_else(|| "text".to_string())
+        best_match
+            .map(|n| n.kind.clone())
+            .unwrap_or_else(|| "text".to_string())
     }
 }
 
@@ -270,11 +271,7 @@ impl MultiRuleLinter {
     /// 4. Making the linter ready for immediate use with `analyze()`
     ///
     /// After calling `analyze()`, this linter instance should be discarded.
-    pub fn new_for_document(
-        file_path: PathBuf,
-        config: QuickmarkConfig,
-        document: &str,
-    ) -> Self {
+    pub fn new_for_document(file_path: PathBuf, config: QuickmarkConfig, document: &str) -> Self {
         // Parse the document immediately
         let mut parser = Parser::new();
         parser
@@ -283,18 +280,17 @@ impl MultiRuleLinter {
         let tree = parser.parse(document, None).expect("Parse failed");
 
         // Create context with pre-initialized cache
-        let context = Rc::new(Context::new(
-            file_path,
-            config,
-            document,
-            &tree.root_node(),
-        ));
+        let context = Rc::new(Context::new(file_path, config, document, &tree.root_node()));
 
         // Create rule linters with fully-initialized context
         let linters = ALL_RULES
             .iter()
             .filter(|r| {
-                context.config.linters.severity.get(r.alias)
+                context
+                    .config
+                    .linters
+                    .severity
+                    .get(r.alias)
                     .map(|severity| *severity != RuleSeverity::Off)
                     .unwrap_or(false)
             })
@@ -329,7 +325,6 @@ impl MultiRuleLinter {
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use std::{collections::HashMap, path::PathBuf};
@@ -343,7 +338,6 @@ mod test {
 
     #[test]
     fn test_multiple_violations() {
-
         let severity: HashMap<_, _> = vec![
             (MD001.alias.to_string(), RuleSeverity::Error),
             (MD003.alias.to_string(), RuleSeverity::Error),
@@ -362,6 +356,8 @@ mod test {
                     line_length: config::MD013LineLengthTable::default(),
                     link_fragments: config::MD051LinkFragmentsTable::default(),
                     reference_links_images: config::MD052ReferenceLinksImagesTable::default(),
+                    link_image_reference_definitions:
+                        config::MD053LinkImageReferenceDefinitionsTable::default(),
                 },
             },
         };

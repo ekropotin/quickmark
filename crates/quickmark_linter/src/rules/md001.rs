@@ -106,7 +106,6 @@ mod test {
         ])
     }
 
-
     #[test]
     fn test_atx_positive() {
         let input = "# Heading level 1

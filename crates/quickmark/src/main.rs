@@ -1,8 +1,8 @@
 use anyhow::Context;
 use clap::Parser;
 use quickmark_config::config_in_path_or_default;
-use quickmark_linter::linter::{MultiRuleLinter, RuleViolation};
 use quickmark_linter::config::{QuickmarkConfig, RuleSeverity};
+use quickmark_linter::linter::{MultiRuleLinter, RuleViolation};
 use std::cmp::min;
 use std::env;
 use std::{fs, path::PathBuf, process::exit};
@@ -73,11 +73,11 @@ fn main() -> anyhow::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::PathBuf;
     use quickmark_linter::config::{HeadingStyle, LintersSettingsTable, MD003HeadingStyleTable};
     use quickmark_linter::linter::{CharPosition, Range};
     use quickmark_linter::rules::{md001::MD001, md003::MD003};
     use quickmark_linter::test_utils::test_helpers::test_config_with_settings;
+    use std::path::PathBuf;
 
     #[test]
     fn test_print_cli_errors() {
@@ -94,14 +94,35 @@ mod tests {
             },
         );
         let range = Range {
-            start: CharPosition { line: 1, character: 1 },
-            end: CharPosition { line: 1, character: 5 },
+            start: CharPosition {
+                line: 1,
+                character: 1,
+            },
+            end: CharPosition {
+                line: 1,
+                character: 5,
+            },
         };
         let file = PathBuf::default();
         let results = vec![
-            RuleViolation::new(&MD001, "all is bad".to_string(), file.clone(), range.clone()),
-            RuleViolation::new(&MD003, "all is even worse".to_string(), file.clone(), range.clone()),
-            RuleViolation::new(&MD003, "all is even worse2".to_string(), file.clone(), range),
+            RuleViolation::new(
+                &MD001,
+                "all is bad".to_string(),
+                file.clone(),
+                range.clone(),
+            ),
+            RuleViolation::new(
+                &MD003,
+                "all is even worse".to_string(),
+                file.clone(),
+                range.clone(),
+            ),
+            RuleViolation::new(
+                &MD003,
+                "all is even worse2".to_string(),
+                file.clone(),
+                range,
+            ),
         ];
 
         let (errs, warns) = print_cli_errors(&results, &config);
