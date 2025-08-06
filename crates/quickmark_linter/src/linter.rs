@@ -354,6 +354,7 @@ mod test {
                         style: config::HeadingStyle::ATX,
                     },
                     line_length: config::MD013LineLengthTable::default(),
+                    multiple_headings: config::MD024MultipleHeadingsTable::default(),
                     link_fragments: config::MD051LinkFragmentsTable::default(),
                     reference_links_images: config::MD052ReferenceLinksImagesTable::default(),
                     link_image_reference_definitions:

@@ -1,7 +1,7 @@
 use anyhow::Result;
 use quickmark_linter::config::{
     normalize_severities, HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
-    MD013LineLengthTable, QuickmarkConfig, RuleSeverity,
+    MD013LineLengthTable, MD024MultipleHeadingsTable, QuickmarkConfig, RuleSeverity,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -107,6 +107,14 @@ struct TomlMD053LinkImageReferenceDefinitionsTable {
 }
 
 #[derive(Deserialize, Default)]
+struct TomlMD024MultipleHeadingsTable {
+    #[serde(default = "default_false")]
+    siblings_only: bool,
+    #[serde(default = "default_false")]
+    allow_different_nesting: bool,
+}
+
+#[derive(Deserialize, Default)]
 struct TomlLintersSettingsTable {
     #[serde(rename = "heading-style")]
     #[serde(default)]
@@ -114,6 +122,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "line-length")]
     #[serde(default)]
     line_length: TomlMD013LineLengthTable,
+    #[serde(rename = "no-duplicate-heading")]
+    #[serde(default)]
+    multiple_headings: TomlMD024MultipleHeadingsTable,
     #[serde(rename = "link-fragments")]
     #[serde(default)]
     link_fragments: TomlMD051LinkFragmentsTable,
@@ -198,6 +209,14 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
                 strict: toml_config.linters.settings.line_length.strict,
                 stern: toml_config.linters.settings.line_length.stern,
             },
+            multiple_headings: MD024MultipleHeadingsTable {
+                siblings_only: toml_config.linters.settings.multiple_headings.siblings_only,
+                allow_different_nesting: toml_config
+                    .linters
+                    .settings
+                    .multiple_headings
+                    .allow_different_nesting,
+            },
             link_fragments: quickmark_linter::config::MD051LinkFragmentsTable {
                 ignore_case: toml_config.linters.settings.link_fragments.ignore_case,
                 ignored_pattern: toml_config.linters.settings.link_fragments.ignored_pattern,
@@ -275,6 +294,7 @@ mod tests {
         heading-increment = 'warn'
         heading-style = 'err'
         line-length = 'err'
+        no-duplicate-heading = 'err'
         link-fragments = 'warn'
         reference-links-images = 'err'
         link-image-reference-definitions = 'warn'
@@ -291,6 +311,10 @@ mod tests {
         tables = false
         strict = true
         stern = false
+
+        [linters.settings.no-duplicate-heading]
+        siblings_only = true
+        allow_different_nesting = false
 
         [linters.settings.link-fragments]
         ignore_case = true
@@ -318,6 +342,10 @@ mod tests {
         assert_eq!(
             RuleSeverity::Error,
             *parsed.linters.severity.get("line-length").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("no-duplicate-heading").unwrap()
         );
         assert_eq!(
             RuleSeverity::Warning,
@@ -358,6 +386,16 @@ mod tests {
         assert!(!parsed.linters.settings.line_length.tables);
         assert!(parsed.linters.settings.line_length.strict);
         assert!(!parsed.linters.settings.line_length.stern);
+
+        // Test MD024 (no-duplicate-heading) settings
+        assert!(parsed.linters.settings.multiple_headings.siblings_only);
+        assert!(
+            !parsed
+                .linters
+                .settings
+                .multiple_headings
+                .allow_different_nesting
+        );
 
         // Test MD051 (link-fragments) settings
         assert!(parsed.linters.settings.link_fragments.ignore_case);
