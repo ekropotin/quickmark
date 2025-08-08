@@ -23,7 +23,7 @@ fn test_sample_path(filename: &str) -> String {
 /// Test the CLI with a file that has no MD001 violations but has MD003 violations
 #[test]
 fn test_cli_no_md001_violations() {
-    let mut cmd = Command::cargo_bin("quickmark").unwrap();
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
     cmd.arg(test_sample_path("test_md001_valid.md"));
 
     cmd.assert()
@@ -38,7 +38,7 @@ fn test_cli_no_md001_violations() {
 /// Test the CLI with a file that has MD001 violations
 #[test]
 fn test_cli_md001_violations() {
-    let mut cmd = Command::cargo_bin("quickmark").unwrap();
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
     cmd.arg(test_sample_path("test_md001_violations.md"));
 
     cmd.assert()
@@ -53,7 +53,7 @@ fn test_cli_md001_violations() {
 /// Test the CLI with a file that has MD003 violations
 #[test]
 fn test_cli_md003_violations() {
-    let mut cmd = Command::cargo_bin("quickmark").unwrap();
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
     cmd.arg(test_sample_path("test_md003_mixed_styles.md"));
 
     cmd.assert()
@@ -68,7 +68,7 @@ fn test_cli_md003_violations() {
 /// Test the CLI with a comprehensive file that triggers all rules
 #[test]
 fn test_cli_all_rules_violations() {
-    let mut cmd = Command::cargo_bin("quickmark").unwrap();
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
     cmd.arg(test_sample_path("test_all_rules_violations.md"));
 
     cmd.assert()
@@ -85,7 +85,7 @@ fn test_cli_all_rules_violations() {
 /// Test the CLI with a non-existent file
 #[test]
 fn test_cli_nonexistent_file() {
-    let mut cmd = Command::cargo_bin("quickmark").unwrap();
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
     cmd.arg("nonexistent_file.md");
 
     cmd.assert()
@@ -96,7 +96,7 @@ fn test_cli_nonexistent_file() {
 /// Test CLI error output format
 #[test]
 fn test_cli_error_format() {
-    let mut cmd = Command::cargo_bin("quickmark").unwrap();
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
     cmd.arg(test_sample_path("test_md001_violations.md"));
 
     let output = cmd.assert().failure().get_output().clone();
@@ -138,7 +138,7 @@ style = 'atx'
     let config_file = temp_dir.child("quickmark.toml");
     config_file.write_str(config_content).unwrap();
 
-    let mut cmd = Command::cargo_bin("quickmark").unwrap();
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
     cmd.current_dir(temp_dir.path())
         .arg(test_sample_path("test_md003_mixed_styles.md"));
 
@@ -155,7 +155,7 @@ style = 'atx'
 /// Test that line numbers are 1-based in CLI output
 #[test]
 fn test_cli_line_numbers_are_one_based() {
-    let mut cmd = Command::cargo_bin("quickmark").unwrap();
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
     cmd.arg(test_sample_path("test_md001_violations.md"));
 
     let output = cmd.assert().failure().get_output().clone();
@@ -203,7 +203,7 @@ style = 'consistent'
     let config_file = temp_dir.child("quickmark.toml");
     config_file.write_str(config_content).unwrap();
 
-    let mut cmd = Command::cargo_bin("quickmark").unwrap();
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
     cmd.current_dir(temp_dir.path())
         .arg(test_sample_path("test_all_rules_violations.md"));
 
@@ -223,7 +223,7 @@ style = 'consistent'
 /// Test CLI with ATX-only style configuration
 #[test]
 fn test_cli_atx_only_file() {
-    let mut cmd = Command::cargo_bin("quickmark").unwrap();
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
     cmd.arg(test_sample_path("test_md003_atx_only.md"));
 
     cmd.assert()
@@ -235,7 +235,7 @@ fn test_cli_atx_only_file() {
 /// Test CLI with setext-only style file
 #[test]
 fn test_cli_setext_only_file() {
-    let mut cmd = Command::cargo_bin("quickmark").unwrap();
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
     cmd.arg(test_sample_path("test_md003_setext_only.md"));
 
     cmd.assert()
@@ -247,7 +247,7 @@ fn test_cli_setext_only_file() {
 /// Test CLI with ATX-closed style file
 #[test]
 fn test_cli_atx_closed_file() {
-    let mut cmd = Command::cargo_bin("quickmark").unwrap();
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
     cmd.arg(test_sample_path("test_md003_atx_closed.md"));
 
     cmd.assert()
@@ -259,7 +259,7 @@ fn test_cli_atx_closed_file() {
 /// Test CLI with setext-atx violations file
 #[test]
 fn test_cli_setext_atx_violations() {
-    let mut cmd = Command::cargo_bin("quickmark").unwrap();
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
     cmd.arg(test_sample_path("test_md003_setext_atx_violations.md"));
 
     cmd.assert()
@@ -288,7 +288,7 @@ style = 'setext_with_atx'
     let config_file = temp_dir.child("quickmark.toml");
     config_file.write_str(config_content).unwrap();
 
-    let mut cmd = Command::cargo_bin("quickmark").unwrap();
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
     cmd.current_dir(temp_dir.path())
         .arg(test_sample_path("test_md003_setext_atx_violations.md"));
 

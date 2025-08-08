@@ -1,0 +1,57 @@
+name: 📖 Story
+description: Request a new feature or enhancement
+title: "[Story] "
+labels: ["type: story", "status: triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to request a new feature! Please fill out the information below.
+
+  - type: textarea
+    id: user-story
+    attributes:
+      label: User Story
+      description: Describe the feature from a user perspective
+      placeholder: "As a [user type], I want [goal] so that [benefit]"
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Define what needs to be done for this story to be complete
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] Criterion 3
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context, mockups, or examples about the feature request
+      placeholder: Screenshots, links to documentation, examples, etc.
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature?
+      options:
+        - Low
+        - Medium
+        - High
+      default: 1
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our Code of Conduct
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true

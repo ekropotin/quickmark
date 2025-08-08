@@ -3,6 +3,10 @@ name = "quickmark"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "qmark"
+path = "src/main.rs"
+
 [dependencies]
 anyhow = "1.0.86"
 clap = { version = "4.5.4", features = ["derive"] }

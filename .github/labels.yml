@@ -1,0 +1,59 @@
+# Issue Types
+- name: "type: story"
+  color: "0E8A16"
+  description: "New feature or enhancement"
+
+- name: "type: bug"
+  color: "D73A49"
+  description: "Something isn't working"
+
+- name: "type: spike"
+  color: "7057FF"
+  description: "Research or investigation task"
+
+# Status Labels
+- name: "status: triage"
+  color: "FBCA04"
+  description: "Needs review and prioritization"
+
+- name: "status: ready"
+  color: "0052CC"
+  description: "Ready for development"
+
+- name: "status: in-progress"
+  color: "1D76DB"
+  description: "Currently being worked on"
+
+- name: "status: review"
+  color: "8B5FBF"
+  description: "Implementation complete, awaiting review"
+
+- name: "status: done"
+  color: "0E8A16"
+  description: "Completed and closed"
+
+# Priority Labels (Optional)
+- name: "priority: high"
+  color: "B60205"
+  description: "High priority"
+
+- name: "priority: low"
+  color: "E4E669"
+  description: "Low priority"
+
+# Component Labels (Optional - for larger projects)
+- name: "component: core"
+  color: "C2E0C6"
+  description: "Core linting engine"
+
+- name: "component: cli"
+  color: "C2E0C6"
+  description: "Command line interface"
+
+- name: "component: config"
+  color: "C2E0C6"
+  description: "Configuration system"
+
+- name: "component: rules"
+  color: "C2E0C6"
+  description: "Linting rules"
