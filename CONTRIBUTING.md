@@ -38,9 +38,21 @@ If you'd like to contribute code to QuickMark, please follow these steps:
 
 3. **Create a Branch**
 
+Use descriptive branch names that include the issue number:
+
+**Format:** `type/issue-number-short-description`
+
+- `feature/123-add-md025-rule` - New features
+- `fix/456-line-ending-detection` - Bug fixes
+- `docs/789-update-contributing-guide` - Documentation changes
+- `chore/101-update-dependencies` - Maintenance tasks
+- `refactor/202-rule-system-cleanup` - Code improvements
+
 ```sh
-git checkout -b feature-or-bugfix-description
+git checkout -b feature/123-your-feature-name
 ```
+
+If working on something without an existing issue, please create one first to get an issue number.
 
 4. **Make Changes**
 
@@ -51,9 +63,26 @@ git checkout -b feature-or-bugfix-description
 
 5. **Commit Changes**
 
+Follow the [Conventional Commits](https://www.conventionalcommits.org/) standard for commit messages:
+
+**Format:** `type(scope): description`
+
+Examples:
+- `feat(md025): add single H1 rule implementation`
+- `fix(parser): handle edge case in heading detection`
+- `docs(contributing): update branch naming guidelines`
+- `test(md013): add comprehensive line length tests`
+
+If your commit relates to a specific issue, include `Fixes #123` in the commit body:
+
 ```sh
 git add .
-git commit -m "Description of changes"
+git commit -m "feat(md025): add single H1 rule implementation
+
+Implements the MD025 rule that ensures documents have only one H1 heading.
+Includes comprehensive tests and documentation.
+
+Fixes #123"
 ```
 
 6. **Push to Your Fork**

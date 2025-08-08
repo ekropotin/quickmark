@@ -275,3 +275,34 @@ This architecture allows rules like MD013 to work efficiently with raw text whil
 1. **Cover edge cases**: And performance regressions.
 2. **Use `#[should_panic]`**: Where panics are expected.
 3. **Prefer property-based testing**: Use `proptest` or fuzzing where inputs are highly variable.
+
+# Git and Commit Guidelines
+
+## Branch Naming and Workflow
+
+Follow the branch naming conventions defined in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Commit Messages
+
+When working on a branch that follows the naming convention, always include the issue reference in commit messages:
+
+**If the branch name contains an issue number** (e.g., `feature/123-add-rule`), include `fixes #123` in the commit message to automatically link and close the issue when merged.
+
+**Format:**
+```
+Brief description of changes
+
+Longer explanation if needed.
+
+Fixes #123
+```
+
+**Example:**
+```
+Add MD025 single H1 rule implementation
+
+Implements the MD025 rule that ensures documents have only one H1 heading.
+Includes comprehensive tests and documentation.
+
+Fixes #123
+```

@@ -1,0 +1,37 @@
+#!/bin/sh
+# Pre-push hook to enforce branch naming conventions
+# Format: type/issue-number-description
+# Types: feature, fix, docs, chore, refactor
+
+set -e
+
+protected_branches='main|dev'
+branch_pattern='^(feature|fix|docs|chore|refactor)/[0-9]+-[a-z0-9-]+$'
+
+current_branch=$(git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,')
+
+# Skip check for protected branches
+if [[ "$current_branch" =~ $protected_branches ]]; then
+    exit 0
+fi
+
+# Check if branch name follows convention
+if [[ ! "$current_branch" =~ $branch_pattern ]]; then
+    echo "❌ Branch name '$current_branch' does not follow naming convention"
+    echo ""
+    echo "Required format: type/issue-number-description"
+    echo ""
+    echo "Valid types: feature, fix, docs, chore, refactor"
+    echo "Examples:"
+    echo "  - feature/123-add-md025-rule"
+    echo "  - fix/456-line-ending-detection"
+    echo "  - docs/789-update-contributing-guide"
+    echo "  - chore/101-update-dependencies"
+    echo "  - refactor/202-rule-system-cleanup"
+    echo ""
+    echo "Please rename your branch or create an issue first if needed."
+    exit 1
+fi
+
+echo "✅ Branch name follows convention: $current_branch"
+exit 0

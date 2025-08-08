@@ -8,7 +8,7 @@ on:
   issues:
     types: [opened, closed, reopened]
   pull_request:
-    types: [opened, closed, converted_to_draft, ready_for_review, reopened]
+    types: [closed]
 
 jobs:
   manage-issue-status:
@@ -31,54 +31,6 @@ jobs:
               });
             }
 
-  manage-pr-status:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - name: Update PR status labels
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const pr = context.payload.pull_request;
-            const action = context.payload.action;
-            // Get current labels
-            const currentLabels = pr.labels.map(label => label.name);
-            const statusLabels = currentLabels.filter(label => label.startsWith('status:'));
-            let newLabel = '';
-            switch (action) {
-              case 'opened':
-              case 'reopened':
-                newLabel = pr.draft ? 'status: in-progress' : 'status: review';
-                break;
-              case 'converted_to_draft':
-                newLabel = 'status: in-progress';
-                break;
-              case 'ready_for_review':
-                newLabel = 'status: review';
-                break;
-              case 'closed':
-                newLabel = pr.merged ? 'status: done' : null;
-                break;
-            }
-
-            if (newLabel) {
-              // Remove existing status labels
-              if (statusLabels.length > 0) {
-                await github.rest.issues.removeLabel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: pr.number,
-                  name: statusLabels[0]
-                });
-              }
-              // Add new status label
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr.number,
-                labels: [newLabel]
-              });
-            }
 
   manage-linked-issues:
     runs-on: ubuntu-latest
