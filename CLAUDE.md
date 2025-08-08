@@ -48,7 +48,7 @@ quickmark/
 - **Build all crates**: `cargo build`
 - **Build release**: `cargo build --release`
 - **Run tests**: `cargo test`
-- **Run CLI linter**: `cargo run --bin quickmark -- /path/to/file.md`
+- **Run CLI linter**: `cargo run --bin qmark -- /path/to/file.md`
 - **Run server**: `cargo run --bin quickmark_server`
 
 ### Configuration

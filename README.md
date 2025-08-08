@@ -28,14 +28,14 @@ cd quickmark
 cargo build --release
 ```
 
-This command will generate the `quickmark` binary in the `./target/release` directory.
+This command will generate the `qmark` binary in the `./target/release` directory.
 
 ### Usage
 
 Lint a single file:
 
 ```shell
-quickmark /path/to/file.md
+qmark /path/to/file.md
 ```
 
 ### Configuration

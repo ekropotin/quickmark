@@ -1,0 +1,88 @@
+name: 🔍 Spike
+description: Research or investigation task
+title: "[Spike] "
+labels: ["type: spike", "status: triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for proposing a research spike! Please provide details about what needs to be investigated.
+
+  - type: textarea
+    id: research-question
+    attributes:
+      label: Research Question
+      description: What question or problem needs investigation?
+      placeholder: What specific question or technical challenge needs to be researched?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context & Background
+      description: Why is this research needed? What's the current situation?
+      placeholder: Provide background on why this investigation is necessary
+    validations:
+      required: true
+
+  - type: textarea
+    id: success-criteria
+    attributes:
+      label: Success Criteria
+      description: What would constitute a successful outcome for this spike?
+      placeholder: |
+        - [ ] Research findings documented
+        - [ ] Recommendations provided
+        - [ ] Technical feasibility assessed
+        - [ ] Next steps identified
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What should be included/excluded from this investigation?
+      placeholder: |
+        **In Scope:**
+        - Item 1
+        - Item 2
+        
+        **Out of Scope:**
+        - Item 1
+        - Item 2
+
+  - type: input
+    id: timebox
+    attributes:
+      label: Time Box
+      description: How much time should be allocated to this research?
+      placeholder: e.g., 4 hours, 1 day, 1 week
+
+  - type: textarea
+    id: deliverables
+    attributes:
+      label: Expected Deliverables
+      description: What artifacts should be produced?
+      placeholder: |
+        - Research summary document
+        - Proof of concept code
+        - Performance benchmarks
+        - Recommendation for next steps
+
+  - type: textarea
+    id: resources
+    attributes:
+      label: Resources & References
+      description: Any relevant links, documentation, or resources
+      placeholder: Links to relevant documentation, similar projects, papers, etc.
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our Code of Conduct
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
