@@ -1,5 +1,8 @@
 name: Issue Management
 
+permissions:
+  issues: write
+
 on:
   issues:
     types: [opened, closed, reopened]
