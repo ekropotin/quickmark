@@ -1,9 +1,11 @@
 [package]
 name = "quickmark_server"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 
 [dependencies]
 anyhow = "1.0.86"
 quickmark_config = { path = "../quickmark_config" }
 quickmark_linter = { path = "../quickmark_linter" }
+tower-lsp = "0.20.0"
+tokio = { version = "1.0", features = ["full"] }
