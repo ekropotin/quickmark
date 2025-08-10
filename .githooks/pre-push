@@ -8,7 +8,7 @@ set -e
 protected_branches='main|dev'
 branch_pattern='^(feature|fix|docs|chore|refactor)/[0-9]+-[a-z0-9-]+$'
 
-current_branch=$(git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,')
+current_branch=$(git branch --show-current)
 
 # Skip check for protected branches
 if [[ "$current_branch" =~ $protected_branches ]]; then

@@ -1,0 +1,15 @@
+{
+  "jsonrpc": "2.0",
+  "method": "textDocument/didChange",
+  "params": {
+    "contentChanges": [
+      {
+        "text": "# Test Document Updated\n\nThis is a test markdown document for QuickMark LSP testing.\n\n## Section 1\n\nSome content here with additional text.\n\n## Section 2\n\nMore content with changes.\n\n### Subsection\n\nNew subsection added.\n"
+      }
+    ],
+    "textDocument": {
+      "uri": "file:///home/ekropotin/sources/quickmark/test.md",
+      "version": 3
+    }
+  }
+}

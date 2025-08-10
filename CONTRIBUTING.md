@@ -36,7 +36,15 @@ If you'd like to contribute code to QuickMark, please follow these steps:
    cd quickmark
    ```
 
-3. **Create a Branch**
+3. **Set Up Git Hooks**
+
+   Configure git to use our custom hooks for branch name enforcement:
+
+   ```sh
+   git config --local core.hooksPath .githooks
+   ```
+
+4. **Create a Branch**
 
 Use descriptive branch names that include the issue number:
 

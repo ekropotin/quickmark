@@ -1,0 +1,54 @@
+{
+  "id": 1,
+  "jsonrpc": "2.0",
+  "method": "initialize",
+  "params": {
+    "capabilities": {
+      "textDocument": {
+        "completion": {
+          "completionItem": {
+            "snippetSupport": true
+          }
+        },
+        "diagnostic": {
+          "dynamicRegistration": true
+        },
+        "hover": {
+          "contentFormat": [
+            "markdown",
+            "plaintext"
+          ]
+        },
+        "publishDiagnostics": {
+          "relatedInformation": true,
+          "versionSupport": true
+        },
+        "synchronization": {
+          "dynamicRegistration": true,
+          "willSave": true,
+          "willSaveWaitUntil": true
+        }
+      },
+      "workspace": {
+        "configuration": true,
+        "didChangeConfiguration": {
+          "dynamicRegistration": true
+        },
+        "workspaceFolders": true
+      }
+    },
+    "clientInfo": {
+      "name": "Neovim",
+      "version": "0.10.0"
+    },
+    "processId": 12345,
+    "rootPath": "/home/ekropotin/sources/quickmark",
+    "rootUri": "file:///home/ekropotin/sources/quickmark",
+    "workspaceFolders": [
+      {
+        "name": "quickmark",
+        "uri": "file:///home/ekropotin/sources/quickmark"
+      }
+    ]
+  }
+}
