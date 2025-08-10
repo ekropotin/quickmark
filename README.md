@@ -85,7 +85,7 @@ ignored_definitions = ["//"]
 
 ## Rules
 
-**Implementation Progress: 7/48 rules completed (14.6%)**
+**Implementation Progress: 8/48 rules completed (16.7%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -115,7 +115,7 @@ ignored_definitions = ["//"]
 - [ ] **MD031** *blanks-around-fences* - Fenced code blocks surrounded by blank lines
 - [ ] **MD032** *blanks-around-lists* - Lists surrounded by blank lines
 - [ ] **MD033** *no-inline-html* - Inline HTML usage
-- [ ] **MD034** *no-bare-urls* - Bare URLs without proper formatting
+- [x] **[MD034](docs/rules/md034.md)** *no-bare-urls* - Bare URLs without proper formatting
 - [ ] **MD035** *hr-style* - Horizontal rule style consistency
 - [ ] **MD036** *no-emphasis-as-heading* - Emphasis used instead of heading
 - [ ] **MD037** *no-space-in-emphasis* - Spaces inside emphasis markers
