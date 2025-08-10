@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.86"
+linkify = "0.10"
 once_cell = "1.19"
 regex = "1.0"
 tree-sitter = "0.25.6"

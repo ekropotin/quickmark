@@ -294,6 +294,7 @@ mod tests {
         heading-increment = 'warn'
         heading-style = 'err'
         line-length = 'err'
+        no-bare-urls = 'err'
         no-duplicate-heading = 'err'
         link-fragments = 'warn'
         reference-links-images = 'err'
@@ -342,6 +343,10 @@ mod tests {
         assert_eq!(
             RuleSeverity::Error,
             *parsed.linters.severity.get("line-length").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("no-bare-urls").unwrap()
         );
         assert_eq!(
             RuleSeverity::Error,
