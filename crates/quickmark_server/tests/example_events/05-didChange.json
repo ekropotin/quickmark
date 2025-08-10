@@ -1,0 +1,25 @@
+{
+  "jsonrpc": "2.0",
+  "method": "textDocument/didChange",
+  "params": {
+    "contentChanges": [
+      {
+        "range": {
+          "end": {
+            "character": 15,
+            "line": 0
+          },
+          "start": {
+            "character": 0,
+            "line": 0
+          }
+        },
+        "text": "# Test Document Updated"
+      }
+    ],
+    "textDocument": {
+      "uri": "file:///home/ekropotin/sources/quickmark/test.md",
+      "version": 2
+    }
+  }
+}

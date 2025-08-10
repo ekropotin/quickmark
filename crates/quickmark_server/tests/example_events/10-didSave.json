@@ -1,0 +1,9 @@
+{
+  "jsonrpc": "2.0",
+  "method": "textDocument/didSave",
+  "params": {
+    "textDocument": {
+      "uri": "file:///home/ekropotin/sources/quickmark/test.md"
+    }
+  }
+}
