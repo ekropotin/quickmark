@@ -1,0 +1,17 @@
+# QuickMark configuration for testing MD031 with list_items disabled
+
+[linters.settings.blanks-around-fences]
+list_items = false
+
+# Enable only MD031 for focused testing  
+[linters.severity]
+heading-increment = "off"
+heading-style = "off"
+line-length = "off"
+blanks-around-headings = "off"
+blanks-around-fences = "error"
+no-duplicate-heading = "off"
+link-fragments = "off"
+reference-links-images = "off"
+link-image-reference-definitions = "off"
+no-bare-urls = "off"

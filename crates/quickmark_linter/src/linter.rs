@@ -355,6 +355,7 @@ mod test {
                     },
                     line_length: config::MD013LineLengthTable::default(),
                     headings_blanks: config::MD022HeadingsBlanksTable::default(),
+                    fenced_code_blanks: config::MD031FencedCodeBlanksTable::default(),
                     multiple_headings: config::MD024MultipleHeadingsTable::default(),
                     link_fragments: config::MD051LinkFragmentsTable::default(),
                     reference_links_images: config::MD052ReferenceLinksImagesTable::default(),
