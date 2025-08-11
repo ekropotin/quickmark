@@ -336,7 +336,7 @@ mod tests {
         heading-increment = 'warn'
         heading-style = 'err'
         line-length = 'err'
-        no-missing-space-atx = 'err'
+        no-missing-space-closed-atx = 'err'
         no-bare-urls = 'err'
         no-duplicate-heading = 'err'
         no-multiple-space-atx = 'warn'
@@ -397,7 +397,11 @@ mod tests {
         );
         assert_eq!(
             RuleSeverity::Error,
-            *parsed.linters.severity.get("no-missing-space-atx").unwrap()
+            *parsed
+                .linters
+                .severity
+                .get("no-missing-space-closed-atx")
+                .unwrap()
         );
         assert_eq!(
             RuleSeverity::Error,
