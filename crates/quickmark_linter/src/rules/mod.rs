@@ -5,6 +5,7 @@ use crate::linter::{Context, RuleLinter};
 pub mod md001;
 pub mod md003;
 pub mod md013;
+pub mod md022;
 pub mod md024;
 pub mod md034;
 pub mod md051;
@@ -19,6 +20,8 @@ pub enum RuleType {
     Token,
     /// Rules that require full document analysis (e.g., duplicate headings, cross-references)
     Document,
+    /// Rules that need both AST nodes and line context (blank line spacing around elements)
+    Hybrid,
 }
 
 #[derive(Debug)]
@@ -36,6 +39,7 @@ pub const ALL_RULES: &[Rule] = &[
     md001::MD001,
     md003::MD003,
     md013::MD013,
+    md022::MD022,
     md024::MD024,
     md034::MD034,
     md051::MD051,

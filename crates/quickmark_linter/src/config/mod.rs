@@ -99,10 +99,26 @@ pub struct MD024MultipleHeadingsTable {
     pub allow_different_nesting: bool,
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub struct MD022HeadingsBlanksTable {
+    pub lines_above: Vec<i32>,
+    pub lines_below: Vec<i32>,
+}
+
+impl Default for MD022HeadingsBlanksTable {
+    fn default() -> Self {
+        Self {
+            lines_above: vec![1],
+            lines_below: vec![1],
+        }
+    }
+}
+
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct LintersSettingsTable {
     pub heading_style: MD003HeadingStyleTable,
     pub line_length: MD013LineLengthTable,
+    pub headings_blanks: MD022HeadingsBlanksTable,
     pub multiple_headings: MD024MultipleHeadingsTable,
     pub link_fragments: MD051LinkFragmentsTable,
     pub reference_links_images: MD052ReferenceLinksImagesTable,
@@ -148,8 +164,9 @@ mod test {
 
     use crate::config::{
         HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
-        MD013LineLengthTable, MD024MultipleHeadingsTable, MD051LinkFragmentsTable,
-        MD052ReferenceLinksImagesTable, MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
+        MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable,
+        MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
+        MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -206,6 +223,7 @@ mod test {
                     style: HeadingStyle::ATX,
                 },
                 line_length: MD013LineLengthTable::default(),
+                headings_blanks: MD022HeadingsBlanksTable::default(),
                 multiple_headings: MD024MultipleHeadingsTable::default(),
                 link_fragments: MD051LinkFragmentsTable::default(),
                 reference_links_images: MD052ReferenceLinksImagesTable::default(),
