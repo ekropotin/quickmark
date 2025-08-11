@@ -340,6 +340,7 @@ mod tests {
         no-bare-urls = 'err'
         no-duplicate-heading = 'err'
         no-multiple-space-atx = 'warn'
+        no-multiple-space-closed-atx = 'err'
         link-fragments = 'warn'
         reference-links-images = 'err'
         link-image-reference-definitions = 'warn'
@@ -417,6 +418,14 @@ mod tests {
                 .linters
                 .severity
                 .get("no-multiple-space-atx")
+                .unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed
+                .linters
+                .severity
+                .get("no-multiple-space-closed-atx")
                 .unwrap()
         );
         assert_eq!(
