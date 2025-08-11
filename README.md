@@ -50,6 +50,7 @@ Below is a full configuration with default values:
 heading-increment = 'err'
 heading-style = 'err'
 line-length = 'err'
+blanks-around-headings = 'err'
 no-duplicate-heading = 'err'
 link-fragments = 'warn'
 reference-links-images = 'err'
@@ -66,6 +67,10 @@ headings = true
 tables = true
 strict = false
 stern = false
+
+[linters.settings.blanks-around-headings]
+lines_above = [1]
+lines_below = [1]
 
 [linters.settings.no-duplicate-heading]
 siblings_only = false
@@ -85,7 +90,7 @@ ignored_definitions = ["//"]
 
 ## Rules
 
-**Implementation Progress: 8/48 rules completed (16.7%)**
+**Implementation Progress: 9/48 rules completed (18.8%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -103,7 +108,7 @@ ignored_definitions = ["//"]
 - [ ] **MD019** *no-multiple-space-atx* - Multiple spaces after hash in ATX headings
 - [ ] **MD020** *no-missing-space-closed-atx* - Space inside closed ATX headings
 - [ ] **MD021** *no-multiple-space-closed-atx* - Multiple spaces in closed ATX headings
-- [ ] **MD022** *blanks-around-headings* - Headings surrounded by blank lines
+- [x] **[MD022](docs/rules/md022.md)** *blanks-around-headings* - Headings surrounded by blank lines
 - [ ] **MD023** *heading-start-left* - Headings start at beginning of line
 - [x] **[MD024](docs/rules/md024.md)** *no-duplicate-heading* - Multiple headings with same content
 - [ ] **MD025** *single-title* - Multiple top-level headings

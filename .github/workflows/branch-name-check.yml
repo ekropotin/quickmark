@@ -7,12 +7,13 @@ on:
     branches-ignore:
       - main
       - dev
+      - development
 
 jobs:
   check-branch-name:
     runs-on: ubuntu-latest
     name: Validate branch naming convention
-    
+
     steps:
       - name: Check branch name
         run: |
@@ -22,19 +23,19 @@ jobs:
           else
             branch="${{ github.ref_name }}"
           fi
-          
+
           echo "Checking branch: $branch"
-          
+
           # Skip protected branches
           if [[ "$branch" == "main" || "$branch" == "dev" ]]; then
             echo "✅ Branch '$branch' is a protected branch, skipping validation"
             exit 0
           fi
-          
+
           # Define the pattern for branch naming convention
           # Format: type/issue-number-description
           pattern='^(feature|fix|docs|chore|refactor)/[0-9]+-[a-z0-9-]+$'
-          
+
           # Check if branch name matches the pattern
           if [[ ! "$branch" =~ $pattern ]]; then
             echo "❌ Branch name '$branch' does not follow naming convention"
@@ -52,5 +53,5 @@ jobs:
             echo "Please rename your branch to follow the convention."
             exit 1
           fi
-          
+
           echo "✅ Branch name '$branch' follows the naming convention"

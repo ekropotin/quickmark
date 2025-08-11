@@ -1,7 +1,8 @@
 use anyhow::Result;
 use quickmark_linter::config::{
     normalize_severities, HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
-    MD013LineLengthTable, MD024MultipleHeadingsTable, QuickmarkConfig, RuleSeverity,
+    MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable, QuickmarkConfig,
+    RuleSeverity,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -114,6 +115,18 @@ struct TomlMD024MultipleHeadingsTable {
     allow_different_nesting: bool,
 }
 
+fn default_lines_config() -> Vec<i32> {
+    vec![1]
+}
+
+#[derive(Deserialize, Default)]
+struct TomlMD022HeadingsBlanksTable {
+    #[serde(default = "default_lines_config")]
+    lines_above: Vec<i32>,
+    #[serde(default = "default_lines_config")]
+    lines_below: Vec<i32>,
+}
+
 #[derive(Deserialize, Default)]
 struct TomlLintersSettingsTable {
     #[serde(rename = "heading-style")]
@@ -122,6 +135,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "line-length")]
     #[serde(default)]
     line_length: TomlMD013LineLengthTable,
+    #[serde(rename = "blanks-around-headings")]
+    #[serde(default)]
+    headings_blanks: TomlMD022HeadingsBlanksTable,
     #[serde(rename = "no-duplicate-heading")]
     #[serde(default)]
     multiple_headings: TomlMD024MultipleHeadingsTable,
@@ -208,6 +224,10 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
                 tables: toml_config.linters.settings.line_length.tables,
                 strict: toml_config.linters.settings.line_length.strict,
                 stern: toml_config.linters.settings.line_length.stern,
+            },
+            headings_blanks: MD022HeadingsBlanksTable {
+                lines_above: toml_config.linters.settings.headings_blanks.lines_above,
+                lines_below: toml_config.linters.settings.headings_blanks.lines_below,
             },
             multiple_headings: MD024MultipleHeadingsTable {
                 siblings_only: toml_config.linters.settings.multiple_headings.siblings_only,
@@ -313,6 +333,10 @@ mod tests {
         strict = true
         stern = false
 
+        [linters.settings.blanks-around-headings]
+        lines_above = [1, 2, 0]
+        lines_below = [1, 1, 2]
+
         [linters.settings.no-duplicate-heading]
         siblings_only = true
         allow_different_nesting = false
@@ -391,6 +415,16 @@ mod tests {
         assert!(!parsed.linters.settings.line_length.tables);
         assert!(parsed.linters.settings.line_length.strict);
         assert!(!parsed.linters.settings.line_length.stern);
+
+        // Test MD022 (blanks-around-headings) settings
+        assert_eq!(
+            vec![1, 2, 0],
+            parsed.linters.settings.headings_blanks.lines_above
+        );
+        assert_eq!(
+            vec![1, 1, 2],
+            parsed.linters.settings.headings_blanks.lines_below
+        );
 
         // Test MD024 (no-duplicate-heading) settings
         assert!(parsed.linters.settings.multiple_headings.siblings_only);
