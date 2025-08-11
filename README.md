@@ -53,6 +53,7 @@ line-length = 'err'
 no-missing-space-atx = 'err'
 no-missing-space-closed-atx = 'err'
 no-multiple-space-atx = 'err'
+no-multiple-space-closed-atx = 'err'
 blanks-around-headings = 'err'
 blanks-around-fences = 'err'
 blanks-around-lists = 'err'
@@ -115,7 +116,7 @@ ignored_definitions = ["//"]
 - [x] **[MD018](docs/rules/md018.md)** *no-missing-space-atx* - Space after hash in ATX headings
 - [x] **[MD019](docs/rules/md019.md)** *no-multiple-space-atx* - Multiple spaces after hash in ATX headings
 - [x] **[MD020](docs/rules/md020.md)** *no-missing-space-closed-atx* - Space inside closed ATX headings
-- [ ] **MD021** *no-multiple-space-closed-atx* - Multiple spaces in closed ATX headings
+- [x] **[MD021](docs/rules/md021.md)** *no-multiple-space-closed-atx* - Multiple spaces in closed ATX headings
 - [x] **[MD022](docs/rules/md022.md)** *blanks-around-headings* - Headings surrounded by blank lines
 - [ ] **MD023** *heading-start-left* - Headings start at beginning of line
 - [x] **[MD024](docs/rules/md024.md)** *no-duplicate-heading* - Multiple headings with same content
