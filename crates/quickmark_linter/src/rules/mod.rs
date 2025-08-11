@@ -5,6 +5,7 @@ use crate::linter::{Context, RuleLinter};
 pub mod md001;
 pub mod md003;
 pub mod md013;
+pub mod md018;
 pub mod md022;
 pub mod md024;
 pub mod md031;
@@ -41,6 +42,7 @@ pub const ALL_RULES: &[Rule] = &[
     md001::MD001,
     md003::MD003,
     md013::MD013,
+    md018::MD018,
     md022::MD022,
     md024::MD024,
     md031::MD031,
