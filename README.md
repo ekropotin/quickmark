@@ -52,6 +52,7 @@ heading-style = 'err'
 line-length = 'err'
 blanks-around-headings = 'err'
 blanks-around-fences = 'err'
+blanks-around-lists = 'err'
 no-duplicate-heading = 'err'
 link-fragments = 'warn'
 reference-links-images = 'err'
@@ -94,7 +95,7 @@ ignored_definitions = ["//"]
 
 ## Rules
 
-**Implementation Progress: 10/48 rules completed (20.8%)**
+**Implementation Progress: 11/48 rules completed (22.9%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -122,7 +123,7 @@ ignored_definitions = ["//"]
 - [ ] **MD029** *ol-prefix* - Ordered list item prefix consistency
 - [ ] **MD030** *list-marker-space* - Spaces after list markers
 - [x] **[MD031](docs/rules/md031.md)** *blanks-around-fences* - Fenced code blocks surrounded by blank lines
-- [ ] **MD032** *blanks-around-lists* - Lists surrounded by blank lines
+- [x] **[MD032](docs/rules/md032.md)** *blanks-around-lists* - Lists surrounded by blank lines
 - [ ] **MD033** *no-inline-html* - Inline HTML usage
 - [x] **[MD034](docs/rules/md034.md)** *no-bare-urls* - Bare URLs without proper formatting
 - [ ] **MD035** *hr-style* - Horizontal rule style consistency
