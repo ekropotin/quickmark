@@ -51,6 +51,7 @@ heading-increment = 'err'
 heading-style = 'err'
 line-length = 'err'
 no-missing-space-atx = 'err'
+no-multiple-space-atx = 'err'
 blanks-around-headings = 'err'
 blanks-around-fences = 'err'
 blanks-around-lists = 'err'
@@ -96,7 +97,7 @@ ignored_definitions = ["//"]
 
 ## Rules
 
-**Implementation Progress: 12/48 rules completed (25.0%)**
+**Implementation Progress: 13/48 rules completed (27.1%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -111,7 +112,7 @@ ignored_definitions = ["//"]
 - [x] **[MD013](docs/rules/md013.md)** *line-length* - Line length limits with configurable exceptions
 - [ ] **MD014** *commands-show-output* - Dollar signs before shell commands
 - [x] **[MD018](docs/rules/md018.md)** *no-missing-space-atx* - Space after hash in ATX headings
-- [ ] **MD019** *no-multiple-space-atx* - Multiple spaces after hash in ATX headings
+- [x] **[MD019](docs/rules/md019.md)** *no-multiple-space-atx* - Multiple spaces after hash in ATX headings
 - [ ] **MD020** *no-missing-space-closed-atx* - Space inside closed ATX headings
 - [ ] **MD021** *no-multiple-space-closed-atx* - Multiple spaces in closed ATX headings
 - [x] **[MD022](docs/rules/md022.md)** *blanks-around-headings* - Headings surrounded by blank lines

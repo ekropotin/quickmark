@@ -339,6 +339,7 @@ mod tests {
         no-missing-space-atx = 'err'
         no-bare-urls = 'err'
         no-duplicate-heading = 'err'
+        no-multiple-space-atx = 'warn'
         link-fragments = 'warn'
         reference-links-images = 'err'
         link-image-reference-definitions = 'warn'
@@ -405,6 +406,14 @@ mod tests {
         assert_eq!(
             RuleSeverity::Error,
             *parsed.linters.severity.get("no-duplicate-heading").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed
+                .linters
+                .severity
+                .get("no-multiple-space-atx")
+                .unwrap()
         );
         assert_eq!(
             RuleSeverity::Warning,
