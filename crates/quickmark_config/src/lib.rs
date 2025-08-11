@@ -119,12 +119,28 @@ fn default_lines_config() -> Vec<i32> {
     vec![1]
 }
 
+fn default_list_items_true() -> bool {
+    true
+}
+
 #[derive(Deserialize, Default)]
 struct TomlMD022HeadingsBlanksTable {
     #[serde(default = "default_lines_config")]
     lines_above: Vec<i32>,
     #[serde(default = "default_lines_config")]
     lines_below: Vec<i32>,
+}
+
+#[derive(Deserialize)]
+struct TomlMD031FencedCodeBlanksTable {
+    #[serde(default = "default_list_items_true")]
+    list_items: bool,
+}
+
+impl Default for TomlMD031FencedCodeBlanksTable {
+    fn default() -> Self {
+        Self { list_items: true }
+    }
 }
 
 #[derive(Deserialize, Default)]
@@ -138,6 +154,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "blanks-around-headings")]
     #[serde(default)]
     headings_blanks: TomlMD022HeadingsBlanksTable,
+    #[serde(rename = "blanks-around-fences")]
+    #[serde(default)]
+    fenced_code_blanks: TomlMD031FencedCodeBlanksTable,
     #[serde(rename = "no-duplicate-heading")]
     #[serde(default)]
     multiple_headings: TomlMD024MultipleHeadingsTable,
@@ -228,6 +247,9 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
             headings_blanks: MD022HeadingsBlanksTable {
                 lines_above: toml_config.linters.settings.headings_blanks.lines_above,
                 lines_below: toml_config.linters.settings.headings_blanks.lines_below,
+            },
+            fenced_code_blanks: quickmark_linter::config::MD031FencedCodeBlanksTable {
+                list_items: toml_config.linters.settings.fenced_code_blanks.list_items,
             },
             multiple_headings: MD024MultipleHeadingsTable {
                 siblings_only: toml_config.linters.settings.multiple_headings.siblings_only,
@@ -337,6 +359,9 @@ mod tests {
         lines_above = [1, 2, 0]
         lines_below = [1, 1, 2]
 
+        [linters.settings.blanks-around-fences]
+        list_items = false
+
         [linters.settings.no-duplicate-heading]
         siblings_only = true
         allow_different_nesting = false
@@ -425,6 +450,9 @@ mod tests {
             vec![1, 1, 2],
             parsed.linters.settings.headings_blanks.lines_below
         );
+
+        // Test MD031 (blanks-around-fences) settings
+        assert!(!parsed.linters.settings.fenced_code_blanks.list_items);
 
         // Test MD024 (no-duplicate-heading) settings
         assert!(parsed.linters.settings.multiple_headings.siblings_only);

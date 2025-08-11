@@ -51,6 +51,7 @@ heading-increment = 'err'
 heading-style = 'err'
 line-length = 'err'
 blanks-around-headings = 'err'
+blanks-around-fences = 'err'
 no-duplicate-heading = 'err'
 link-fragments = 'warn'
 reference-links-images = 'err'
@@ -72,6 +73,9 @@ stern = false
 lines_above = [1]
 lines_below = [1]
 
+[linters.settings.blanks-around-fences]
+list_items = true
+
 [linters.settings.no-duplicate-heading]
 siblings_only = false
 allow_different_nesting = false
@@ -90,7 +94,7 @@ ignored_definitions = ["//"]
 
 ## Rules
 
-**Implementation Progress: 9/48 rules completed (18.8%)**
+**Implementation Progress: 10/48 rules completed (20.8%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -117,7 +121,7 @@ ignored_definitions = ["//"]
 - [ ] **MD028** *no-blanks-blockquote* - Blank lines inside blockquotes
 - [ ] **MD029** *ol-prefix* - Ordered list item prefix consistency
 - [ ] **MD030** *list-marker-space* - Spaces after list markers
-- [ ] **MD031** *blanks-around-fences* - Fenced code blocks surrounded by blank lines
+- [x] **[MD031](docs/rules/md031.md)** *blanks-around-fences* - Fenced code blocks surrounded by blank lines
 - [ ] **MD032** *blanks-around-lists* - Lists surrounded by blank lines
 - [ ] **MD033** *no-inline-html* - Inline HTML usage
 - [x] **[MD034](docs/rules/md034.md)** *no-bare-urls* - Bare URLs without proper formatting

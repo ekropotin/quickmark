@@ -114,11 +114,23 @@ impl Default for MD022HeadingsBlanksTable {
     }
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub struct MD031FencedCodeBlanksTable {
+    pub list_items: bool,
+}
+
+impl Default for MD031FencedCodeBlanksTable {
+    fn default() -> Self {
+        Self { list_items: true }
+    }
+}
+
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct LintersSettingsTable {
     pub heading_style: MD003HeadingStyleTable,
     pub line_length: MD013LineLengthTable,
     pub headings_blanks: MD022HeadingsBlanksTable,
+    pub fenced_code_blanks: MD031FencedCodeBlanksTable,
     pub multiple_headings: MD024MultipleHeadingsTable,
     pub link_fragments: MD051LinkFragmentsTable,
     pub reference_links_images: MD052ReferenceLinksImagesTable,
@@ -165,7 +177,7 @@ mod test {
     use crate::config::{
         HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
         MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable,
-        MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
+        MD031FencedCodeBlanksTable, MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
         MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
     };
 
@@ -224,6 +236,7 @@ mod test {
                 },
                 line_length: MD013LineLengthTable::default(),
                 headings_blanks: MD022HeadingsBlanksTable::default(),
+                fenced_code_blanks: MD031FencedCodeBlanksTable::default(),
                 multiple_headings: MD024MultipleHeadingsTable::default(),
                 link_fragments: MD051LinkFragmentsTable::default(),
                 reference_links_images: MD052ReferenceLinksImagesTable::default(),
