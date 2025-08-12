@@ -353,6 +353,7 @@ mod test {
                     heading_style: config::MD003HeadingStyleTable {
                         style: config::HeadingStyle::ATX,
                     },
+                    ul_style: config::MD004UlStyleTable::default(),
                     line_length: config::MD013LineLengthTable::default(),
                     headings_blanks: config::MD022HeadingsBlanksTable::default(),
                     fenced_code_blanks: config::MD031FencedCodeBlanksTable::default(),

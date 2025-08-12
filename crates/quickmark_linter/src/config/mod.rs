@@ -20,6 +20,15 @@ pub enum HeadingStyle {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub enum UlStyle {
+    Asterisk,
+    Consistent,
+    Dash,
+    Plus,
+    Sublist,
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct MD003HeadingStyleTable {
     pub style: HeadingStyle,
 }
@@ -28,6 +37,19 @@ impl Default for MD003HeadingStyleTable {
     fn default() -> Self {
         Self {
             style: HeadingStyle::Consistent,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct MD004UlStyleTable {
+    pub style: UlStyle,
+}
+
+impl Default for MD004UlStyleTable {
+    fn default() -> Self {
+        Self {
+            style: UlStyle::Consistent,
         }
     }
 }
@@ -128,6 +150,7 @@ impl Default for MD031FencedCodeBlanksTable {
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct LintersSettingsTable {
     pub heading_style: MD003HeadingStyleTable,
+    pub ul_style: MD004UlStyleTable,
     pub line_length: MD013LineLengthTable,
     pub headings_blanks: MD022HeadingsBlanksTable,
     pub fenced_code_blanks: MD031FencedCodeBlanksTable,
@@ -176,9 +199,9 @@ mod test {
 
     use crate::config::{
         HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
-        MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable,
-        MD031FencedCodeBlanksTable, MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
-        MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
+        MD004UlStyleTable, MD013LineLengthTable, MD022HeadingsBlanksTable,
+        MD024MultipleHeadingsTable, MD031FencedCodeBlanksTable, MD051LinkFragmentsTable,
+        MD052ReferenceLinksImagesTable, MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -234,6 +257,7 @@ mod test {
                 heading_style: MD003HeadingStyleTable {
                     style: HeadingStyle::ATX,
                 },
+                ul_style: MD004UlStyleTable::default(),
                 line_length: MD013LineLengthTable::default(),
                 headings_blanks: MD022HeadingsBlanksTable::default(),
                 fenced_code_blanks: MD031FencedCodeBlanksTable::default(),

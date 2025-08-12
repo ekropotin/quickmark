@@ -35,8 +35,27 @@ enum TomlHeadingStyle {
 }
 
 #[derive(Deserialize)]
+enum TomlUlStyle {
+    #[serde(rename = "asterisk")]
+    Asterisk,
+    #[serde(rename = "consistent")]
+    Consistent,
+    #[serde(rename = "dash")]
+    Dash,
+    #[serde(rename = "plus")]
+    Plus,
+    #[serde(rename = "sublist")]
+    Sublist,
+}
+
+#[derive(Deserialize)]
 struct TomlMD003HeadingStyleTable {
     style: TomlHeadingStyle,
+}
+
+#[derive(Deserialize)]
+struct TomlMD004UlStyleTable {
+    style: TomlUlStyle,
 }
 
 #[derive(Deserialize, Default)]
@@ -148,6 +167,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "heading-style")]
     #[serde(default)]
     heading_style: TomlMD003HeadingStyleTable,
+    #[serde(rename = "ul-style")]
+    #[serde(default)]
+    ul_style: TomlMD004UlStyleTable,
     #[serde(rename = "line-length")]
     #[serde(default)]
     line_length: TomlMD013LineLengthTable,
@@ -193,6 +215,14 @@ impl Default for TomlMD003HeadingStyleTable {
     }
 }
 
+impl Default for TomlMD004UlStyleTable {
+    fn default() -> Self {
+        Self {
+            style: TomlUlStyle::Consistent,
+        }
+    }
+}
+
 fn convert_toml_severity(toml_severity: TomlRuleSeverity) -> RuleSeverity {
     match toml_severity {
         TomlRuleSeverity::Error => RuleSeverity::Error,
@@ -209,6 +239,16 @@ fn convert_toml_heading_style(toml_style: TomlHeadingStyle) -> HeadingStyle {
         TomlHeadingStyle::ATXClosed => HeadingStyle::ATXClosed,
         TomlHeadingStyle::SetextWithATX => HeadingStyle::SetextWithATX,
         TomlHeadingStyle::SetextWithATXClosed => HeadingStyle::SetextWithATXClosed,
+    }
+}
+
+fn convert_toml_ul_style(toml_style: TomlUlStyle) -> quickmark_linter::config::UlStyle {
+    match toml_style {
+        TomlUlStyle::Asterisk => quickmark_linter::config::UlStyle::Asterisk,
+        TomlUlStyle::Consistent => quickmark_linter::config::UlStyle::Consistent,
+        TomlUlStyle::Dash => quickmark_linter::config::UlStyle::Dash,
+        TomlUlStyle::Plus => quickmark_linter::config::UlStyle::Plus,
+        TomlUlStyle::Sublist => quickmark_linter::config::UlStyle::Sublist,
     }
 }
 
@@ -229,6 +269,9 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
         settings: LintersSettingsTable {
             heading_style: MD003HeadingStyleTable {
                 style: convert_toml_heading_style(toml_config.linters.settings.heading_style.style),
+            },
+            ul_style: quickmark_linter::config::MD004UlStyleTable {
+                style: convert_toml_ul_style(toml_config.linters.settings.ul_style.style),
             },
             line_length: MD013LineLengthTable {
                 line_length: toml_config.linters.settings.line_length.line_length,
@@ -327,6 +370,48 @@ mod tests {
             *parsed.linters.severity.get("heading-style").unwrap()
         );
         assert_eq!(None, parsed.linters.severity.get("some-invalid-rule"));
+    }
+
+    #[test]
+    fn test_parse_md004_ul_style_config() {
+        let config_str = r#"
+        [linters.severity]
+        ul-style = 'err'
+
+        [linters.settings.ul-style]
+        style = 'asterisk'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("ul-style").unwrap()
+        );
+        assert_eq!(
+            quickmark_linter::config::UlStyle::Asterisk,
+            parsed.linters.settings.ul_style.style
+        );
+    }
+
+    #[test]
+    fn test_parse_md004_sublist_style_config() {
+        let config_str = r#"
+        [linters.severity]
+        ul-style = 'warn'
+
+        [linters.settings.ul-style]
+        style = 'sublist'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("ul-style").unwrap()
+        );
+        assert_eq!(
+            quickmark_linter::config::UlStyle::Sublist,
+            parsed.linters.settings.ul_style.style
+        );
     }
 
     #[test]
