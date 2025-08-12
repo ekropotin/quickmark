@@ -132,7 +132,7 @@ ignored_definitions = ["//"]
 
 ## Rules
 
-**Implementation Progress: 17/47 rules completed (36.2%)**
+**Implementation Progress: 18/52 rules completed (34.6%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -181,3 +181,8 @@ ignored_definitions = ["//"]
 - [x] **[MD051](docs/rules/md051.md)** *link-fragments* - Link fragments should be valid
 - [x] **[MD052](docs/rules/md052.md)** *reference-links-images* - Reference links should be defined
 - [x] **[MD053](docs/rules/md053.md)** *link-image-reference-definitions* - Reference definitions should be needed
+- [ ] **MD054** *link-image-style* - Link and image style
+- [ ] **MD055** *table-pipe-style* - Table pipe style
+- [ ] **MD056** *table-column-count* - Table column count
+- [ ] **MD058** *blanks-around-tables* - Tables should be surrounded by blank lines
+- [ ] **MD059** *descriptive-link-text* - Link text should be descriptive
