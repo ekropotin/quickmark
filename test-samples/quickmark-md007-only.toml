@@ -1,0 +1,23 @@
+[linters.severity]
+"ul-indent" = "err"
+"heading-increment" = "off"
+"heading-style" = "off"
+"ul-style" = "off"
+"line-length" = "off"
+"no-missing-space-atx" = "off"
+"no-multiple-space-atx" = "off"
+"no-multiple-space-closed-atx" = "off"
+"no-multiple-space-closed-atx" = "off"
+"blanks-around-headings" = "off"
+"blanks-around-fences" = "off"
+"no-duplicate-heading" = "off"
+"blanks-around-lists" = "off"
+"no-bare-urls" = "off"
+"link-fragments" = "off"
+"reference-links-images" = "off"
+"link-image-reference-definitions" = "off"
+
+[linters.settings.ul-indent]
+indent = 2
+start_indent = 2
+start_indented = false
