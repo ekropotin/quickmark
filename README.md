@@ -40,7 +40,29 @@ qmark /path/to/file.md
 
 ### Configuration
 
-Quickmark looks up for `quickmark.toml` configuration file in the current working directory. If the file was not found, the default is used.
+QuickMark looks for configuration in the following order:
+
+1. **Environment Variable**: If `QUICKMARK_CONFIG` environment variable is set, it uses the config file at the specified path
+2. **Local Config**: If not found, it looks for `quickmark.toml` in the current working directory  
+3. **Default**: If neither is found, default configuration is used
+
+#### Using QUICKMARK_CONFIG Environment Variable
+
+You can specify a custom configuration file location using the `QUICKMARK_CONFIG` environment variable:
+
+```shell
+# Set config file path
+export QUICKMARK_CONFIG="/path/to/your/custom-config.toml"
+qmark file.md
+
+# Or use it inline
+QUICKMARK_CONFIG="/path/to/custom-config.toml" qmark file.md
+```
+
+This is especially useful for:
+- Shared configurations across multiple projects
+- CI/CD pipelines with centralized configs
+- Different config files for different environments
 
 Below is a full configuration with default values:
 

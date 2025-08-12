@@ -1,6 +1,6 @@
 use anyhow::Context;
 use clap::Parser;
-use quickmark_config::config_in_path_or_default;
+use quickmark_config::config_from_env_path_or_default;
 use quickmark_linter::config::{QuickmarkConfig, RuleSeverity};
 use quickmark_linter::linter::{MultiRuleLinter, RuleViolation};
 use std::cmp::min;
@@ -60,7 +60,7 @@ fn main() -> anyhow::Result<()> {
         .context(format!("Can't read file {}", &file_path.to_string_lossy()))?;
 
     let pwd = env::current_dir()?;
-    let config = config_in_path_or_default(&pwd)?;
+    let config = config_from_env_path_or_default(&pwd)?;
 
     let mut linter = MultiRuleLinter::new_for_document(file_path, config.clone(), &file_content);
 

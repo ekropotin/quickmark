@@ -362,6 +362,33 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
     }))
 }
 
+/// Load configuration from QUICKMARK_CONFIG environment variable, path, or default
+pub fn config_from_env_path_or_default(path: &Path) -> Result<QuickmarkConfig> {
+    // First check if QUICKMARK_CONFIG environment variable is set
+    if let Ok(env_config_path) = std::env::var("QUICKMARK_CONFIG") {
+        let env_config_file = Path::new(&env_config_path);
+        if env_config_file.is_file() {
+            match fs::read_to_string(env_config_file) {
+                Ok(config) => return parse_toml_config(&config),
+                Err(e) => {
+                    eprintln!(
+                        "Error loading config from QUICKMARK_CONFIG path {env_config_path}: {e}. Default config will be used."
+                    );
+                    return Ok(QuickmarkConfig::default_with_normalized_severities());
+                }
+            }
+        } else {
+            eprintln!(
+                "Config file was not found at QUICKMARK_CONFIG path {env_config_path}. Default config will be used."
+            );
+            return Ok(QuickmarkConfig::default_with_normalized_severities());
+        }
+    }
+
+    // Fallback to existing behavior - check for quickmark.toml in path
+    config_in_path_or_default(path)
+}
+
 /// Load configuration from a path, or return default if not found
 pub fn config_in_path_or_default(path: &Path) -> Result<QuickmarkConfig> {
     let config_file = path.join("quickmark.toml");
@@ -680,6 +707,48 @@ mod tests {
                 .settings
                 .link_image_reference_definitions
                 .ignored_definitions
+        );
+    }
+
+    #[test]
+    fn test_config_from_env_fallback_to_local() {
+        // Create a local config in a temp directory
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config_path = temp_dir.path().join("quickmark.toml");
+        let config_content = r#"
+        [linters.severity]
+        heading-increment = 'err'
+        heading-style = 'off'
+        "#;
+
+        fs::write(&config_path, config_content).unwrap();
+
+        // Load config - should fall back to checking the provided path
+        let config = config_from_env_path_or_default(temp_dir.path()).unwrap();
+
+        assert_eq!(
+            RuleSeverity::Error,
+            *config.linters.severity.get("heading-increment").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Off,
+            *config.linters.severity.get("heading-style").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_config_from_env_default_when_no_config() {
+        let dummy_path = Path::new("/tmp");
+        let config = config_from_env_path_or_default(dummy_path).unwrap();
+
+        // Should use default configuration
+        assert_eq!(
+            RuleSeverity::Error,
+            *config.linters.severity.get("heading-increment").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Error,
+            *config.linters.severity.get("heading-style").unwrap()
         );
     }
 }

@@ -297,3 +297,92 @@ style = 'setext_with_atx'
         .stderr(predicates::str::contains("MD003"))
         .stderr(predicates::str::contains("heading-style"));
 }
+
+/// Test CLI with QUICKMARK_CONFIG environment variable pointing to valid config
+#[test]
+fn test_cli_quickmark_config_env_valid() {
+    let temp_dir = TempDir::new().unwrap();
+
+    // Create a config file with specific settings
+    let config_content = r#"
+[linters.severity]
+heading-increment = 'warn'
+heading-style = 'off'
+line-length = 'err'
+
+[linters.settings.line-length]
+line_length = 50
+"#;
+
+    let config_file = temp_dir.child("custom_config.toml");
+    config_file.write_str(config_content).unwrap();
+
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
+    cmd.env("QUICKMARK_CONFIG", config_file.path())
+        .arg(test_sample_path("test_md001_violations.md"));
+
+    let output = cmd.assert().failure().get_output().clone();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Should only show MD001 warnings (heading-style is off, line-length is on)
+    assert!(stderr.contains("WARN:"));
+    assert!(stderr.contains("MD001"));
+    assert!(!stderr.contains("MD003")); // heading-style is off
+}
+
+/// Test CLI with QUICKMARK_CONFIG environment variable pointing to invalid path
+#[test]
+fn test_cli_quickmark_config_env_invalid() {
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
+    cmd.env("QUICKMARK_CONFIG", "/nonexistent/path/config.toml")
+        .arg(test_sample_path("test_md001_valid.md"));
+
+    let output = cmd.assert().failure().get_output().clone();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Should show error about invalid config path but continue with default config
+    assert!(
+        stderr.contains("Config file was not found") || stderr.contains("Error loading config")
+    );
+    // Should still process the file with default config
+    assert!(stderr.contains("MD003")); // Default config should catch MD003 violations
+}
+
+/// Test CLI with QUICKMARK_CONFIG environment variable taking precedence over local config
+#[test]
+fn test_cli_quickmark_config_env_precedence() {
+    let temp_dir = TempDir::new().unwrap();
+
+    // Create a local quickmark.toml that would normally be used
+    let local_config_content = r#"
+[linters.severity]
+heading-increment = 'off'
+heading-style = 'off'
+"#;
+
+    let local_config_file = temp_dir.child("quickmark.toml");
+    local_config_file.write_str(local_config_content).unwrap();
+
+    // Create a different config file for QUICKMARK_CONFIG
+    let env_config_content = r#"
+[linters.severity]
+heading-increment = 'err'
+heading-style = 'err'
+"#;
+
+    let env_config_file = temp_dir.child("env_config.toml");
+    env_config_file.write_str(env_config_content).unwrap();
+
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .env("QUICKMARK_CONFIG", env_config_file.path())
+        .arg(test_sample_path("test_md001_violations.md"));
+
+    let output = cmd.assert().failure().get_output().clone();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Should use env config (errors) not local config (off)
+    assert!(stderr.contains("ERR:"));
+    assert!(stderr.contains("MD001"));
+    assert!(stderr.contains("MD003"));
+}

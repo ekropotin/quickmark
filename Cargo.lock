@@ -915,6 +915,7 @@ dependencies = [
  "anyhow",
  "quickmark_linter",
  "serde",
+ "tempfile",
  "toml",
 ]
 
