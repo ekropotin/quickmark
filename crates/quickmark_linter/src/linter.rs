@@ -360,6 +360,7 @@ mod test {
                     single_h1: config::MD025SingleH1Table::default(),
                     fenced_code_blanks: config::MD031FencedCodeBlanksTable::default(),
                     multiple_headings: config::MD024MultipleHeadingsTable::default(),
+                    required_headings: config::MD043RequiredHeadingsTable::default(),
                     link_fragments: config::MD051LinkFragmentsTable::default(),
                     reference_links_images: config::MD052ReferenceLinksImagesTable::default(),
                     link_image_reference_definitions:

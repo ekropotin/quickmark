@@ -191,6 +191,18 @@ fn default_list_items_true() -> bool {
     true
 }
 
+fn default_empty_headings() -> Vec<String> {
+    Vec::new()
+}
+
+#[derive(Deserialize, Default)]
+struct TomlMD043RequiredHeadingsTable {
+    #[serde(default = "default_empty_headings")]
+    headings: Vec<String>,
+    #[serde(default = "default_false")]
+    match_case: bool,
+}
+
 #[derive(Deserialize, Default)]
 struct TomlMD022HeadingsBlanksTable {
     #[serde(default = "default_lines_config")]
@@ -237,6 +249,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "no-duplicate-heading")]
     #[serde(default)]
     multiple_headings: TomlMD024MultipleHeadingsTable,
+    #[serde(rename = "required-headings")]
+    #[serde(default)]
+    required_headings: TomlMD043RequiredHeadingsTable,
     #[serde(rename = "link-fragments")]
     #[serde(default)]
     link_fragments: TomlMD051LinkFragmentsTable,
@@ -381,6 +396,10 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
                     .settings
                     .reference_links_images
                     .ignored_labels,
+            },
+            required_headings: quickmark_linter::config::MD043RequiredHeadingsTable {
+                headings: toml_config.linters.settings.required_headings.headings,
+                match_case: toml_config.linters.settings.required_headings.match_case,
             },
             link_image_reference_definitions:
                 quickmark_linter::config::MD053LinkImageReferenceDefinitionsTable {
@@ -798,6 +817,51 @@ mod tests {
             RuleSeverity::Error,
             *config.linters.severity.get("heading-style").unwrap()
         );
+    }
+
+    #[test]
+    fn test_parse_md043_required_headings_config() {
+        let config_str = "
+        [linters.severity]
+        required-headings = 'err'
+
+        [linters.settings.required-headings]
+        headings = [\"# Title\", \"## Section\", \"*\", \"## Conclusion\"]
+        match_case = true
+        ";
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("required-headings").unwrap()
+        );
+        assert_eq!(
+            vec!["# Title", "## Section", "*", "## Conclusion"],
+            parsed.linters.settings.required_headings.headings
+        );
+        assert!(parsed.linters.settings.required_headings.match_case);
+    }
+
+    #[test]
+    fn test_parse_md043_default_values() {
+        let config_str = r#"
+        [linters.severity]
+        required-headings = 'warn'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("required-headings").unwrap()
+        );
+        // Test default values
+        assert!(parsed
+            .linters
+            .settings
+            .required_headings
+            .headings
+            .is_empty());
+        assert!(!parsed.linters.settings.required_headings.match_case);
     }
 
     #[test]
