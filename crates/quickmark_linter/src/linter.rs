@@ -357,6 +357,7 @@ mod test {
                     ul_indent: config::MD007UlIndentTable::default(),
                     line_length: config::MD013LineLengthTable::default(),
                     headings_blanks: config::MD022HeadingsBlanksTable::default(),
+                    single_h1: config::MD025SingleH1Table::default(),
                     fenced_code_blanks: config::MD031FencedCodeBlanksTable::default(),
                     multiple_headings: config::MD024MultipleHeadingsTable::default(),
                     link_fragments: config::MD051LinkFragmentsTable::default(),

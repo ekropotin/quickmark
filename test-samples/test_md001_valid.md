@@ -2,9 +2,7 @@
 
 This file demonstrates correct heading increment following the MD001 rule.
 
-# Heading Level 1
-
-## Heading Level 2
+## Heading Level 2 (First Section)
 
 ### Heading Level 3
 
@@ -20,14 +18,14 @@ This file demonstrates correct heading increment following the MD001 rule.
 
 #### Another Heading Level 4
 
-# Another Heading Level 1
+## Different Section Level 2
 
-## Different Heading Level 2
+### Different Heading Level 3
 
 Some content here.
 
-Setext Heading Level 1
-======================
+Another Section Level 2
+-----------------------
 
 Setext Heading Level 2
 ----------------------
