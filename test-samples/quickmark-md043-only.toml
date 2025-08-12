@@ -1,0 +1,30 @@
+[linters.severity]
+required-headings = "err"
+
+# Disable all other rules
+heading-increment = "off"
+heading-style = "off"
+ul-style = "off"
+list-indent = "off"
+ul-indent = "off"
+line-length = "off"
+no-missing-space-atx = "off"
+no-missing-space-closed-atx = "off"
+no-multiple-space-atx = "off"
+no-multiple-space-closed-atx = "off"
+blanks-around-headings = "off"
+blanks-around-fences = "off"
+single-h1 = "off"
+no-duplicate-heading = "off"
+no-bare-urls = "off"
+link-fragments = "off"
+reference-links-images = "off"
+link-image-reference-definitions = "off"
+
+[linters.settings.required-headings]
+headings = [
+    "# Introduction",
+    "## Overview", 
+    "### Details"
+]
+match_case = false

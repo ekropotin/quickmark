@@ -84,6 +84,7 @@ single-h1 = 'err'
 blanks-around-fences = 'err'
 blanks-around-lists = 'err'
 no-duplicate-heading = 'err'
+required-headings = 'err'
 link-fragments = 'warn'
 reference-links-images = 'err'
 link-image-reference-definitions = 'err'
@@ -131,13 +132,17 @@ ignored_pattern = ""
 shortcut_syntax = false
 ignored_labels = ["x"]
 
+[linters.settings.required-headings]
+headings = []
+match_case = false
+
 [linters.settings.link-image-reference-definitions]
 ignored_definitions = ["//"]
 ```
 
 ## Rules
 
-**Implementation Progress: 19/52 rules completed (36.5%)**
+**Implementation Progress: 20/52 rules completed (38.5%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -175,7 +180,7 @@ ignored_definitions = ["//"]
 - [ ] **MD040** *fenced-code-language* - Language specified for fenced code blocks
 - [ ] **MD041** *first-line-heading* - First line should be top-level heading
 - [ ] **MD042** *no-empty-links* - Empty links
-- [ ] **MD043** *required-headings* - Required heading structure
+- [x] **[MD043](docs/rules/md043.md)** *required-headings* - Required heading structure
 - [ ] **MD044** *proper-names* - Proper names with correct capitalization
 - [ ] **MD045** *no-alt-text* - Images should have alternate text
 - [ ] **MD046** *code-block-style* - Code block style consistency

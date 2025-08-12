@@ -129,9 +129,9 @@ impl MD005Linter {
                     end_matching = true;
                 } else {
                     let detail = if end_matching {
-                        format!("Expected: ({}); Actual: ({})", expected_end, actual_end)
+                        format!("Expected: ({expected_end}); Actual: ({actual_end})")
                     } else {
-                        format!("Expected: {}; Actual: {}", expected_indent, actual_indent)
+                        format!("Expected: {expected_indent}; Actual: {actual_indent}")
                     };
 
                     self.violations.push(RuleViolation::new(
