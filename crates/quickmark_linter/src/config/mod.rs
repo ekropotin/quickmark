@@ -122,6 +122,21 @@ pub struct MD024MultipleHeadingsTable {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub struct MD025SingleH1Table {
+    pub level: u8,
+    pub front_matter_title: String,
+}
+
+impl Default for MD025SingleH1Table {
+    fn default() -> Self {
+        Self {
+            level: 1,
+            front_matter_title: r"^\s*title\s*[:=]".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct MD022HeadingsBlanksTable {
     pub lines_above: Vec<i32>,
     pub lines_below: Vec<i32>,
@@ -171,6 +186,7 @@ pub struct LintersSettingsTable {
     pub ul_indent: MD007UlIndentTable,
     pub line_length: MD013LineLengthTable,
     pub headings_blanks: MD022HeadingsBlanksTable,
+    pub single_h1: MD025SingleH1Table,
     pub fenced_code_blanks: MD031FencedCodeBlanksTable,
     pub multiple_headings: MD024MultipleHeadingsTable,
     pub link_fragments: MD051LinkFragmentsTable,
@@ -218,8 +234,9 @@ mod test {
     use crate::config::{
         HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
         MD004UlStyleTable, MD007UlIndentTable, MD013LineLengthTable, MD022HeadingsBlanksTable,
-        MD024MultipleHeadingsTable, MD031FencedCodeBlanksTable, MD051LinkFragmentsTable,
-        MD052ReferenceLinksImagesTable, MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
+        MD024MultipleHeadingsTable, MD025SingleH1Table, MD031FencedCodeBlanksTable,
+        MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
+        MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -284,6 +301,7 @@ mod test {
                 ul_indent: MD007UlIndentTable::default(),
                 line_length: MD013LineLengthTable::default(),
                 headings_blanks: MD022HeadingsBlanksTable::default(),
+                single_h1: MD025SingleH1Table::default(),
                 fenced_code_blanks: MD031FencedCodeBlanksTable::default(),
                 multiple_headings: MD024MultipleHeadingsTable::default(),
                 link_fragments: MD051LinkFragmentsTable::default(),

@@ -80,6 +80,7 @@ no-missing-space-closed-atx = 'err'
 no-multiple-space-atx = 'err'
 no-multiple-space-closed-atx = 'err'
 blanks-around-headings = 'err'
+single-h1 = 'err'
 blanks-around-fences = 'err'
 blanks-around-lists = 'err'
 no-duplicate-heading = 'err'
@@ -118,6 +119,10 @@ list_items = true
 siblings_only = false
 allow_different_nesting = false
 
+[linters.settings.single-h1]
+level = 1
+front_matter_title = '^\s*title\s*[:=]'
+
 [linters.settings.link-fragments]
 ignore_case = false
 ignored_pattern = ""
@@ -132,7 +137,7 @@ ignored_definitions = ["//"]
 
 ## Rules
 
-**Implementation Progress: 18/52 rules completed (34.6%)**
+**Implementation Progress: 19/52 rules completed (36.5%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -152,7 +157,7 @@ ignored_definitions = ["//"]
 - [x] **[MD022](docs/rules/md022.md)** *blanks-around-headings* - Headings surrounded by blank lines
 - [ ] **MD023** *heading-start-left* - Headings start at beginning of line
 - [x] **[MD024](docs/rules/md024.md)** *no-duplicate-heading* - Multiple headings with same content
-- [ ] **MD025** *single-title* - Multiple top-level headings
+- [x] **[MD025](docs/rules/md025.md)** *single-h1* - Multiple top-level headings
 - [ ] **MD026** *no-trailing-punctuation* - Trailing punctuation in headings
 - [ ] **MD027** *no-multiple-space-blockquote* - Multiple spaces after blockquote
 - [ ] **MD028** *no-blanks-blockquote* - Blank lines inside blockquotes

@@ -2,7 +2,7 @@ use anyhow::Result;
 use quickmark_linter::config::{
     normalize_severities, HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
     MD007UlIndentTable, MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable,
-    QuickmarkConfig, RuleSeverity,
+    MD025SingleH1Table, QuickmarkConfig, RuleSeverity,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -158,6 +158,31 @@ struct TomlMD024MultipleHeadingsTable {
     allow_different_nesting: bool,
 }
 
+fn default_level_1() -> u8 {
+    1
+}
+
+fn default_front_matter_title() -> String {
+    r"^\s*title\s*[:=]".to_string()
+}
+
+#[derive(Deserialize)]
+struct TomlMD025SingleH1Table {
+    #[serde(default = "default_level_1")]
+    level: u8,
+    #[serde(default = "default_front_matter_title")]
+    front_matter_title: String,
+}
+
+impl Default for TomlMD025SingleH1Table {
+    fn default() -> Self {
+        Self {
+            level: 1,
+            front_matter_title: r"^\s*title\s*[:=]".to_string(),
+        }
+    }
+}
+
 fn default_lines_config() -> Vec<i32> {
     vec![1]
 }
@@ -203,6 +228,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "blanks-around-headings")]
     #[serde(default)]
     headings_blanks: TomlMD022HeadingsBlanksTable,
+    #[serde(rename = "single-h1")]
+    #[serde(default)]
+    single_h1: TomlMD025SingleH1Table,
     #[serde(rename = "blanks-around-fences")]
     #[serde(default)]
     fenced_code_blanks: TomlMD031FencedCodeBlanksTable,
@@ -322,6 +350,10 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
             headings_blanks: MD022HeadingsBlanksTable {
                 lines_above: toml_config.linters.settings.headings_blanks.lines_above,
                 lines_below: toml_config.linters.settings.headings_blanks.lines_below,
+            },
+            single_h1: MD025SingleH1Table {
+                level: toml_config.linters.settings.single_h1.level,
+                front_matter_title: toml_config.linters.settings.single_h1.front_matter_title,
             },
             fenced_code_blanks: quickmark_linter::config::MD031FencedCodeBlanksTable {
                 list_items: toml_config.linters.settings.fenced_code_blanks.list_items,
@@ -525,6 +557,7 @@ mod tests {
         no-duplicate-heading = 'err'
         no-multiple-space-atx = 'warn'
         no-multiple-space-closed-atx = 'err'
+        single-h1 = 'warn'
         link-fragments = 'warn'
         reference-links-images = 'err'
         link-image-reference-definitions = 'warn'
@@ -552,6 +585,10 @@ mod tests {
         [linters.settings.no-duplicate-heading]
         siblings_only = true
         allow_different_nesting = false
+
+        [linters.settings.single-h1]
+        level = 2
+        front_matter_title = '^\s*custom_title\s*:'
 
         [linters.settings.link-fragments]
         ignore_case = true
@@ -614,6 +651,10 @@ mod tests {
         );
         assert_eq!(
             RuleSeverity::Warning,
+            *parsed.linters.severity.get("single-h1").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Warning,
             *parsed.linters.severity.get("link-fragments").unwrap()
         );
         assert_eq!(
@@ -673,6 +714,13 @@ mod tests {
                 .settings
                 .multiple_headings
                 .allow_different_nesting
+        );
+
+        // Test MD025 (single-h1) settings
+        assert_eq!(2, parsed.linters.settings.single_h1.level);
+        assert_eq!(
+            r"^\s*custom_title\s*:",
+            parsed.linters.settings.single_h1.front_matter_title
         );
 
         // Test MD051 (link-fragments) settings
@@ -749,6 +797,49 @@ mod tests {
         assert_eq!(
             RuleSeverity::Error,
             *config.linters.severity.get("heading-style").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_parse_md025_single_h1_config() {
+        let config_str = r#"
+        [linters.severity]
+        single-h1 = 'err'
+
+        [linters.settings.single-h1]
+        level = 2
+        front_matter_title = '^\s*heading\s*:'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("single-h1").unwrap()
+        );
+        assert_eq!(2, parsed.linters.settings.single_h1.level);
+        assert_eq!(
+            r"^\s*heading\s*:",
+            parsed.linters.settings.single_h1.front_matter_title
+        );
+    }
+
+    #[test]
+    fn test_parse_md025_default_values() {
+        let config_str = r#"
+        [linters.severity]
+        single-h1 = 'warn'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("single-h1").unwrap()
+        );
+        // Test default values
+        assert_eq!(1, parsed.linters.settings.single_h1.level);
+        assert_eq!(
+            r"^\s*title\s*[:=]",
+            parsed.linters.settings.single_h1.front_matter_title
         );
     }
 }

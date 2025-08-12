@@ -1,0 +1,22 @@
+[linters.severity]
+single-h1 = 'err'
+# Disable other rules to focus on MD025
+heading-increment = 'off'
+heading-style = 'off'
+ul-style = 'off'
+list-indent = 'off'
+line-length = 'off'
+blanks-around-headings = 'off'
+blanks-around-fences = 'off'
+no-duplicate-heading = 'off'
+no-missing-space-closed-atx = 'off'
+no-multiple-space-atx = 'off'
+no-multiple-space-closed-atx = 'off'
+no-bare-urls = 'off'
+link-fragments = 'off'
+reference-links-images = 'off'
+link-image-reference-definitions = 'off'
+
+[linters.settings.single-h1]
+level = 2
+front_matter_title = '^\s*title\s*[:=]'

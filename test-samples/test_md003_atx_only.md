@@ -2,7 +2,7 @@
 
 This file uses only ATX-style headings consistently.
 
-# ATX Heading Level 1
+## ATX Heading Level 2 (First Content Section)
 
 ## ATX Heading Level 2
 
