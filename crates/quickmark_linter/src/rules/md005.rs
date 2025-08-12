@@ -41,8 +41,9 @@ impl MD005Linter {
             return;
         }
 
-        let is_ordered = Self::is_ordered_list_static(list_node, &self.context.document_content.borrow());
-        
+        let is_ordered =
+            Self::is_ordered_list_static(list_node, &self.context.document_content.borrow());
+
         if is_ordered {
             self.check_ordered_list_indentation(list_node, &list_items);
         } else {
@@ -52,7 +53,7 @@ impl MD005Linter {
 
     fn get_direct_list_items_static<'a>(list_node: &Node<'a>) -> Vec<Node<'a>> {
         let mut list_items = Vec::new();
-        
+
         for child_idx in 0..list_node.child_count() {
             if let Some(child) = list_node.child(child_idx) {
                 if child.kind() == "list_item" {
@@ -60,7 +61,7 @@ impl MD005Linter {
                 }
             }
         }
-        
+
         list_items
     }
 
@@ -86,10 +87,10 @@ impl MD005Linter {
 
     fn check_unordered_list_indentation(&mut self, _list_node: &Node, list_items: &[Node]) {
         let expected_indent = self.get_list_item_indentation(&list_items[0]);
-        
+
         for item in list_items.iter().skip(1) {
             let actual_indent = self.get_list_item_indentation(item);
-            
+
             if actual_indent != expected_indent {
                 let message = format!(
                     "{} [Expected: {}; Actual: {}]",
@@ -111,14 +112,18 @@ impl MD005Linter {
         let expected_indent = self.get_list_item_indentation(&list_items[0]);
         let mut expected_end = 0;
         let mut end_matching = false;
-        
+
         for item in list_items {
             let actual_indent = self.get_list_item_indentation(item);
             let marker_length = self.get_list_marker_text_length(item);
             let actual_end = actual_indent + marker_length;
-            
-            expected_end = if expected_end == 0 { actual_end } else { expected_end };
-            
+
+            expected_end = if expected_end == 0 {
+                actual_end
+            } else {
+                expected_end
+            };
+
             if expected_indent != actual_indent || end_matching {
                 if expected_end == actual_end {
                     end_matching = true;
@@ -165,7 +170,6 @@ impl MD005Linter {
             0
         }
     }
-
 }
 
 pub const MD005: Rule = Rule {
@@ -200,7 +204,11 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        assert_eq!(0, violations.len(), "Consistent indentation should have no violations");
+        assert_eq!(
+            0,
+            violations.len(),
+            "Consistent indentation should have no violations"
+        );
     }
 
     #[test]
@@ -213,7 +221,10 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        assert!(!violations.is_empty(), "Inconsistent indentation should have violations");
+        assert!(
+            !violations.is_empty(),
+            "Inconsistent indentation should have violations"
+        );
     }
 
     #[test]
@@ -227,7 +238,11 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        assert_eq!(0, violations.len(), "Left-aligned ordered list should have no violations");
+        assert_eq!(
+            0,
+            violations.len(),
+            "Left-aligned ordered list should have no violations"
+        );
     }
 
     #[test]
@@ -241,7 +256,11 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        assert_eq!(0, violations.len(), "Right-aligned ordered list should have no violations");
+        assert_eq!(
+            0,
+            violations.len(),
+            "Right-aligned ordered list should have no violations"
+        );
     }
 
     #[test]
@@ -254,7 +273,10 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        assert!(!violations.is_empty(), "Inconsistent ordered list indentation should have violations");
+        assert!(
+            !violations.is_empty(),
+            "Inconsistent ordered list indentation should have violations"
+        );
     }
 
     #[test]
@@ -269,7 +291,11 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        assert_eq!(0, violations.len(), "Items at different nesting levels should not be compared");
+        assert_eq!(
+            0,
+            violations.len(),
+            "Items at different nesting levels should not be compared"
+        );
     }
 
     #[test]
@@ -283,7 +309,10 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        assert!(!violations.is_empty(), "Nested items at same level with inconsistent indent should have violations");
+        assert!(
+            !violations.is_empty(),
+            "Nested items at same level with inconsistent indent should have violations"
+        );
     }
 
     #[test]
@@ -298,7 +327,11 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        assert_eq!(0, violations.len(), "Different list types should not interfere with each other");
+        assert_eq!(
+            0,
+            violations.len(),
+            "Different list types should not interfere with each other"
+        );
     }
 
     #[test]
@@ -309,7 +342,11 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        assert_eq!(0, violations.len(), "Single item lists should not have violations");
+        assert_eq!(
+            0,
+            violations.len(),
+            "Single item lists should not have violations"
+        );
     }
 
     #[test]
@@ -319,7 +356,11 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        assert_eq!(0, violations.len(), "Empty documents should not have violations");
+        assert_eq!(
+            0,
+            violations.len(),
+            "Empty documents should not have violations"
+        );
     }
 
     #[test]
@@ -341,7 +382,11 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        assert_eq!(0, violations.len(), "Right-aligned numbers should be consistent");
+        assert_eq!(
+            0,
+            violations.len(),
+            "Right-aligned numbers should be consistent"
+        );
     }
 
     #[test]
@@ -355,6 +400,9 @@ mod test {
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        assert!(!violations.is_empty(), "Inconsistent right alignment should have violations");
+        assert!(
+            !violations.is_empty(),
+            "Inconsistent right alignment should have violations"
+        );
     }
 }
