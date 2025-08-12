@@ -240,6 +240,7 @@ mod test {
             *severity.get("heading-increment").unwrap()
         );
         assert_eq!(RuleSeverity::Error, *severity.get("heading-style").unwrap());
+        assert_eq!(RuleSeverity::Error, *severity.get("list-indent").unwrap());
         assert_eq!(None, severity.get("some-bullshit"));
     }
 
@@ -253,6 +254,10 @@ mod test {
         assert_eq!(
             RuleSeverity::Error,
             *config.linters.severity.get("heading-style").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Error,
+            *config.linters.severity.get("list-indent").unwrap()
         );
         assert_eq!(
             HeadingStyle::Consistent,

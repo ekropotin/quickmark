@@ -72,6 +72,7 @@ Below is a full configuration with default values:
 heading-increment = 'err'
 heading-style = 'err'
 ul-style = 'err'
+list-indent = 'err'
 ul-indent = 'err'
 line-length = 'err'
 no-missing-space-atx = 'err'
@@ -131,12 +132,12 @@ ignored_definitions = ["//"]
 
 ## Rules
 
-**Implementation Progress: 16/47 rules completed (34.0%)**
+**Implementation Progress: 17/47 rules completed (36.2%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
 - [x] **[MD004](docs/rules/md004.md)** *ul-style* - Unordered list style consistency
-- [ ] **MD005** *list-indent* - List item indentation at same level
+- [x] **[MD005](docs/rules/md005.md)** *list-indent* - Inconsistent indentation for list items at the same level
 - [x] **[MD007](docs/rules/md007.md)** *ul-indent* - Unordered list indentation consistency
 - [ ] **MD009** *no-trailing-spaces* - Trailing spaces at end of lines
 - [ ] **MD010** *no-hard-tabs* - Hard tabs should not be used
