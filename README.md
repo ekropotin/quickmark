@@ -49,6 +49,7 @@ Below is a full configuration with default values:
 # possible values are: 'warn', 'err' and 'off'
 heading-increment = 'err'
 heading-style = 'err'
+ul-style = 'err'
 line-length = 'err'
 no-missing-space-atx = 'err'
 no-missing-space-closed-atx = 'err'
@@ -64,6 +65,9 @@ link-image-reference-definitions = 'err'
 
 # see a specific rule's doc for details of configuration
 [linters.settings.heading-style]
+style = 'consistent'
+
+[linters.settings.ul-style]
 style = 'consistent'
 
 [linters.settings.line-length]
@@ -99,11 +103,11 @@ ignored_definitions = ["//"]
 
 ## Rules
 
-**Implementation Progress: 14/48 rules completed (29.2%)**
+**Implementation Progress: 15/48 rules completed (31.3%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
-- [ ] **MD004** *ul-style* - Unordered list style consistency
+- [x] **[MD004](docs/rules/md004.md)** *ul-style* - Unordered list style consistency
 - [ ] **MD005** *list-indent* - List item indentation at same level
 - [ ] **MD006** *ul-start-left* - Bulleted lists start at beginning of line
 - [ ] **MD007** *ul-indent* - Unordered list indentation consistency
