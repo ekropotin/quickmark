@@ -1,8 +1,8 @@
 use anyhow::Result;
 use quickmark_linter::config::{
     normalize_severities, HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
-    MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable, QuickmarkConfig,
-    RuleSeverity,
+    MD007UlIndentTable, MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable,
+    QuickmarkConfig, RuleSeverity,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -56,6 +56,30 @@ struct TomlMD003HeadingStyleTable {
 #[derive(Deserialize)]
 struct TomlMD004UlStyleTable {
     style: TomlUlStyle,
+}
+
+fn default_indent() -> usize {
+    2
+}
+
+#[derive(Deserialize)]
+struct TomlMD007UlIndentTable {
+    #[serde(default = "default_indent")]
+    indent: usize,
+    #[serde(default = "default_indent")]
+    start_indent: usize,
+    #[serde(default = "default_false")]
+    start_indented: bool,
+}
+
+impl Default for TomlMD007UlIndentTable {
+    fn default() -> Self {
+        Self {
+            indent: 2,
+            start_indent: 2,
+            start_indented: false,
+        }
+    }
 }
 
 #[derive(Deserialize, Default)]
@@ -170,6 +194,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "ul-style")]
     #[serde(default)]
     ul_style: TomlMD004UlStyleTable,
+    #[serde(rename = "ul-indent")]
+    #[serde(default)]
+    ul_indent: TomlMD007UlIndentTable,
     #[serde(rename = "line-length")]
     #[serde(default)]
     line_length: TomlMD013LineLengthTable,
@@ -272,6 +299,11 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
             },
             ul_style: quickmark_linter::config::MD004UlStyleTable {
                 style: convert_toml_ul_style(toml_config.linters.settings.ul_style.style),
+            },
+            ul_indent: MD007UlIndentTable {
+                indent: toml_config.linters.settings.ul_indent.indent,
+                start_indent: toml_config.linters.settings.ul_indent.start_indent,
+                start_indented: toml_config.linters.settings.ul_indent.start_indented,
             },
             line_length: MD013LineLengthTable {
                 line_length: toml_config.linters.settings.line_length.line_length,
@@ -412,6 +444,46 @@ mod tests {
             quickmark_linter::config::UlStyle::Sublist,
             parsed.linters.settings.ul_style.style
         );
+    }
+
+    #[test]
+    fn test_parse_md007_ul_indent_config() {
+        let config_str = r#"
+        [linters.severity]
+        ul-indent = 'err'
+
+        [linters.settings.ul-indent]
+        indent = 4
+        start_indent = 3
+        start_indented = true
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("ul-indent").unwrap()
+        );
+        assert_eq!(4, parsed.linters.settings.ul_indent.indent);
+        assert_eq!(3, parsed.linters.settings.ul_indent.start_indent);
+        assert!(parsed.linters.settings.ul_indent.start_indented);
+    }
+
+    #[test]
+    fn test_parse_md007_default_values() {
+        let config_str = r#"
+        [linters.severity]
+        ul-indent = 'warn'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("ul-indent").unwrap()
+        );
+        // Test default values
+        assert_eq!(2, parsed.linters.settings.ul_indent.indent);
+        assert_eq!(2, parsed.linters.settings.ul_indent.start_indent);
+        assert!(!parsed.linters.settings.ul_indent.start_indented);
     }
 
     #[test]

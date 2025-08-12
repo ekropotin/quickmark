@@ -354,6 +354,7 @@ mod test {
                         style: config::HeadingStyle::ATX,
                     },
                     ul_style: config::MD004UlStyleTable::default(),
+                    ul_indent: config::MD007UlIndentTable::default(),
                     line_length: config::MD013LineLengthTable::default(),
                     headings_blanks: config::MD022HeadingsBlanksTable::default(),
                     fenced_code_blanks: config::MD031FencedCodeBlanksTable::default(),

@@ -137,6 +137,23 @@ impl Default for MD022HeadingsBlanksTable {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub struct MD007UlIndentTable {
+    pub indent: usize,
+    pub start_indent: usize,
+    pub start_indented: bool,
+}
+
+impl Default for MD007UlIndentTable {
+    fn default() -> Self {
+        Self {
+            indent: 2,
+            start_indent: 2,
+            start_indented: false,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct MD031FencedCodeBlanksTable {
     pub list_items: bool,
 }
@@ -151,6 +168,7 @@ impl Default for MD031FencedCodeBlanksTable {
 pub struct LintersSettingsTable {
     pub heading_style: MD003HeadingStyleTable,
     pub ul_style: MD004UlStyleTable,
+    pub ul_indent: MD007UlIndentTable,
     pub line_length: MD013LineLengthTable,
     pub headings_blanks: MD022HeadingsBlanksTable,
     pub fenced_code_blanks: MD031FencedCodeBlanksTable,
@@ -199,7 +217,7 @@ mod test {
 
     use crate::config::{
         HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
-        MD004UlStyleTable, MD013LineLengthTable, MD022HeadingsBlanksTable,
+        MD004UlStyleTable, MD007UlIndentTable, MD013LineLengthTable, MD022HeadingsBlanksTable,
         MD024MultipleHeadingsTable, MD031FencedCodeBlanksTable, MD051LinkFragmentsTable,
         MD052ReferenceLinksImagesTable, MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
     };
@@ -258,6 +276,7 @@ mod test {
                     style: HeadingStyle::ATX,
                 },
                 ul_style: MD004UlStyleTable::default(),
+                ul_indent: MD007UlIndentTable::default(),
                 line_length: MD013LineLengthTable::default(),
                 headings_blanks: MD022HeadingsBlanksTable::default(),
                 fenced_code_blanks: MD031FencedCodeBlanksTable::default(),

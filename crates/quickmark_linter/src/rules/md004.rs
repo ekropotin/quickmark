@@ -218,7 +218,7 @@ impl MD004Linter {
                                     .trim()
                                     .chars()
                                     .next()
-                                    .map_or(false, |c| c == '*' || c == '+' || c == '-');
+                                    .is_some_and(|c| c == '*' || c == '+' || c == '-');
                             }
                         }
                     }

@@ -50,6 +50,7 @@ Below is a full configuration with default values:
 heading-increment = 'err'
 heading-style = 'err'
 ul-style = 'err'
+ul-indent = 'err'
 line-length = 'err'
 no-missing-space-atx = 'err'
 no-missing-space-closed-atx = 'err'
@@ -69,6 +70,11 @@ style = 'consistent'
 
 [linters.settings.ul-style]
 style = 'consistent'
+
+[linters.settings.ul-indent]
+indent = 2
+start_indent = 2
+start_indented = false
 
 [linters.settings.line-length]
 line_length = 80
@@ -103,14 +109,13 @@ ignored_definitions = ["//"]
 
 ## Rules
 
-**Implementation Progress: 15/48 rules completed (31.3%)**
+**Implementation Progress: 16/47 rules completed (34.0%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
 - [x] **[MD004](docs/rules/md004.md)** *ul-style* - Unordered list style consistency
 - [ ] **MD005** *list-indent* - List item indentation at same level
-- [ ] **MD006** *ul-start-left* - Bulleted lists start at beginning of line
-- [ ] **MD007** *ul-indent* - Unordered list indentation consistency
+- [x] **[MD007](docs/rules/md007.md)** *ul-indent* - Unordered list indentation consistency
 - [ ] **MD009** *no-trailing-spaces* - Trailing spaces at end of lines
 - [ ] **MD010** *no-hard-tabs* - Hard tabs should not be used
 - [ ] **MD011** *no-reversed-links* - Reversed link syntax
