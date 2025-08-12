@@ -142,7 +142,7 @@ ignored_definitions = ["//"]
 
 ## Rules
 
-**Implementation Progress: 20/52 rules completed (38.5%)**
+**Implementation Progress: 21/52 rules completed (40.4%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -154,7 +154,7 @@ ignored_definitions = ["//"]
 - [ ] **MD011** *no-reversed-links* - Reversed link syntax
 - [ ] **MD012** *no-multiple-blanks* - Multiple consecutive blank lines
 - [x] **[MD013](docs/rules/md013.md)** *line-length* - Line length limits with configurable exceptions
-- [ ] **MD014** *commands-show-output* - Dollar signs before shell commands
+- [x] **[MD014](docs/rules/md014.md)** *commands-show-output* - Dollar signs before shell commands
 - [x] **[MD018](docs/rules/md018.md)** *no-missing-space-atx* - Space after hash in ATX headings
 - [x] **[MD019](docs/rules/md019.md)** *no-multiple-space-atx* - Multiple spaces after hash in ATX headings
 - [x] **[MD020](docs/rules/md020.md)** *no-missing-space-closed-atx* - Space inside closed ATX headings
