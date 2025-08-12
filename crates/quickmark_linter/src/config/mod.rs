@@ -198,10 +198,10 @@ mod test {
     use std::collections::HashMap;
 
     use crate::config::{
-        HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD004UlStyleTable,
-        MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable,
-        MD031FencedCodeBlanksTable, MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
-        MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
+        HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
+        MD004UlStyleTable, MD013LineLengthTable, MD022HeadingsBlanksTable,
+        MD024MultipleHeadingsTable, MD031FencedCodeBlanksTable, MD051LinkFragmentsTable,
+        MD052ReferenceLinksImagesTable, MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};

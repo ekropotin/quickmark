@@ -28,14 +28,17 @@ impl MD004Linter {
 
     /// Extract marker character from a text node
     fn extract_marker(text: &str) -> Option<char> {
-        text.trim().chars().next().filter(|&c| c == '*' || c == '+' || c == '-')
+        text.trim()
+            .chars()
+            .next()
+            .filter(|&c| c == '*' || c == '+' || c == '-')
     }
 
     /// Convert marker character to style name for error messages
     fn marker_to_style_name(marker: char) -> &'static str {
         match marker {
             '*' => "asterisk",
-            '+' => "plus", 
+            '+' => "plus",
             '-' => "dash",
             _ => "unknown",
         }
@@ -54,7 +57,7 @@ impl MD004Linter {
     /// Find list item markers within a list node
     fn find_list_item_markers<'a>(&self, list_node: &Node<'a>) -> Vec<(Node<'a>, char, usize)> {
         let mut markers = Vec::new();
-        
+
         for child_idx in 0..list_node.child_count() {
             if let Some(list_item) = list_node.child(child_idx) {
                 if list_item.kind() == "list_item" {
@@ -75,7 +78,7 @@ impl MD004Linter {
                 }
             }
         }
-        
+
         markers
     }
 
@@ -83,7 +86,7 @@ impl MD004Linter {
     fn calculate_nesting_level(&self, list_node: &Node) -> usize {
         let mut nesting_level = 0;
         let mut current_node = *list_node;
-        
+
         // Walk up the tree looking for parent list nodes
         while let Some(parent) = current_node.parent() {
             if parent.kind() == "list" {
@@ -91,25 +94,28 @@ impl MD004Linter {
             }
             current_node = parent;
         }
-        
+
         nesting_level
     }
 
     fn check_list(&mut self, node: &Node) {
         let style = &self.context.config.linters.settings.ul_style.style;
-        
+
         // Extract marker information immediately to avoid lifetime issues
         let marker_info: Vec<(tree_sitter::Range, char, usize)> = {
             let markers = self.find_list_item_markers(node);
-            markers.into_iter().map(|(node, marker, level)| (node.range(), marker, level)).collect()
+            markers
+                .into_iter()
+                .map(|(node, marker, level)| (node.range(), marker, level))
+                .collect()
         };
-        
+
         if marker_info.is_empty() {
             return; // No markers found, nothing to check
         }
-        
+
         let nesting_level = self.calculate_nesting_level(node);
-        
+
         // Debug: print found markers
         // eprintln!("Found {} markers: {:?}", marker_info.len(), marker_info.iter().map(|(_, c, _)| c).collect::<Vec<_>>());
         // eprintln!("Nesting level: {}", nesting_level);
@@ -131,19 +137,26 @@ impl MD004Linter {
             }
             UlStyle::Sublist => {
                 // Handle sublist style - each nesting level should differ from its parent
-                if let Some(&parent_marker) = self.nesting_styles.get(&nesting_level.saturating_sub(1)) {
+                if let Some(&parent_marker) =
+                    self.nesting_styles.get(&nesting_level.saturating_sub(1))
+                {
                     // Choose a different marker from parent
                     expected_marker = Some(match parent_marker {
                         '*' => '+',
-                        '+' => '-', 
+                        '+' => '-',
                         '-' => '*',
                         _ => '*',
                     });
                 } else {
                     // Top level - use first marker found or default to asterisk
-                    expected_marker = Some(marker_info.first().map(|(_, marker, _)| *marker).unwrap_or('*'));
+                    expected_marker = Some(
+                        marker_info
+                            .first()
+                            .map(|(_, marker, _)| *marker)
+                            .unwrap_or('*'),
+                    );
                 }
-                
+
                 // Remember this nesting level's marker
                 if let Some(marker) = expected_marker {
                     self.nesting_styles.insert(nesting_level, marker);
@@ -161,7 +174,7 @@ impl MD004Linter {
                         Self::marker_to_style_name(expected),
                         Self::marker_to_style_name(actual_marker)
                     );
-                    
+
                     self.violations.push(RuleViolation::new(
                         &MD004,
                         message,
@@ -201,7 +214,11 @@ impl MD004Linter {
                                 let content = self.context.document_content.borrow();
                                 let text = child.utf8_text(content.as_bytes()).unwrap_or("");
                                 // Check if it's an unordered list marker
-                                return text.trim().chars().next().map_or(false, |c| c == '*' || c == '+' || c == '-');
+                                return text
+                                    .trim()
+                                    .chars()
+                                    .next()
+                                    .map_or(false, |c| c == '*' || c == '+' || c == '-');
                             }
                         }
                     }
@@ -231,20 +248,20 @@ mod test {
     use crate::test_utils::test_helpers::test_config_with_rules;
 
     fn test_config() -> crate::config::QuickmarkConfig {
-        test_config_with_rules(vec![
-            ("ul-style", RuleSeverity::Error),
-        ])
+        test_config_with_rules(vec![("ul-style", RuleSeverity::Error)])
     }
 
     fn test_config_sublist() -> crate::config::QuickmarkConfig {
+        use crate::config::{
+            LintersSettingsTable, LintersTable, MD004UlStyleTable, QuickmarkConfig, RuleSeverity,
+            UlStyle,
+        };
         use std::collections::HashMap;
-        use crate::config::{LintersTable, LintersSettingsTable, QuickmarkConfig, RuleSeverity, UlStyle, MD004UlStyleTable};
-        
-        let severity: HashMap<String, RuleSeverity> = vec![
-            ("ul-style".to_string(), RuleSeverity::Error),
-        ]
-        .into_iter()
-        .collect();
+
+        let severity: HashMap<String, RuleSeverity> =
+            vec![("ul-style".to_string(), RuleSeverity::Error)]
+                .into_iter()
+                .collect();
 
         QuickmarkConfig::new(LintersTable {
             severity,
