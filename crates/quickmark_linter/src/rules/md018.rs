@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::rc::Rc;
 
 use tree_sitter::Node;
@@ -40,37 +41,16 @@ impl MD018Linter {
     }
 
     /// Get line numbers that should be ignored (inside code blocks or HTML blocks)
-    fn get_ignore_lines(&self) -> std::collections::HashSet<usize> {
-        let mut ignore_lines = std::collections::HashSet::new();
+    fn get_ignore_lines(&self) -> HashSet<usize> {
+        let mut ignore_lines = HashSet::new();
         let node_cache = self.context.node_cache.borrow();
 
-        // Get cached nodes for code blocks and HTML blocks
-        if let Some(fenced_blocks) = node_cache.get("fenced_code_block") {
-            for node_info in fenced_blocks {
-                let start_line = node_info.line_start + 1;
-                let end_line = node_info.line_end + 1;
-                for line_num in start_line..=end_line {
-                    ignore_lines.insert(line_num);
-                }
-            }
-        }
-
-        if let Some(indented_blocks) = node_cache.get("indented_code_block") {
-            for node_info in indented_blocks {
-                let start_line = node_info.line_start + 1;
-                let end_line = node_info.line_end + 1;
-                for line_num in start_line..=end_line {
-                    ignore_lines.insert(line_num);
-                }
-            }
-        }
-
-        if let Some(html_blocks) = node_cache.get("html_block") {
-            for node_info in html_blocks {
-                let start_line = node_info.line_start + 1;
-                let end_line = node_info.line_end + 1;
-                for line_num in start_line..=end_line {
-                    ignore_lines.insert(line_num);
+        for node_type in ["fenced_code_block", "indented_code_block", "html_block"] {
+            if let Some(blocks) = node_cache.get(node_type) {
+                for node_info in blocks {
+                    for line_num in (node_info.line_start + 1)..=(node_info.line_end + 1) {
+                        ignore_lines.insert(line_num);
+                    }
                 }
             }
         }
@@ -79,44 +59,26 @@ impl MD018Linter {
     }
 
     fn is_md018_violation(&self, line: &str) -> bool {
-        // Pattern from original: /^#+[^# \t]/.test(line) && !/#\s*$/.test(line) && !line.startsWith("#️⃣")
-
-        // Check if line starts with one or more # followed by non-space, non-tab, non-# character
         let trimmed = line.trim_start();
 
         if !trimmed.starts_with('#') {
             return false;
         }
 
-        // Find the end of the hash sequence
-        let hash_end = trimmed.chars().take_while(|&c| c == '#').count();
-        if hash_end == 0 {
+        if trimmed.starts_with("#️⃣") {
             return false;
         }
 
-        // Check if line is only hashes and whitespace
-        if trimmed.trim_end().chars().all(|c| c == '#') {
+        let hash_count = trimmed.chars().take_while(|&c| c == '#').count();
+        if hash_count == 0 {
             return false;
         }
 
-        // Get the character immediately after the hashes
-        let chars: Vec<char> = trimmed.chars().collect();
-        if hash_end >= chars.len() {
-            return false; // Line ends with hashes only
+        match trimmed.chars().nth(hash_count) {
+            None => false,                  // Line consists only of hashes (e.g., "###")
+            Some(' ') | Some('\t') => false, // Correctly formatted with a space or tab
+            Some(_) => true,                // Any other character indicates a missing space
         }
-
-        let char_after_hashes = chars[hash_end];
-
-        // Check if the character after hashes is NOT a space or tab
-        if char_after_hashes != ' ' && char_after_hashes != '\t' && char_after_hashes != '#' {
-            // Additional check: ignore emoji hashtag pattern #️⃣ (not ##️⃣ or others)
-            if line.starts_with("#️⃣") {
-                return false;
-            }
-            return true;
-        }
-
-        false
     }
 
     fn create_violation_for_line(&self, line: &str, line_number: usize) -> RuleViolation {
@@ -125,7 +87,7 @@ impl MD018Linter {
             MD018.description.to_string(),
             self.context.file_path.clone(),
             range_from_tree_sitter(&tree_sitter::Range {
-                start_byte: 0,
+                start_byte: 0, // Note: byte offsets are not correctly handled here
                 end_byte: line.len(),
                 start_point: tree_sitter::Point {
                     row: line_number,
@@ -172,10 +134,7 @@ mod test {
     use crate::test_utils::test_helpers::test_config_with_rules;
 
     fn test_config() -> crate::config::QuickmarkConfig {
-        test_config_with_rules(vec![
-            ("no-missing-space-atx", RuleSeverity::Error),
-            ("heading-style", RuleSeverity::Off),
-        ])
+        test_config_with_rules(vec![("no-missing-space-atx", RuleSeverity::Error), ("heading-style", RuleSeverity::Off)])
     }
 
     #[test]
@@ -224,7 +183,9 @@ mod test {
 
     #[test]
     fn test_hash_only_lines_ignored() {
-        let input = "#\n##\n###";
+        let input = "#
+##
+###";
 
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
@@ -234,7 +195,9 @@ mod test {
 
     #[test]
     fn test_hash_with_only_whitespace_ignored() {
-        let input = "#   \n##  \n### \t";
+        let input = "#   
+##  
+### 	";
 
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
@@ -254,7 +217,9 @@ mod test {
 
     #[test]
     fn test_code_blocks_ignored() {
-        let input = "```\n#NoSpaceHere\n```";
+        let input = "```
+#NoSpaceHere
+```";
 
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
@@ -274,7 +239,9 @@ mod test {
 
     #[test]
     fn test_html_blocks_ignored() {
-        let input = "<div>\n#NoSpaceHere\n</div>";
+        let input = "<div>
+#NoSpaceHere
+</div>";
 
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
@@ -284,7 +251,10 @@ mod test {
 
     #[test]
     fn test_multiple_violations() {
-        let input = "#Heading 1\n##Heading 2\n### Proper heading\n####Heading 4";
+        let input = "#Heading 1
+##Heading 2
+### Proper heading
+####Heading 4";
 
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
@@ -299,7 +269,10 @@ mod test {
 
     #[test]
     fn test_mixed_valid_invalid() {
-        let input = "# Valid heading 1\n#Invalid heading\n## Valid heading 2\n###Also invalid";
+        let input = "# Valid heading 1
+#Invalid heading
+## Valid heading 2
+###Also invalid";
 
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
