@@ -145,7 +145,7 @@ allowed_elements = []
 
 ## Rules
 
-**Implementation Progress: 23/52 rules completed (44.2%)**
+**Implementation Progress: 24/52 rules completed (46.2%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -154,7 +154,7 @@ allowed_elements = []
 - [x] **[MD007](docs/rules/md007.md)** *ul-indent* - Unordered list indentation consistency
 - [x] **[MD009](docs/rules/md009.md)** *no-trailing-spaces* - Trailing spaces at end of lines
 - [x] **[MD010](docs/rules/md010.md)** *no-hard-tabs* - Hard tabs should not be used
-- [ ] **MD011** *no-reversed-links* - Reversed link syntax
+- [x] **[MD011](docs/rules/md011.md)** *no-reversed-links* - Reversed link syntax
 - [ ] **MD012** *no-multiple-blanks* - Multiple consecutive blank lines
 - [x] **[MD013](docs/rules/md013.md)** *line-length* - Line length limits with configurable exceptions
 - [x] **[MD014](docs/rules/md014.md)** *commands-show-output* - Dollar signs before shell commands
