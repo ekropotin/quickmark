@@ -1,10 +1,10 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
-use std::cell::RefCell;
+use std::collections::HashSet;
 use std::rc::Rc;
 use tree_sitter::Node;
 
-use crate::linter::{Context, RuleLinter, RuleViolation};
+use crate::linter::{range_from_tree_sitter, Context, RuleLinter, RuleViolation};
 
 use super::{Rule, RuleType};
 
@@ -17,20 +17,19 @@ static CLOSED_ATX_REGEX: Lazy<Regex> = Lazy::new(|| {
 
 pub(crate) struct MD021Linter {
     context: Rc<Context>,
-    pending_violations: RefCell<Vec<RuleViolation>>,
+    violations: Vec<RuleViolation>,
 }
 
 impl MD021Linter {
     pub fn new(context: Rc<Context>) -> Self {
         Self {
             context,
-            pending_violations: RefCell::new(Vec::new()),
+            violations: Vec::new(),
         }
     }
 
-    fn analyze_all_lines(&self) {
+    fn analyze_all_lines(&mut self) {
         let lines = self.context.lines.borrow();
-        let mut violations = Vec::new();
 
         // Get line numbers that should be ignored (inside code blocks or HTML blocks)
         let ignore_lines = self.get_ignore_lines();
@@ -41,45 +40,22 @@ impl MD021Linter {
             }
 
             if let Some(mut line_violations) = self.check_line(line, line_index) {
-                violations.append(&mut line_violations);
+                self.violations.append(&mut line_violations);
             }
         }
-
-        *self.pending_violations.borrow_mut() = violations;
     }
 
     /// Get line numbers that should be ignored (inside code blocks or HTML blocks)
-    fn get_ignore_lines(&self) -> std::collections::HashSet<usize> {
-        let mut ignore_lines = std::collections::HashSet::new();
+    fn get_ignore_lines(&self) -> HashSet<usize> {
+        let mut ignore_lines = HashSet::new();
         let node_cache = self.context.node_cache.borrow();
 
-        // Get cached nodes for code blocks and HTML blocks
-        if let Some(fenced_blocks) = node_cache.get("fenced_code_block") {
-            for node_info in fenced_blocks {
-                let start_line = node_info.line_start + 1;
-                let end_line = node_info.line_end + 1;
-                for line_num in start_line..=end_line {
-                    ignore_lines.insert(line_num);
-                }
-            }
-        }
-
-        if let Some(indented_blocks) = node_cache.get("indented_code_block") {
-            for node_info in indented_blocks {
-                let start_line = node_info.line_start + 1;
-                let end_line = node_info.line_end + 1;
-                for line_num in start_line..=end_line {
-                    ignore_lines.insert(line_num);
-                }
-            }
-        }
-
-        if let Some(html_blocks) = node_cache.get("html_block") {
-            for node_info in html_blocks {
-                let start_line = node_info.line_start + 1;
-                let end_line = node_info.line_end + 1;
-                for line_num in start_line..=end_line {
-                    ignore_lines.insert(line_num);
+        for node_type in ["fenced_code_block", "indented_code_block", "html_block"] {
+            if let Some(blocks) = node_cache.get(node_type) {
+                for node_info in blocks {
+                    for line_num in (node_info.line_start + 1)..=(node_info.line_end + 1) {
+                        ignore_lines.insert(line_num);
+                    }
                 }
             }
         }
@@ -91,17 +67,12 @@ impl MD021Linter {
         let mut violations = Vec::new();
 
         if let Some(captures) = CLOSED_ATX_REGEX.captures(line) {
-            let _opening_hashes = captures.get(1).unwrap().as_str();
             let opening_spaces = captures.get(2).unwrap().as_str();
-            let _content = captures.get(3).unwrap().as_str();
             let closing_spaces = captures.get(4).unwrap().as_str();
-            let _closing_hashes = captures.get(5).unwrap().as_str();
 
             // Check for multiple spaces after opening hashes
             if opening_spaces.len() > 1 {
-                // Point to the start of excess opening spaces (after first space)
-                let start_pos = captures.get(2).unwrap().start() + 1 + 1; // +1 to skip first valid space, +1 for 1-based indexing
-                let end_pos = start_pos;
+                let start_col = captures.get(2).unwrap().start();
                 violations.push(RuleViolation::new(
                     &MD021,
                     format!(
@@ -109,18 +80,19 @@ impl MD021Linter {
                         opening_spaces.len()
                     ),
                     self.context.file_path.clone(),
-                    crate::linter::Range {
-                        start: crate::linter::CharPosition { line: line_index, character: start_pos },
-                        end: crate::linter::CharPosition { line: line_index, character: end_pos },
-                    },
+                    // The location points to the second space, which is the beginning of the violation.
+                    range_from_tree_sitter(&tree_sitter::Range {
+                        start_byte: 0, // Not accurate, but line/col is used
+                        end_byte: 0,
+                        start_point: tree_sitter::Point { row: line_index, column: start_col + 2 },
+                        end_point: tree_sitter::Point { row: line_index, column: start_col + 3 },
+                    }),
                 ));
             }
 
             // Check for multiple spaces before closing hashes
             if closing_spaces.len() > 1 {
-                // Point to the start of excess closing spaces (after first space)
-                let start_pos = captures.get(4).unwrap().start() + 1 + 1; // +1 to skip first valid space, +1 for 1-based indexing
-                let end_pos = start_pos;
+                let start_col = captures.get(4).unwrap().start();
                 violations.push(RuleViolation::new(
                     &MD021,
                     format!(
@@ -128,10 +100,13 @@ impl MD021Linter {
                         closing_spaces.len()
                     ),
                     self.context.file_path.clone(),
-                    crate::linter::Range {
-                        start: crate::linter::CharPosition { line: line_index, character: start_pos },
-                        end: crate::linter::CharPosition { line: line_index, character: end_pos },
-                    },
+                    // The location points to the second space, which is the beginning of the violation.
+                    range_from_tree_sitter(&tree_sitter::Range {
+                        start_byte: 0, // Not accurate, but line/col is used
+                        end_byte: 0,
+                        start_point: tree_sitter::Point { row: line_index, column: start_col + 2 },
+                        end_point: tree_sitter::Point { row: line_index, column: start_col + 3 },
+                    }),
                 ));
             }
         }
@@ -145,14 +120,14 @@ impl MD021Linter {
 }
 
 impl RuleLinter for MD021Linter {
-    fn feed(&mut self, _node: &Node) {
-        // This rule uses line-based analysis, so we don't need to process individual nodes
-        // The analysis is done in finalize() on all lines at once
+    fn feed(&mut self, node: &Node) {
+        if node.kind() == "document" {
+            self.analyze_all_lines();
+        }
     }
 
     fn finalize(&mut self) -> Vec<RuleViolation> {
-        self.analyze_all_lines();
-        std::mem::take(&mut *self.pending_violations.borrow_mut())
+        std::mem::take(&mut self.violations)
     }
 }
 
@@ -186,10 +161,7 @@ mod test {
     fn test_md021_multiple_spaces_after_opening_hashes() {
         let config = test_config();
 
-        let input = "##  Heading with multiple spaces after opening ##
-###   Another heading ###
-####    Yet another heading ####
-";
+        let input = "##  Heading with multiple spaces after opening ##\n###   Another heading ###\n####    Yet another heading ####\n";
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
 
@@ -205,10 +177,7 @@ mod test {
     fn test_md021_multiple_spaces_before_closing_hashes() {
         let config = test_config();
 
-        let input = "## Heading with multiple spaces before closing  ##
-### Another heading with spaces before closing   ###
-#### Yet another heading    ####
-";
+        let input = "## Heading with multiple spaces before closing  ##\n### Another heading with spaces before closing   ###\n#### Yet another heading    ####\n";
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
 
@@ -224,9 +193,7 @@ mod test {
     fn test_md021_multiple_spaces_both_sides() {
         let config = test_config();
 
-        let input = "##  Heading with multiple spaces on both sides  ##
-###   Another heading with multiple spaces   ###
-";
+        let input = "##  Heading with multiple spaces on both sides  ##\n###   Another heading with multiple spaces   ###\n";
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
 
@@ -242,11 +209,7 @@ mod test {
     fn test_md021_correct_single_spaces() {
         let config = test_config();
 
-        let input = "# Heading with correct spacing #
-## Another heading with correct spacing ##
-### Third heading with correct spacing ###
-#### Fourth heading ####
-";
+        let input = "# Heading with correct spacing #\n## Another heading with correct spacing ##\n### Third heading with correct spacing ###\n#### Fourth heading ####\n";
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
 
@@ -258,12 +221,7 @@ mod test {
     fn test_md021_only_applies_to_closed_headings() {
         let config = test_config();
 
-        let input = "# Regular ATX heading
-##  Regular ATX heading with multiple spaces
-### Regular ATX heading
-##  Closed heading with multiple spaces ##
-### Another closed heading with multiple spaces  ###
-";
+        let input = "# Regular ATX heading\n##  Regular ATX heading with multiple spaces\n### Regular ATX heading\n##  Closed heading with multiple spaces ##\n### Another closed heading with multiple spaces  ###\n";
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
 
@@ -280,9 +238,7 @@ mod test {
     fn test_md021_no_spaces_around_hashes() {
         let config = test_config();
 
-        let input = "##Heading with no spaces##
-###Another heading with no spaces###
-";
+        let input = "##Heading with no spaces##\n###Another heading with no spaces###\n";
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
 
@@ -295,10 +251,7 @@ mod test {
     fn test_md021_mixed_tabs_and_spaces() {
         let config = test_config();
 
-        let input = "##\t\tHeading with tabs after opening ##
-## Heading with spaces before closing\t\t##
-###  \tMixed tabs and spaces   ###
-";
+        let input = "##\t\tHeading with tabs after opening ##\n## Heading with spaces before closing\t\t##\n###  \tMixed tabs and spaces   ###\n";
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
 
@@ -314,9 +267,7 @@ mod test {
     fn test_md021_edge_case_single_hash() {
         let config = test_config();
 
-        let input = "#  Heading with single hash and multiple spaces #
-#   Another single hash heading   #
-";
+        let input = "#  Heading with single hash and multiple spaces #\n#   Another single hash heading   #\n";
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
 
@@ -334,10 +285,7 @@ mod test {
 
         // These escaped hash headings should NOT trigger MD021 violations
         // (they should be ignored as they're not true closed ATX headings)
-        let input = "## Multiple spaces before escaped hash  \\##
-### Multiple spaces with escaped hash  \\###
-####  Yet another escaped hash  \\####
-";
+        let input = "## Multiple spaces before escaped hash  \\##\n### Multiple spaces with escaped hash  \\###\n####  Yet another escaped hash  \\####\n";
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
 
@@ -350,9 +298,7 @@ mod test {
         let config = test_config();
 
         // Test that column positions are reported correctly (1-based indexing)
-        let input = "##  Two spaces after opening ##
-### Three spaces before closing   ###
-";
+        let input = "##  Two spaces after opening ##\n### Three spaces before closing   ###\n";
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
 
@@ -360,17 +306,15 @@ mod test {
 
         // First violation: opening spaces on line 1
         // Line: "##  Two spaces after opening ##"
-        //        0123456789...
-        // Should point to column 4 (1-based) which is the second space
-        assert_eq!(violations[0].location().range.start.line, 0); // 0-based line indexing
-        assert_eq!(violations[0].location().range.start.character, 4); // 1-based column, pointing to excess space
+        // Column should be 4 (the second space)
+        assert_eq!(violations[0].location().range.start.line, 0);
+        assert_eq!(violations[0].location().range.start.character, 4);
 
         // Second violation: closing spaces on line 2
         // Line: "### Three spaces before closing   ###"
-        //        01234567890123456789012345678901234567
-        // Should point to column 33 (1-based) which is the second space before ###
-        assert_eq!(violations[1].location().range.start.line, 1); // 0-based line indexing
-        assert_eq!(violations[1].location().range.start.character, 33); // 1-based column, pointing to excess space
+        // Column should be 33 (the second space)
+        assert_eq!(violations[1].location().range.start.line, 1);
+        assert_eq!(violations[1].location().range.start.character, 33);
     }
 
     #[test]
@@ -378,11 +322,7 @@ mod test {
         let config = test_config();
 
         // Test various combinations of tabs and spaces
-        let input = "##\t\tTab after opening ##
-##  \tSpace then tab ##
-##\t Mixed tab and space\t##
-###\t  Tab and spaces  \t###
-";
+        let input = "##\t\tTab after opening ##\n##  \tSpace then tab ##\n##\t Mixed tab and space\t##\n###\t  Tab and spaces  \t###\n";
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
 
@@ -406,13 +346,7 @@ mod test {
         let config = test_config();
 
         // Test different combinations of hash counts
-        let input = "#  Single hash with multiple opening spaces #
-##   Double hash with multiple opening spaces ##
-###    Triple hash with multiple opening spaces ###
-# Single hash with multiple closing spaces  #
-##  Double hash with multiple closing spaces  ##
-###   Triple hash with multiple closing spaces   ###
-";
+        let input = "#  Single hash with multiple opening spaces #\n##   Double hash with multiple opening spaces ##\n###    Triple hash with multiple opening spaces ###\n# Single hash with multiple closing spaces  #\n##  Double hash with multiple closing spaces  ##\n###   Triple hash with multiple closing spaces   ###\n";
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
 
@@ -436,11 +370,7 @@ mod test {
         let config = test_config();
 
         // Test boundary conditions: exactly 1 space (valid) vs 2+ spaces (invalid)
-        let input = "# Exactly one space on both sides #
-##  Exactly two spaces after opening ##
-## Exactly two spaces before closing  ##
-###   Three spaces both sides   ###
-";
+        let input = "# Exactly one space on both sides #\n##  Exactly two spaces after opening ##\n## Exactly two spaces before closing  ##\n###   Three spaces both sides   ###\n";
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
 
@@ -459,10 +389,7 @@ mod test {
         let config = test_config();
 
         // Test that violation messages contain correct actual counts
-        let input = "##  Two spaces ##
-###   Three spaces   ###
-####    Four spaces    ####
-";
+        let input = "##  Two spaces ##\n###   Three spaces   ###\n####    Four spaces    ####\n";
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
 
@@ -482,12 +409,7 @@ mod test {
         let config = test_config();
 
         // Test edge cases that might confuse the regex
-        let input = "## Normal heading ##
-##  Heading with  multiple  internal  spaces ##
-###   Heading with trailing hash###
-####    Heading with unmatched hashes ###
-##### Heading with content containing # symbols #####
-";
+        let input = "## Normal heading ##\n##  Heading with  multiple  internal  spaces ##\n###   Heading with trailing hash###\n####    Heading with unmatched hashes ###\n##### Heading with content containing # symbols #####\n";
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
 
@@ -510,16 +432,7 @@ mod test {
         let config = test_config();
 
         // Test cases that exactly match the comprehensive test file scenarios
-        let input = "##  Two spaces after opening ##
-###   Three spaces after opening ###
-## Two spaces before closing  ##
-### Three spaces before closing   ###
-##  Both sides have multiple  ##
-#  Multiple spaces after single hash #
-##\tTab after opening\t##
-##    Many spaces    ##
-###     Even more spaces     ###
-";
+        let input = "##  Two spaces after opening ##\n###   Three spaces after opening ###\n## Two spaces before closing  ##\n### Three spaces before closing   ###\n##  Both sides have multiple  ##\n#  Multiple spaces after single hash #\n##\tTab after opening\t##\n##    Many spaces    ##\n###     Even more spaces     ###\n";
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
 
@@ -554,14 +467,7 @@ mod test {
     fn test_md021_only_closed_not_setext() {
         let config = test_config();
 
-        let input = "Setext Heading 1
-================
-
-Setext Heading 2
-----------------
-
-##  Closed ATX heading  ##
-";
+        let input = "Setext Heading 1\n================\n\nSetext Heading 2\n----------------\n\n##  Closed ATX heading  ##\n";
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
 
