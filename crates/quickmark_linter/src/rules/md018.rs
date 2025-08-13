@@ -75,9 +75,9 @@ impl MD018Linter {
         }
 
         match trimmed.chars().nth(hash_count) {
-            None => false,                  // Line consists only of hashes (e.g., "###")
+            None => false,                   // Line consists only of hashes (e.g., "###")
             Some(' ') | Some('\t') => false, // Correctly formatted with a space or tab
-            Some(_) => true,                // Any other character indicates a missing space
+            Some(_) => true,                 // Any other character indicates a missing space
         }
     }
 
@@ -134,7 +134,10 @@ mod test {
     use crate::test_utils::test_helpers::test_config_with_rules;
 
     fn test_config() -> crate::config::QuickmarkConfig {
-        test_config_with_rules(vec![("no-missing-space-atx", RuleSeverity::Error), ("heading-style", RuleSeverity::Off)])
+        test_config_with_rules(vec![
+            ("no-missing-space-atx", RuleSeverity::Error),
+            ("heading-style", RuleSeverity::Off),
+        ])
     }
 
     #[test]
