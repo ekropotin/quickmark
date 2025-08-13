@@ -1,0 +1,30 @@
+[linters.severity]
+# Disable all rules except MD012
+"heading-increment" = "off"
+"heading-style" = "off"
+"ul-style" = "off" 
+"ul-indent" = "off"
+"no-trailing-spaces" = "off"
+"no-hard-tabs" = "off"
+"no-reversed-links" = "off"
+"no-multiple-blanks" = "err"
+"line-length" = "off"
+"commands-show-output" = "off"
+"no-missing-space-atx" = "off"
+"no-multiple-space-atx" = "off"
+"no-missing-space-closed-atx" = "off"
+"no-space-in-emphasis" = "off"
+"blanks-around-headings" = "off"
+"no-duplicate-heading" = "off"
+"single-h1" = "off"
+"blanks-around-fences" = "off"
+"blanks-around-lists" = "off"
+"no-inline-html" = "off"
+"no-bare-urls" = "off"
+"required-headings" = "off"
+"link-fragments" = "off"
+"reference-links-images" = "off"
+"link-image-reference-definitions" = "off"
+
+[linters.settings.no-multiple-blanks]
+maximum = 2

@@ -155,7 +155,7 @@ allowed_elements = []
 - [x] **[MD009](docs/rules/md009.md)** *no-trailing-spaces* - Trailing spaces at end of lines
 - [x] **[MD010](docs/rules/md010.md)** *no-hard-tabs* - Hard tabs should not be used
 - [x] **[MD011](docs/rules/md011.md)** *no-reversed-links* - Reversed link syntax
-- [ ] **MD012** *no-multiple-blanks* - Multiple consecutive blank lines
+- [x] **[MD012](docs/rules/md012.md)** *no-multiple-blanks* - Multiple consecutive blank lines
 - [x] **[MD013](docs/rules/md013.md)** *line-length* - Line length limits with configurable exceptions
 - [x] **[MD014](docs/rules/md014.md)** *commands-show-output* - Dollar signs before shell commands
 - [x] **[MD018](docs/rules/md018.md)** *no-missing-space-atx* - Space after hash in ATX headings
