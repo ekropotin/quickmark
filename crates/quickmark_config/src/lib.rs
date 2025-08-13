@@ -66,6 +66,14 @@ fn default_br_spaces() -> usize {
     2
 }
 
+fn default_spaces_per_tab() -> usize {
+    1
+}
+
+fn default_empty_code_languages() -> Vec<String> {
+    Vec::new()
+}
+
 #[derive(Deserialize)]
 struct TomlMD007UlIndentTable {
     #[serde(default = "default_indent")]
@@ -102,6 +110,26 @@ impl Default for TomlMD009TrailingSpacesTable {
             br_spaces: 2,
             list_item_empty_lines: false,
             strict: false,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+struct TomlMD010HardTabsTable {
+    #[serde(default = "default_true")]
+    code_blocks: bool,
+    #[serde(default = "default_empty_code_languages")]
+    ignore_code_languages: Vec<String>,
+    #[serde(default = "default_spaces_per_tab")]
+    spaces_per_tab: usize,
+}
+
+impl Default for TomlMD010HardTabsTable {
+    fn default() -> Self {
+        Self {
+            code_blocks: true,
+            ignore_code_languages: Vec::new(),
+            spaces_per_tab: 1,
         }
     }
 }
@@ -271,6 +299,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "no-trailing-spaces")]
     #[serde(default)]
     trailing_spaces: TomlMD009TrailingSpacesTable,
+    #[serde(rename = "no-hard-tabs")]
+    #[serde(default)]
+    hard_tabs: TomlMD010HardTabsTable,
     #[serde(rename = "line-length")]
     #[serde(default)]
     line_length: TomlMD013LineLengthTable,
@@ -396,6 +427,11 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
                     .trailing_spaces
                     .list_item_empty_lines,
                 strict: toml_config.linters.settings.trailing_spaces.strict,
+            },
+            hard_tabs: quickmark_linter::config::MD010HardTabsTable {
+                code_blocks: toml_config.linters.settings.hard_tabs.code_blocks,
+                ignore_code_languages: toml_config.linters.settings.hard_tabs.ignore_code_languages,
+                spaces_per_tab: toml_config.linters.settings.hard_tabs.spaces_per_tab,
             },
             line_length: MD013LineLengthTable {
                 line_length: toml_config.linters.settings.line_length.line_length,
@@ -1056,5 +1092,57 @@ mod tests {
                 .list_item_empty_lines
         );
         assert!(!parsed.linters.settings.trailing_spaces.strict);
+    }
+
+    #[test]
+    fn test_parse_md010_hard_tabs_config() {
+        let config_str = r#"
+        [linters.severity]
+        no-hard-tabs = 'err'
+
+        [linters.settings.no-hard-tabs]
+        code_blocks = false
+        ignore_code_languages = ["python", "javascript", "bash"]
+        spaces_per_tab = 4
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("no-hard-tabs").unwrap()
+        );
+        assert!(!parsed.linters.settings.hard_tabs.code_blocks);
+        assert_eq!(
+            vec![
+                "python".to_string(),
+                "javascript".to_string(),
+                "bash".to_string()
+            ],
+            parsed.linters.settings.hard_tabs.ignore_code_languages
+        );
+        assert_eq!(4, parsed.linters.settings.hard_tabs.spaces_per_tab);
+    }
+
+    #[test]
+    fn test_parse_md010_default_values() {
+        let config_str = r#"
+        [linters.severity]
+        no-hard-tabs = 'warn'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("no-hard-tabs").unwrap()
+        );
+        // Test default values
+        assert!(parsed.linters.settings.hard_tabs.code_blocks);
+        assert!(parsed
+            .linters
+            .settings
+            .hard_tabs
+            .ignore_code_languages
+            .is_empty());
+        assert_eq!(1, parsed.linters.settings.hard_tabs.spaces_per_tab);
     }
 }
