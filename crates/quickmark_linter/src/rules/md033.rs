@@ -1,4 +1,6 @@
-use std::rc::Rc;
+use once_cell::sync::Lazy;
+use regex::Regex;
+use std::{collections::HashSet, rc::Rc};
 use tree_sitter::Node;
 
 use crate::{
@@ -6,25 +8,43 @@ use crate::{
     rules::{Rule, RuleType},
 };
 
+// Memoized regex patterns for HTML tag detection
+static HTML_TAG_REGEX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"<(/?)([a-zA-Z][a-zA-Z0-9]*)[^>]*/?>").expect("Invalid HTML tag regex")
+});
+
+static CODE_SPAN_REGEX: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"`[^`]*`").expect("Invalid code span regex"));
+
 pub(crate) struct MD033Linter {
     context: Rc<Context>,
     violations: Vec<RuleViolation>,
+    allowed_elements: HashSet<String>,
 }
 
 impl MD033Linter {
     pub fn new(context: Rc<Context>) -> Self {
+        // Pre-process allowed elements into a HashSet for O(1) lookups
+        let allowed_elements: HashSet<String> = context
+            .config
+            .linters
+            .settings
+            .inline_html
+            .allowed_elements
+            .iter()
+            .map(|element| element.to_lowercase())
+            .collect();
+
         Self {
             context,
             violations: Vec::new(),
+            allowed_elements,
         }
     }
 
     fn is_allowed_element(&self, element_name: &str) -> bool {
-        let config = &self.context.config.linters.settings.inline_html;
-        config
-            .allowed_elements
-            .iter()
-            .any(|allowed| allowed.to_lowercase() == element_name.to_lowercase())
+        // O(1) lookup in pre-computed HashSet
+        self.allowed_elements.contains(&element_name.to_lowercase())
     }
 
     fn is_in_code_context(&self, node: &Node) -> bool {
@@ -90,16 +110,12 @@ impl MD033Linter {
             document_content[start_byte..end_byte].to_string()
         };
 
-        // Find all code span ranges using regex pattern matching
+        // Find all code span ranges using memoized regex pattern
         let mut code_span_ranges = Vec::new();
-        use regex::Regex;
-
-        if let Ok(code_span_regex) = Regex::new(r"`[^`]*`") {
-            for cap in code_span_regex.captures_iter(&content) {
-                let span_start = cap.get(0).unwrap().start();
-                let span_end = cap.get(0).unwrap().end();
-                code_span_ranges.push((span_start, span_end));
-            }
+        for cap in CODE_SPAN_REGEX.captures_iter(&content) {
+            let span_start = cap.get(0).unwrap().start();
+            let span_end = cap.get(0).unwrap().end();
+            code_span_ranges.push((span_start, span_end));
         }
 
         // Now process HTML with regex, but exclude code span ranges
@@ -118,124 +134,112 @@ impl MD033Linter {
         start_byte: usize,
         exclude_ranges: &[(usize, usize)],
     ) {
-        // Look for HTML tags using regex patterns
-        // This regex matches HTML opening and self-closing tags
-        use regex::Regex;
-        let html_tag_pattern = Regex::new(r"<(/?)([a-zA-Z][a-zA-Z0-9]*)[^>]*/?>");
+        // Use memoized HTML tag regex pattern
+        for cap in HTML_TAG_REGEX.captures_iter(content) {
+            if let Some(element_name_match) = cap.get(2) {
+                let tag_start = cap.get(0).unwrap().start();
+                let tag_end = cap.get(0).unwrap().end();
 
-        if let Ok(regex) = html_tag_pattern {
-            for cap in regex.captures_iter(content) {
-                if let Some(element_name_match) = cap.get(2) {
-                    let tag_start = cap.get(0).unwrap().start();
-                    let tag_end = cap.get(0).unwrap().end();
-
-                    // Check if this tag is inside any excluded range (code span)
-                    let mut in_excluded_range = false;
-                    for &(exclude_start, exclude_end) in exclude_ranges {
-                        if tag_start >= exclude_start && tag_end <= exclude_end {
-                            in_excluded_range = true;
-                            break;
-                        }
+                // Check if this tag is inside any excluded range (code span)
+                let mut in_excluded_range = false;
+                for &(exclude_start, exclude_end) in exclude_ranges {
+                    if tag_start >= exclude_start && tag_end <= exclude_end {
+                        in_excluded_range = true;
+                        break;
                     }
+                }
 
-                    if in_excluded_range {
-                        continue;
-                    }
+                if in_excluded_range {
+                    continue;
+                }
 
-                    let is_closing = cap.get(1).is_some_and(|m| m.as_str() == "/");
+                let is_closing = cap.get(1).is_some_and(|m| m.as_str() == "/");
 
-                    // Skip closing tags - we only want to report opening/self-closing tags
-                    if is_closing {
-                        continue;
-                    }
+                // Skip closing tags - we only want to report opening/self-closing tags
+                if is_closing {
+                    continue;
+                }
 
-                    let element_name = element_name_match.as_str();
+                let element_name = element_name_match.as_str();
 
-                    // Check if this element is allowed
-                    if !self.is_allowed_element(element_name) {
-                        // Calculate precise position of the HTML tag
-                        let tag_start_byte = start_byte + tag_start;
-                        let tag_end_byte = start_byte + tag_end;
-                        let (start_line, start_col) = self.byte_to_line_col(tag_start_byte);
-                        let (end_line, end_col) = self.byte_to_line_col(tag_end_byte);
+                // Check if this element is allowed
+                if !self.is_allowed_element(element_name) {
+                    // Calculate precise position of the HTML tag
+                    let tag_start_byte = start_byte + tag_start;
+                    let tag_end_byte = start_byte + tag_end;
+                    let (start_line, start_col) = self.byte_to_line_col(tag_start_byte);
+                    let (end_line, end_col) = self.byte_to_line_col(tag_end_byte);
 
-                        // Create precise tree_sitter::Range for this violation
-                        let range = range_from_tree_sitter(&tree_sitter::Range {
-                            start_byte: tag_start_byte,
-                            end_byte: tag_end_byte,
-                            start_point: tree_sitter::Point {
-                                row: start_line,
-                                column: start_col,
-                            },
-                            end_point: tree_sitter::Point {
-                                row: end_line,
-                                column: end_col,
-                            },
-                        });
+                    // Create precise tree_sitter::Range for this violation
+                    let range = range_from_tree_sitter(&tree_sitter::Range {
+                        start_byte: tag_start_byte,
+                        end_byte: tag_end_byte,
+                        start_point: tree_sitter::Point {
+                            row: start_line,
+                            column: start_col,
+                        },
+                        end_point: tree_sitter::Point {
+                            row: end_line,
+                            column: end_col,
+                        },
+                    });
 
-                        let violation = RuleViolation::new(
-                            &MD033,
-                            format!("Inline HTML [Element: {element_name}]"),
-                            self.context.file_path.clone(),
-                            range,
-                        );
-                        self.violations.push(violation);
-                    }
+                    let violation = RuleViolation::new(
+                        &MD033,
+                        format!("Inline HTML [Element: {element_name}]"),
+                        self.context.file_path.clone(),
+                        range,
+                    );
+                    self.violations.push(violation);
                 }
             }
         }
     }
 
     fn process_html_with_regex(&mut self, _node: &Node, content: &str, start_byte: usize) {
-        // Look for HTML tags using regex patterns
-        // This regex matches HTML opening and self-closing tags
-        use regex::Regex;
-        let html_tag_pattern = Regex::new(r"<(/?)([a-zA-Z][a-zA-Z0-9]*)[^>]*/?>");
+        // Use memoized HTML tag regex pattern
+        for cap in HTML_TAG_REGEX.captures_iter(content) {
+            if let Some(element_name_match) = cap.get(2) {
+                let tag_start = cap.get(0).unwrap().start();
+                let tag_end = cap.get(0).unwrap().end();
+                let is_closing = cap.get(1).is_some_and(|m| m.as_str() == "/");
 
-        if let Ok(regex) = html_tag_pattern {
-            for cap in regex.captures_iter(content) {
-                if let Some(element_name_match) = cap.get(2) {
-                    let tag_start = cap.get(0).unwrap().start();
-                    let tag_end = cap.get(0).unwrap().end();
-                    let is_closing = cap.get(1).is_some_and(|m| m.as_str() == "/");
+                // Skip closing tags - we only want to report opening/self-closing tags
+                if is_closing {
+                    continue;
+                }
 
-                    // Skip closing tags - we only want to report opening/self-closing tags
-                    if is_closing {
-                        continue;
-                    }
+                let element_name = element_name_match.as_str();
 
-                    let element_name = element_name_match.as_str();
+                // Check if this element is allowed
+                if !self.is_allowed_element(element_name) {
+                    // Calculate precise position of the HTML tag
+                    let tag_start_byte = start_byte + tag_start;
+                    let tag_end_byte = start_byte + tag_end;
+                    let (start_line, start_col) = self.byte_to_line_col(tag_start_byte);
+                    let (end_line, end_col) = self.byte_to_line_col(tag_end_byte);
 
-                    // Check if this element is allowed
-                    if !self.is_allowed_element(element_name) {
-                        // Calculate precise position of the HTML tag
-                        let tag_start_byte = start_byte + tag_start;
-                        let tag_end_byte = start_byte + tag_end;
-                        let (start_line, start_col) = self.byte_to_line_col(tag_start_byte);
-                        let (end_line, end_col) = self.byte_to_line_col(tag_end_byte);
+                    // Create precise tree_sitter::Range for this violation
+                    let range = range_from_tree_sitter(&tree_sitter::Range {
+                        start_byte: tag_start_byte,
+                        end_byte: tag_end_byte,
+                        start_point: tree_sitter::Point {
+                            row: start_line,
+                            column: start_col,
+                        },
+                        end_point: tree_sitter::Point {
+                            row: end_line,
+                            column: end_col,
+                        },
+                    });
 
-                        // Create precise tree_sitter::Range for this violation
-                        let range = range_from_tree_sitter(&tree_sitter::Range {
-                            start_byte: tag_start_byte,
-                            end_byte: tag_end_byte,
-                            start_point: tree_sitter::Point {
-                                row: start_line,
-                                column: start_col,
-                            },
-                            end_point: tree_sitter::Point {
-                                row: end_line,
-                                column: end_col,
-                            },
-                        });
-
-                        let violation = RuleViolation::new(
-                            &MD033,
-                            format!("Inline HTML [Element: {element_name}]"),
-                            self.context.file_path.clone(),
-                            range,
-                        );
-                        self.violations.push(violation);
-                    }
+                    let violation = RuleViolation::new(
+                        &MD033,
+                        format!("Inline HTML [Element: {element_name}]"),
+                        self.context.file_path.clone(),
+                        range,
+                    );
+                    self.violations.push(violation);
                 }
             }
         }
