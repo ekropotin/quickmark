@@ -359,6 +359,7 @@ mod test {
                     headings_blanks: config::MD022HeadingsBlanksTable::default(),
                     single_h1: config::MD025SingleH1Table::default(),
                     fenced_code_blanks: config::MD031FencedCodeBlanksTable::default(),
+                    inline_html: config::MD033InlineHtmlTable::default(),
                     multiple_headings: config::MD024MultipleHeadingsTable::default(),
                     required_headings: config::MD043RequiredHeadingsTable::default(),
                     link_fragments: config::MD051LinkFragmentsTable::default(),

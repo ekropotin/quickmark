@@ -138,11 +138,14 @@ match_case = false
 
 [linters.settings.link-image-reference-definitions]
 ignored_definitions = ["//"]
+
+[linters.settings.no-inline-html]
+allowed_elements = []
 ```
 
 ## Rules
 
-**Implementation Progress: 21/52 rules completed (40.4%)**
+**Implementation Progress: 22/52 rules completed (42.3%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -170,7 +173,7 @@ ignored_definitions = ["//"]
 - [ ] **MD030** *list-marker-space* - Spaces after list markers
 - [x] **[MD031](docs/rules/md031.md)** *blanks-around-fences* - Fenced code blocks surrounded by blank lines
 - [x] **[MD032](docs/rules/md032.md)** *blanks-around-lists* - Lists surrounded by blank lines
-- [ ] **MD033** *no-inline-html* - Inline HTML usage
+- [x] **[MD033](docs/rules/md033.md)** *no-inline-html* - Inline HTML usage
 - [x] **[MD034](docs/rules/md034.md)** *no-bare-urls* - Bare URLs without proper formatting
 - [ ] **MD035** *hr-style* - Horizontal rule style consistency
 - [ ] **MD036** *no-emphasis-as-heading* - Emphasis used instead of heading

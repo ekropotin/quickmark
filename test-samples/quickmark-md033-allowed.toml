@@ -1,0 +1,5 @@
+[linters.severity]
+no-inline-html = "err"
+
+[linters.settings.no-inline-html]
+allowed_elements = ["p", "div", "span", "br", "hr"]

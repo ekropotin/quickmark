@@ -185,6 +185,11 @@ pub struct MD043RequiredHeadingsTable {
     pub match_case: bool,
 }
 
+#[derive(Debug, PartialEq, Clone, Default)]
+pub struct MD033InlineHtmlTable {
+    pub allowed_elements: Vec<String>,
+}
+
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct LintersSettingsTable {
     pub heading_style: MD003HeadingStyleTable,
@@ -194,6 +199,7 @@ pub struct LintersSettingsTable {
     pub headings_blanks: MD022HeadingsBlanksTable,
     pub single_h1: MD025SingleH1Table,
     pub fenced_code_blanks: MD031FencedCodeBlanksTable,
+    pub inline_html: MD033InlineHtmlTable,
     pub multiple_headings: MD024MultipleHeadingsTable,
     pub required_headings: MD043RequiredHeadingsTable,
     pub link_fragments: MD051LinkFragmentsTable,
@@ -242,8 +248,8 @@ mod test {
         HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
         MD004UlStyleTable, MD007UlIndentTable, MD013LineLengthTable, MD022HeadingsBlanksTable,
         MD024MultipleHeadingsTable, MD025SingleH1Table, MD031FencedCodeBlanksTable,
-        MD043RequiredHeadingsTable, MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
-        MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
+        MD033InlineHtmlTable, MD043RequiredHeadingsTable, MD051LinkFragmentsTable,
+        MD052ReferenceLinksImagesTable, MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -310,6 +316,7 @@ mod test {
                 headings_blanks: MD022HeadingsBlanksTable::default(),
                 single_h1: MD025SingleH1Table::default(),
                 fenced_code_blanks: MD031FencedCodeBlanksTable::default(),
+                inline_html: MD033InlineHtmlTable::default(),
                 multiple_headings: MD024MultipleHeadingsTable::default(),
                 required_headings: MD043RequiredHeadingsTable::default(),
                 link_fragments: MD051LinkFragmentsTable::default(),

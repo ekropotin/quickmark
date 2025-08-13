@@ -34,13 +34,13 @@ fn print_cli_errors(results: &[RuleViolation], config: &QuickmarkConfig) -> (i32
                 new_warns += 1;
             }
         };
-        // Convert 0-based line numbers to 1-based for CLI display
+        // Convert 0-based line and character numbers to 1-based for CLI display
         eprintln!(
             "{}: {}:{}:{} {}/{} {}",
             prefix,
             v.location().file_path.to_string_lossy(),
             v.location().range.start.line + 1,
-            v.location().range.start.character,
+            v.location().range.start.character + 1,
             v.rule().id,
             v.rule().alias,
             v.message()
