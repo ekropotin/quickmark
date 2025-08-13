@@ -2,7 +2,7 @@ use anyhow::Result;
 use quickmark_linter::config::{
     normalize_severities, HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
     MD007UlIndentTable, MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable,
-    MD025SingleH1Table, QuickmarkConfig, RuleSeverity,
+    MD025SingleH1Table, MD033InlineHtmlTable, QuickmarkConfig, RuleSeverity,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -223,6 +223,16 @@ impl Default for TomlMD031FencedCodeBlanksTable {
     }
 }
 
+fn default_empty_vec() -> Vec<String> {
+    Vec::new()
+}
+
+#[derive(Deserialize, Default)]
+struct TomlMD033InlineHtmlTable {
+    #[serde(default = "default_empty_vec")]
+    allowed_elements: Vec<String>,
+}
+
 #[derive(Deserialize, Default)]
 struct TomlLintersSettingsTable {
     #[serde(rename = "heading-style")]
@@ -246,6 +256,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "blanks-around-fences")]
     #[serde(default)]
     fenced_code_blanks: TomlMD031FencedCodeBlanksTable,
+    #[serde(rename = "no-inline-html")]
+    #[serde(default)]
+    inline_html: TomlMD033InlineHtmlTable,
     #[serde(rename = "no-duplicate-heading")]
     #[serde(default)]
     multiple_headings: TomlMD024MultipleHeadingsTable,
@@ -372,6 +385,9 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
             },
             fenced_code_blanks: quickmark_linter::config::MD031FencedCodeBlanksTable {
                 list_items: toml_config.linters.settings.fenced_code_blanks.list_items,
+            },
+            inline_html: MD033InlineHtmlTable {
+                allowed_elements: toml_config.linters.settings.inline_html.allowed_elements,
             },
             multiple_headings: MD024MultipleHeadingsTable {
                 siblings_only: toml_config.linters.settings.multiple_headings.siblings_only,
@@ -905,5 +921,52 @@ mod tests {
             r"^\s*title\s*[:=]",
             parsed.linters.settings.single_h1.front_matter_title
         );
+    }
+
+    #[test]
+    fn test_parse_md033_inline_html_config() {
+        let config_str = r#"
+        [linters.severity]
+        no-inline-html = 'err'
+
+        [linters.settings.no-inline-html]
+        allowed_elements = ["h1", "p", "br", "hr"]
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("no-inline-html").unwrap()
+        );
+        assert_eq!(
+            vec![
+                "h1".to_string(),
+                "p".to_string(),
+                "br".to_string(),
+                "hr".to_string()
+            ],
+            parsed.linters.settings.inline_html.allowed_elements
+        );
+    }
+
+    #[test]
+    fn test_parse_md033_default_values() {
+        let config_str = r#"
+        [linters.severity]
+        no-inline-html = 'warn'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("no-inline-html").unwrap()
+        );
+        // Test default values
+        assert!(parsed
+            .linters
+            .settings
+            .inline_html
+            .allowed_elements
+            .is_empty());
     }
 }
