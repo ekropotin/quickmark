@@ -1,5 +1,5 @@
 use regex::Regex;
-use std::{cell::RefCell, rc::Rc};
+use std::rc::Rc;
 use tree_sitter::Node;
 
 use crate::linter::{CharPosition, Context, Range, RuleLinter, RuleViolation};
@@ -10,7 +10,7 @@ const VIOLATION_MESSAGE: &str = "Dollar signs used before commands without showi
 
 pub(crate) struct MD014Linter {
     context: Rc<Context>,
-    pending_violations: RefCell<Vec<RuleViolation>>,
+    violations: Vec<RuleViolation>,
     dollar_regex: Regex,
 }
 
@@ -18,14 +18,13 @@ impl MD014Linter {
     pub fn new(context: Rc<Context>) -> Self {
         Self {
             context,
-            pending_violations: RefCell::new(Vec::new()),
+            violations: Vec::new(),
             dollar_regex: Regex::new(r"^(\s*)\$\s+").unwrap(),
         }
     }
 
     /// Analyze all code blocks using cached nodes
-    fn analyze_all_code_blocks(&self) {
-        let mut violations = Vec::new();
+    fn analyze_all_code_blocks(&mut self) {
         let node_cache = self.context.node_cache.borrow();
         let lines = self.context.lines.borrow();
 
@@ -33,7 +32,7 @@ impl MD014Linter {
         if let Some(fenced_blocks) = node_cache.get("fenced_code_block") {
             for node_info in fenced_blocks {
                 if let Some(violation) = self.check_code_block_info(node_info, &lines, true) {
-                    violations.push(violation);
+                    self.violations.push(violation);
                 }
             }
         }
@@ -42,12 +41,10 @@ impl MD014Linter {
         if let Some(indented_blocks) = node_cache.get("indented_code_block") {
             for node_info in indented_blocks {
                 if let Some(violation) = self.check_code_block_info(node_info, &lines, false) {
-                    violations.push(violation);
+                    self.violations.push(violation);
                 }
             }
         }
-
-        *self.pending_violations.borrow_mut() = violations;
     }
 
     fn check_code_block_info(
@@ -80,7 +77,7 @@ impl MD014Linter {
                     // This works around tree-sitter-md parsing inconsistencies
                     if !is_fenced {
                         // Check if line starts with at least 4 spaces (indented code block requirement)
-                        if !line.starts_with("    ") && !line.starts_with('\t') {
+                        if !line.starts_with("    ") && !line.starts_with(' ') {
                             continue;
                         }
                     }
@@ -127,13 +124,15 @@ impl MD014Linter {
 }
 
 impl RuleLinter for MD014Linter {
-    fn feed(&mut self, _node: &Node) {
-        // Document rule type - we don't process individual nodes during feed
+    fn feed(&mut self, node: &Node) {
+        // This is a document-level rule, so we run the analysis when we see the document node.
+        if node.kind() == "document" {
+            self.analyze_all_code_blocks();
+        }
     }
 
     fn finalize(&mut self) -> Vec<RuleViolation> {
-        self.analyze_all_code_blocks();
-        std::mem::take(&mut self.pending_violations.borrow_mut())
+        std::mem::take(&mut self.violations)
     }
 }
 

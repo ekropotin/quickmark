@@ -41,8 +41,10 @@ impl MD005Linter {
             return;
         }
 
-        let is_ordered =
-            Self::is_ordered_list_static(list_node, &self.context.document_content.borrow());
+        let is_ordered = Self::is_ordered_list_static(
+            list_node,
+            self.context.document_content.borrow().as_bytes(),
+        );
 
         if is_ordered {
             self.check_ordered_list_indentation(list_node, &list_items);
@@ -52,33 +54,28 @@ impl MD005Linter {
     }
 
     fn get_direct_list_items_static<'a>(list_node: &Node<'a>) -> Vec<Node<'a>> {
-        let mut list_items = Vec::new();
-
-        for child_idx in 0..list_node.child_count() {
-            if let Some(child) = list_node.child(child_idx) {
-                if child.kind() == "list_item" {
-                    list_items.push(child);
-                }
-            }
-        }
-
-        list_items
+        let mut cursor = list_node.walk();
+        list_node
+            .children(&mut cursor)
+            .filter(|c| c.kind() == "list_item")
+            .collect()
     }
 
-    fn is_ordered_list_static(list_node: &Node, content: &str) -> bool {
-        // Check the first list item's marker to determine if it's ordered
-        for child_idx in 0..list_node.child_count() {
-            if let Some(list_item) = list_node.child(child_idx) {
-                if list_item.kind() == "list_item" {
-                    for grand_child_idx in 0..list_item.child_count() {
-                        if let Some(child) = list_item.child(grand_child_idx) {
-                            if child.kind().starts_with("list_marker") {
-                                let text = child.utf8_text(content.as_bytes()).unwrap_or("");
-                                // If it contains a period, it's an ordered list
-                                return text.contains('.');
-                            }
-                        }
+    fn is_ordered_list_static(list_node: &Node, content: &[u8]) -> bool {
+        let mut list_cursor = list_node.walk();
+        if let Some(first_item) = list_node
+            .children(&mut list_cursor)
+            .find(|c| c.kind() == "list_item")
+        {
+            let mut item_cursor = first_item.walk();
+            // Use a for loop to make lifetimes explicit and avoid borrow checker issues.
+            for child in first_item.children(&mut item_cursor) {
+                if child.kind().starts_with("list_marker") {
+                    if let Ok(text) = child.utf8_text(content) {
+                        return text.contains('.');
                     }
+                    // If a marker is found but its text cannot be read, assume it's not an ordered list.
+                    return false;
                 }
             }
         }
@@ -146,14 +143,14 @@ impl MD005Linter {
     }
 
     fn get_list_marker_text_length(&self, list_item: &Node) -> usize {
-        // Find the list marker and return its text length
-        for child_idx in 0..list_item.child_count() {
-            if let Some(child) = list_item.child(child_idx) {
-                if child.kind().starts_with("list_marker") {
-                    let content = self.context.document_content.borrow();
-                    let text = child.utf8_text(content.as_bytes()).unwrap_or("");
-                    return text.trim().len();
-                }
+        let mut cursor = list_item.walk();
+        if let Some(marker_node) = list_item
+            .children(&mut cursor)
+            .find(|c| c.kind().starts_with("list_marker"))
+        {
+            let content = self.context.document_content.borrow();
+            if let Ok(text) = marker_node.utf8_text(content.as_bytes()) {
+                return text.trim().len();
             }
         }
         0

@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::rc::Rc;
 
 use tree_sitter::Node;
 
@@ -14,22 +14,21 @@ use crate::{
 /// should be discarded. The pending_violations state is not cleared between uses.
 pub(crate) struct MD013Linter {
     context: Rc<Context>,
-    pending_violations: RefCell<Vec<RuleViolation>>,
+    violations: Vec<RuleViolation>,
 }
 
 impl MD013Linter {
     pub fn new(context: Rc<Context>) -> Self {
         Self {
             context,
-            pending_violations: RefCell::new(Vec::new()),
+            violations: Vec::new(),
         }
     }
 
     /// Analyze all lines and store all violations for reporting via finalize()
     /// Context cache is already initialized by MultiRuleLinter
-    fn analyze_all_lines(&self) {
+    fn analyze_all_lines(&mut self) {
         let lines = self.context.lines.borrow();
-        let mut violations = Vec::new();
 
         for (line_index, line) in lines.iter().enumerate() {
             let node_kind = self.context.get_node_type_for_line(line_index);
@@ -42,11 +41,9 @@ impl MD013Linter {
 
             if should_violate {
                 let violation = self.create_violation_for_line(line, line_index, &node_kind);
-                violations.push(violation);
+                self.violations.push(violation);
             }
         }
-
-        *self.pending_violations.borrow_mut() = violations;
     }
 
     fn is_link_reference_definition(&self, line: &str) -> bool {
@@ -210,7 +207,7 @@ impl RuleLinter for MD013Linter {
 
     fn finalize(&mut self) -> Vec<RuleViolation> {
         // Return all pending violations at once
-        std::mem::take(&mut *self.pending_violations.borrow_mut())
+        std::mem::take(&mut self.violations)
     }
 }
 

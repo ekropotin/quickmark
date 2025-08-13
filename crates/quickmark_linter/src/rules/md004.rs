@@ -55,30 +55,31 @@ impl MD004Linter {
     }
 
     /// Find list item markers within a list node
-    fn find_list_item_markers<'a>(&self, list_node: &Node<'a>) -> Vec<(Node<'a>, char, usize)> {
+    fn find_list_item_markers<'a>(&self, list_node: &Node<'a>) -> Vec<(Node<'a>, char)> {
         let mut markers = Vec::new();
+        let content = self.context.document_content.borrow();
+        let source_bytes = content.as_bytes();
+        let mut list_cursor = list_node.walk();
 
-        for child_idx in 0..list_node.child_count() {
-            if let Some(list_item) = list_node.child(child_idx) {
-                if list_item.kind() == "list_item" {
-                    // Look for the list marker within the list item
-                    for grand_child_idx in 0..list_item.child_count() {
-                        if let Some(child) = list_item.child(grand_child_idx) {
-                            if child.kind().starts_with("list_marker") {
-                                let content = self.context.document_content.borrow();
-                                let text = child.utf8_text(content.as_bytes()).unwrap_or("");
-                                if let Some(marker) = Self::extract_marker(text) {
-                                    // Calculate nesting level (simple approach for now)
-                                    let nesting_level = 0; // TODO: Implement proper nesting calculation
-                                    markers.push((child, marker, nesting_level));
-                                }
-                            }
+        for list_item in list_node.children(&mut list_cursor) {
+            if list_item.kind() == "list_item" {
+                // This is the key: we need a new cursor for the sub-iteration
+                let mut item_cursor = list_item.walk();
+                for child in list_item.children(&mut item_cursor) {
+                    if child.kind().starts_with("list_marker") {
+                        if let Some(marker_char) = child
+                            .utf8_text(source_bytes)
+                            .ok()
+                            .and_then(Self::extract_marker)
+                        {
+                            markers.push((child, marker_char));
                         }
+                        // Once we find a marker for a list_item, we can stop searching its children.
+                        break;
                     }
                 }
             }
         }
-
         markers
     }
 
@@ -102,11 +103,11 @@ impl MD004Linter {
         let style = &self.context.config.linters.settings.ul_style.style;
 
         // Extract marker information immediately to avoid lifetime issues
-        let marker_info: Vec<(tree_sitter::Range, char, usize)> = {
+        let marker_info: Vec<(tree_sitter::Range, char)> = {
             let markers = self.find_list_item_markers(node);
             markers
                 .into_iter()
-                .map(|(node, marker, level)| (node.range(), marker, level))
+                .map(|(node, marker)| (node.range(), marker))
                 .collect()
         };
 
@@ -117,7 +118,7 @@ impl MD004Linter {
         let nesting_level = self.calculate_nesting_level(node);
 
         // Debug: print found markers
-        // eprintln!("Found {} markers: {:?}", marker_info.len(), marker_info.iter().map(|(_, c, _)| c).collect::<Vec<_>>());
+        // eprintln!("Found {} markers: {:?}", marker_info.len(), marker_info.iter().map(|(_, c)| c).collect::<Vec<_>>());
         // eprintln!("Nesting level: {}", nesting_level);
         let expected_marker: Option<char>;
 
@@ -152,7 +153,7 @@ impl MD004Linter {
                     expected_marker = Some(
                         marker_info
                             .first()
-                            .map(|(_, marker, _)| *marker)
+                            .map(|(_, marker)| *marker)
                             .unwrap_or('*'),
                     );
                 }
@@ -166,7 +167,7 @@ impl MD004Linter {
 
         // Check all markers against expected and collect violations
         if let Some(expected) = expected_marker {
-            for (range, actual_marker, _) in marker_info {
+            for (range, actual_marker) in marker_info {
                 if actual_marker != expected {
                     let message = format!(
                         "{} [Expected: {}; Actual: {}]",
@@ -205,22 +206,19 @@ impl RuleLinter for MD004Linter {
 impl MD004Linter {
     /// Check if a list node is an unordered list by examining its first marker
     fn is_unordered_list(&self, list_node: &Node) -> bool {
-        for child_idx in 0..list_node.child_count() {
-            if let Some(list_item) = list_node.child(child_idx) {
-                if list_item.kind() == "list_item" {
-                    for grand_child_idx in 0..list_item.child_count() {
-                        if let Some(child) = list_item.child(grand_child_idx) {
-                            if child.kind().starts_with("list_marker") {
-                                let content = self.context.document_content.borrow();
-                                let text = child.utf8_text(content.as_bytes()).unwrap_or("");
-                                // Check if it's an unordered list marker
-                                return text
-                                    .trim()
-                                    .chars()
-                                    .next()
-                                    .is_some_and(|c| c == '*' || c == '+' || c == '-');
+        let mut list_cursor = list_node.walk();
+        for list_item in list_node.children(&mut list_cursor) {
+            if list_item.kind() == "list_item" {
+                let mut item_cursor = list_item.walk();
+                for child in list_item.children(&mut item_cursor) {
+                    if child.kind().starts_with("list_marker") {
+                        let content = self.context.document_content.borrow();
+                        if let Ok(text) = child.utf8_text(content.as_bytes()) {
+                            if let Some(marker_char) = text.trim().chars().next() {
+                                return matches!(marker_char, '*' | '+' | '-');
                             }
                         }
+                        return false; // Found marker, but failed to parse
                     }
                 }
             }
