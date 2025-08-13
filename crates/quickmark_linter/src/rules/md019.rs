@@ -35,12 +35,13 @@ impl MD019Linter {
                     // Check if more than one whitespace character
                     if whitespace_text.len() > 1 {
                         // Create a range for the excess whitespace (after the first character)
-                        let line_start = source[..marker_end]
-                            .rfind('\n')
-                            .map(|pos| pos + 1)
-                            .unwrap_or(0);
-                        let line_num = source[..marker_end].matches('\n').count();
-                        let start_col = marker_end - line_start + 1; // +1 for the first valid space
+                        let line_num = node.start_position().row;
+                        let start_col = node.start_position().column
+                            + marker_child
+                                .utf8_text(source.as_bytes())
+                                .unwrap_or("")
+                                .len()
+                            + 1;
 
                         self.violations.push(RuleViolation::new(
                             &MD019,
@@ -51,7 +52,7 @@ impl MD019Linter {
                             self.context.file_path.clone(),
                             crate::linter::Range {
                                 start: crate::linter::CharPosition { line: line_num, character: start_col },
-                                end: crate::linter::CharPosition { line: line_num, character: start_col + whitespace_text.len() - 1 },
+                                end: crate::linter::CharPosition { line: line_num, character: content_child.start_position().column },
                             },
                         ));
                     }

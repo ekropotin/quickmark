@@ -50,46 +50,41 @@ impl MD003Linter {
     }
 
     fn get_heading_level(&self, node: &Node) -> u8 {
+        let mut cursor = node.walk();
         match node.kind() {
-            "atx_heading" => {
-                // Look for atx_hX_marker
-                for i in 0..node.child_count() {
-                    let child = node.child(i).unwrap();
-                    if child.kind().starts_with("atx_h") && child.kind().ends_with("_marker") {
-                        // "atx_h3_marker" => 3
-                        return child.kind().chars().nth(5).unwrap().to_digit(10).unwrap() as u8;
+            "atx_heading" => node
+                .children(&mut cursor)
+                .find_map(|child| {
+                    let kind = child.kind();
+                    if kind.starts_with("atx_h") && kind.ends_with("_marker") {
+                        // "atx_h3_marker" -> 3
+                        kind.get(5..6)?.parse::<u8>().ok()
+                    } else {
+                        None
                     }
-                }
-                1 // fallback
-            }
-            "setext_heading" => {
-                // Look for setext_h1_underline or setext_h2_underline
-                for i in 0..node.child_count() {
-                    let child = node.child(i).unwrap();
-                    if child.kind() == "setext_h1_underline" {
-                        return 1;
-                    } else if child.kind() == "setext_h2_underline" {
-                        return 2;
-                    }
-                }
-                1 // fallback
-            }
+                })
+                .unwrap_or(1),
+            "setext_heading" => node
+                .children(&mut cursor)
+                .find_map(|child| match child.kind() {
+                    "setext_h1_underline" => Some(1),
+                    "setext_h2_underline" => Some(2),
+                    _ => None,
+                })
+                .unwrap_or(1),
             _ => 1,
         }
     }
 
     fn is_atx_closed(&self, node: &Node) -> bool {
-        let source = self.context.get_document_content();
-
-        // Extract the text content of the heading from the source
-        let start_byte = node.start_byte();
-        let end_byte = node.end_byte();
-        let heading_text = &source[start_byte..end_byte];
-
-        // Check if the heading ends with one or more '#' characters
-        // We need to be careful about whitespace - trim the end and check for '#'
-        let trimmed = heading_text.trim_end();
-        trimmed.ends_with('#')
+        // Use the idiomatic tree-sitter way to get the node's text.
+        // This is more efficient than slicing the whole document manually.
+        if let Ok(heading_text) = node.utf8_text(self.context.get_document_content().as_bytes()) {
+            // Trim trailing whitespace and check if the heading ends with '#'.
+            heading_text.trim_end().ends_with('#')
+        } else {
+            false
+        }
     }
 
     fn add_violation(&mut self, node: &Node, expected: &str, actual: &Style) {

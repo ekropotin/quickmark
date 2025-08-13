@@ -1,6 +1,6 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
-use std::{cell::RefCell, rc::Rc};
+use std::rc::Rc;
 use tree_sitter::Node;
 
 use crate::linter::{range_from_tree_sitter, Context, RuleLinter, RuleViolation};
@@ -14,20 +14,19 @@ static CLOSED_ATX_REGEX: Lazy<Regex> = Lazy::new(|| {
 
 pub(crate) struct MD020Linter {
     context: Rc<Context>,
-    pending_violations: RefCell<Vec<RuleViolation>>,
+    violations: Vec<RuleViolation>,
 }
 
 impl MD020Linter {
     pub fn new(context: Rc<Context>) -> Self {
         Self {
             context,
-            pending_violations: RefCell::new(Vec::new()),
+            violations: Vec::new(),
         }
     }
 
-    fn analyze_all_lines(&self) {
+    fn analyze_all_lines(&mut self) {
         let lines = self.context.lines.borrow();
-        let mut violations = Vec::new();
 
         // Get line numbers that should be ignored (inside code blocks or HTML blocks)
         let ignore_lines = self.get_ignore_lines();
@@ -38,11 +37,9 @@ impl MD020Linter {
             }
 
             if let Some(violation) = self.check_line(line, line_index) {
-                violations.push(violation);
+                self.violations.push(violation);
             }
         }
-
-        *self.pending_violations.borrow_mut() = violations;
     }
 
     /// Get line numbers that should be ignored (inside code blocks or HTML blocks)
@@ -122,19 +119,15 @@ impl MD020Linter {
 }
 
 impl RuleLinter for MD020Linter {
-    fn feed(&mut self, _node: &Node) {
-        // For line-based rules, we analyze all lines at once in the first call
-        if self.pending_violations.borrow().is_empty() {
+    fn feed(&mut self, node: &Node) {
+        // For line-based rules, we analyze all lines at once when we see the document node.
+        if node.kind() == "document" {
             self.analyze_all_lines();
         }
     }
 
     fn finalize(&mut self) -> Vec<RuleViolation> {
-        // If analyze_all_lines hasn't been called yet (no nodes fed), call it now
-        if self.pending_violations.borrow().is_empty() {
-            self.analyze_all_lines();
-        }
-        std::mem::take(&mut *self.pending_violations.borrow_mut())
+        std::mem::take(&mut self.violations)
     }
 }
 

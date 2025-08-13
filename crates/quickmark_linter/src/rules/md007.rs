@@ -36,23 +36,23 @@ impl RuleLinter for MD007Linter {
 impl MD007Linter {
     /// Check if a list node is an unordered list by examining its first marker
     fn is_unordered_list(&self, list_node: &Node) -> bool {
-        for child_idx in 0..list_node.child_count() {
-            if let Some(list_item) = list_node.child(child_idx) {
-                if list_item.kind() == "list_item" {
-                    for grand_child_idx in 0..list_item.child_count() {
-                        if let Some(child) = list_item.child(grand_child_idx) {
-                            if child.kind().starts_with("list_marker") {
-                                let content = self.context.document_content.borrow();
-                                let text = child.utf8_text(content.as_bytes()).unwrap_or("");
-                                // Check if it's an unordered list marker
-                                return text
-                                    .trim()
-                                    .chars()
-                                    .next()
-                                    .is_some_and(|c| c == '*' || c == '+' || c == '-');
-                            }
+        let mut list_cursor = list_node.walk();
+        if let Some(first_item) = list_node
+            .children(&mut list_cursor)
+            .find(|c| c.kind() == "list_item")
+        {
+            let mut item_cursor = first_item.walk();
+            for child in first_item.children(&mut item_cursor) {
+                if child.kind().starts_with("list_marker") {
+                    let content = self.context.document_content.borrow();
+                    if let Ok(text) = child.utf8_text(content.as_bytes()) {
+                        // Check if it's an unordered list marker
+                        if let Some(marker_char) = text.trim().chars().next() {
+                            return matches!(marker_char, '*' | '+' | '-');
                         }
                     }
+                    // If marker is found but unreadable, assume not unordered
+                    return false;
                 }
             }
         }
@@ -67,14 +67,13 @@ impl MD007Linter {
             return;
         }
 
-        for child_idx in 0..list_node.child_count() {
-            if let Some(list_item) = list_node.child(child_idx) {
-                if list_item.kind() == "list_item" {
-                    // List items are indented at the same level as their parent list
-                    // The nesting level of a list item is the number of ancestor lists it has
-                    let item_nesting_level = self.calculate_list_item_nesting_level(&list_item);
-                    self.check_list_item_indentation(list_item, item_nesting_level);
-                }
+        let mut cursor = list_node.walk();
+        for list_item in list_node.children(&mut cursor) {
+            if list_item.kind() == "list_item" {
+                // List items are indented at the same level as their parent list
+                // The nesting level of a list item is the number of ancestor lists it has
+                let item_nesting_level = self.calculate_list_item_nesting_level(&list_item);
+                self.check_list_item_indentation(list_item, item_nesting_level);
             }
         }
     }

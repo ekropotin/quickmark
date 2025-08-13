@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::rc::Rc;
 
 use tree_sitter::Node;
 
@@ -9,21 +9,20 @@ use crate::{
 
 pub(crate) struct MD018Linter {
     context: Rc<Context>,
-    pending_violations: RefCell<Vec<RuleViolation>>,
+    violations: Vec<RuleViolation>,
 }
 
 impl MD018Linter {
     pub fn new(context: Rc<Context>) -> Self {
         Self {
             context,
-            pending_violations: RefCell::new(Vec::new()),
+            violations: Vec::new(),
         }
     }
 
     /// Analyze all lines and store all violations for reporting via finalize()
-    fn analyze_all_lines(&self) {
+    fn analyze_all_lines(&mut self) {
         let lines = self.context.lines.borrow();
-        let mut violations = Vec::new();
 
         // We need to identify lines that are in code blocks or HTML blocks to ignore them
         let ignore_lines = self.get_ignore_lines();
@@ -35,11 +34,9 @@ impl MD018Linter {
 
             if self.is_md018_violation(line) {
                 let violation = self.create_violation_for_line(line, line_index);
-                violations.push(violation);
+                self.violations.push(violation);
             }
         }
-
-        *self.pending_violations.borrow_mut() = violations;
     }
 
     /// Get line numbers that should be ignored (inside code blocks or HTML blocks)
@@ -97,21 +94,9 @@ impl MD018Linter {
             return false;
         }
 
-        // Check if line ends with # followed by only whitespace (this should NOT be a violation)
-        if trimmed
-            .chars()
-            .rev()
-            .take_while(|c| c.is_whitespace())
-            .count()
-            + trimmed
-                .chars()
-                .rev()
-                .skip_while(|c| c.is_whitespace())
-                .take_while(|&c| c == '#')
-                .count()
-            == trimmed.len()
-        {
-            return false; // Line is only hashes and whitespace
+        // Check if line is only hashes and whitespace
+        if trimmed.trim_end().chars().all(|c| c == '#') {
+            return false;
         }
 
         // Get the character immediately after the hashes
@@ -164,7 +149,7 @@ impl RuleLinter for MD018Linter {
     }
 
     fn finalize(&mut self) -> Vec<RuleViolation> {
-        std::mem::take(&mut *self.pending_violations.borrow_mut())
+        std::mem::take(&mut self.violations)
     }
 }
 

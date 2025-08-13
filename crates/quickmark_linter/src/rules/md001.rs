@@ -24,30 +24,28 @@ impl MD001Linter {
 }
 
 fn extract_heading_level(node: &Node) -> u8 {
+    let mut cursor = node.walk();
     match node.kind() {
-        "atx_heading" => {
-            // Same as before: look for atx_hX_marker
-            for i in 0..node.child_count() {
-                let child = node.child(i).unwrap();
-                if child.kind().starts_with("atx_h") && child.kind().ends_with("_marker") {
-                    // "atx_h3_marker" => 3
-                    return child.kind().chars().nth(5).unwrap().to_digit(10).unwrap() as u8;
+        "atx_heading" => node
+            .children(&mut cursor)
+            .find_map(|child| {
+                let kind = child.kind();
+                if kind.starts_with("atx_h") && kind.ends_with("_marker") {
+                    // "atx_h3_marker" -> 3
+                    kind.get(5..6)?.parse::<u8>().ok()
+                } else {
+                    None
                 }
-            }
-            1 // fallback
-        }
-        "setext_heading" => {
-            // Setext: look for setext_h1_underline or setext_h2_underline
-            for i in 0..node.child_count() {
-                let child = node.child(i).unwrap();
-                if child.kind() == "setext_h1_underline" {
-                    return 1;
-                } else if child.kind() == "setext_h2_underline" {
-                    return 2;
-                }
-            }
-            1 // fallback
-        }
+            })
+            .unwrap_or(1),
+        "setext_heading" => node
+            .children(&mut cursor)
+            .find_map(|child| match child.kind() {
+                "setext_h1_underline" => Some(1),
+                "setext_h2_underline" => Some(2),
+                _ => None,
+            })
+            .unwrap_or(1),
         _ => 1,
     }
 }
