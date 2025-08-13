@@ -20,6 +20,7 @@ pub(crate) struct MD033Linter {
     context: Rc<Context>,
     violations: Vec<RuleViolation>,
     allowed_elements: HashSet<String>,
+    line_starts: Vec<usize>,
 }
 
 impl MD033Linter {
@@ -35,10 +36,22 @@ impl MD033Linter {
             .map(|element| element.to_lowercase())
             .collect();
 
+        // Pre-calculate line starts for efficient line/col lookup
+        let line_starts: Vec<usize> = std::iter::once(0)
+            .chain(
+                context
+                    .document_content
+                    .borrow()
+                    .match_indices('\n')
+                    .map(|(i, _)| i + 1),
+            )
+            .collect();
+
         Self {
             context,
             violations: Vec::new(),
             allowed_elements,
+            line_starts,
         }
     }
 
@@ -64,24 +77,12 @@ impl MD033Linter {
     }
 
     fn byte_to_line_col(&self, byte_pos: usize) -> (usize, usize) {
-        let document_content = self.context.document_content.borrow();
-        let content = document_content.as_bytes();
-
-        let mut line = 0;
-        let mut col = 0;
-
-        for (i, &byte) in content.iter().enumerate() {
-            if i >= byte_pos {
-                break;
-            }
-            if byte == b'\n' {
-                line += 1;
-                col = 0;
-            } else {
-                col += 1;
-            }
-        }
-
+        let line = match self.line_starts.binary_search(&byte_pos) {
+            Ok(line) => line,
+            Err(line) => line - 1,
+        };
+        let line_start = self.line_starts[line];
+        let col = byte_pos - line_start;
         (line, col)
     }
 
@@ -93,46 +94,27 @@ impl MD033Linter {
             document_content[start_byte..end_byte].to_string()
         };
 
-        // For inline nodes, we need to check for code spans within them
         if node.kind() == "inline" {
-            self.process_html_in_inline_node(node);
+            // Find all code span ranges using memoized regex pattern
+            let mut code_span_ranges = Vec::new();
+            for cap in CODE_SPAN_REGEX.captures_iter(&content) {
+                let span_start = cap.get(0).unwrap().start();
+                let span_end = cap.get(0).unwrap().end();
+                code_span_ranges.push((span_start, span_end));
+            }
+            self.process_html_with_regex(node, &content, start_byte, Some(&code_span_ranges));
         } else {
             // For html_block nodes, process directly
-            self.process_html_with_regex(node, &content, start_byte);
+            self.process_html_with_regex(node, &content, start_byte, None);
         }
     }
 
-    fn process_html_in_inline_node(&mut self, node: &Node) {
-        let start_byte = node.start_byte();
-        let end_byte = node.end_byte();
-        let content = {
-            let document_content = self.context.document_content.borrow();
-            document_content[start_byte..end_byte].to_string()
-        };
-
-        // Find all code span ranges using memoized regex pattern
-        let mut code_span_ranges = Vec::new();
-        for cap in CODE_SPAN_REGEX.captures_iter(&content) {
-            let span_start = cap.get(0).unwrap().start();
-            let span_end = cap.get(0).unwrap().end();
-            code_span_ranges.push((span_start, span_end));
-        }
-
-        // Now process HTML with regex, but exclude code span ranges
-        self.process_html_with_regex_excluding_ranges(
-            node,
-            &content,
-            start_byte,
-            &code_span_ranges,
-        );
-    }
-
-    fn process_html_with_regex_excluding_ranges(
+    fn process_html_with_regex(
         &mut self,
         _node: &Node,
         content: &str,
         start_byte: usize,
-        exclude_ranges: &[(usize, usize)],
+        exclude_ranges: Option<&[(usize, usize)]>,
     ) {
         // Use memoized HTML tag regex pattern
         for cap in HTML_TAG_REGEX.captures_iter(content) {
@@ -140,68 +122,20 @@ impl MD033Linter {
                 let tag_start = cap.get(0).unwrap().start();
                 let tag_end = cap.get(0).unwrap().end();
 
-                // Check if this tag is inside any excluded range (code span)
-                let mut in_excluded_range = false;
-                for &(exclude_start, exclude_end) in exclude_ranges {
-                    if tag_start >= exclude_start && tag_end <= exclude_end {
-                        in_excluded_range = true;
-                        break;
+                // If exclude_ranges are provided, check if the tag is inside one
+                if let Some(ranges) = exclude_ranges {
+                    let mut in_excluded_range = false;
+                    for &(exclude_start, exclude_end) in ranges {
+                        if tag_start >= exclude_start && tag_end <= exclude_end {
+                            in_excluded_range = true;
+                            break;
+                        }
+                    }
+                    if in_excluded_range {
+                        continue;
                     }
                 }
 
-                if in_excluded_range {
-                    continue;
-                }
-
-                let is_closing = cap.get(1).is_some_and(|m| m.as_str() == "/");
-
-                // Skip closing tags - we only want to report opening/self-closing tags
-                if is_closing {
-                    continue;
-                }
-
-                let element_name = element_name_match.as_str();
-
-                // Check if this element is allowed
-                if !self.is_allowed_element(element_name) {
-                    // Calculate precise position of the HTML tag
-                    let tag_start_byte = start_byte + tag_start;
-                    let tag_end_byte = start_byte + tag_end;
-                    let (start_line, start_col) = self.byte_to_line_col(tag_start_byte);
-                    let (end_line, end_col) = self.byte_to_line_col(tag_end_byte);
-
-                    // Create precise tree_sitter::Range for this violation
-                    let range = range_from_tree_sitter(&tree_sitter::Range {
-                        start_byte: tag_start_byte,
-                        end_byte: tag_end_byte,
-                        start_point: tree_sitter::Point {
-                            row: start_line,
-                            column: start_col,
-                        },
-                        end_point: tree_sitter::Point {
-                            row: end_line,
-                            column: end_col,
-                        },
-                    });
-
-                    let violation = RuleViolation::new(
-                        &MD033,
-                        format!("Inline HTML [Element: {element_name}]"),
-                        self.context.file_path.clone(),
-                        range,
-                    );
-                    self.violations.push(violation);
-                }
-            }
-        }
-    }
-
-    fn process_html_with_regex(&mut self, _node: &Node, content: &str, start_byte: usize) {
-        // Use memoized HTML tag regex pattern
-        for cap in HTML_TAG_REGEX.captures_iter(content) {
-            if let Some(element_name_match) = cap.get(2) {
-                let tag_start = cap.get(0).unwrap().start();
-                let tag_end = cap.get(0).unwrap().end();
                 let is_closing = cap.get(1).is_some_and(|m| m.as_str() == "/");
 
                 // Skip closing tags - we only want to report opening/self-closing tags
