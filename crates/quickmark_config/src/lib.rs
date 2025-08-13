@@ -62,6 +62,10 @@ fn default_indent() -> usize {
     2
 }
 
+fn default_br_spaces() -> usize {
+    2
+}
+
 #[derive(Deserialize)]
 struct TomlMD007UlIndentTable {
     #[serde(default = "default_indent")]
@@ -78,6 +82,26 @@ impl Default for TomlMD007UlIndentTable {
             indent: 2,
             start_indent: 2,
             start_indented: false,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+struct TomlMD009TrailingSpacesTable {
+    #[serde(default = "default_br_spaces")]
+    br_spaces: usize,
+    #[serde(default = "default_false")]
+    list_item_empty_lines: bool,
+    #[serde(default = "default_false")]
+    strict: bool,
+}
+
+impl Default for TomlMD009TrailingSpacesTable {
+    fn default() -> Self {
+        Self {
+            br_spaces: 2,
+            list_item_empty_lines: false,
+            strict: false,
         }
     }
 }
@@ -244,6 +268,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "ul-indent")]
     #[serde(default)]
     ul_indent: TomlMD007UlIndentTable,
+    #[serde(rename = "no-trailing-spaces")]
+    #[serde(default)]
+    trailing_spaces: TomlMD009TrailingSpacesTable,
     #[serde(rename = "line-length")]
     #[serde(default)]
     line_length: TomlMD013LineLengthTable,
@@ -360,6 +387,15 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
                 indent: toml_config.linters.settings.ul_indent.indent,
                 start_indent: toml_config.linters.settings.ul_indent.start_indent,
                 start_indented: toml_config.linters.settings.ul_indent.start_indented,
+            },
+            trailing_spaces: quickmark_linter::config::MD009TrailingSpacesTable {
+                br_spaces: toml_config.linters.settings.trailing_spaces.br_spaces,
+                list_item_empty_lines: toml_config
+                    .linters
+                    .settings
+                    .trailing_spaces
+                    .list_item_empty_lines,
+                strict: toml_config.linters.settings.trailing_spaces.strict,
             },
             line_length: MD013LineLengthTable {
                 line_length: toml_config.linters.settings.line_length.line_length,
@@ -968,5 +1004,57 @@ mod tests {
             .inline_html
             .allowed_elements
             .is_empty());
+    }
+
+    #[test]
+    fn test_parse_md009_trailing_spaces_config() {
+        let config_str = r#"
+        [linters.severity]
+        no-trailing-spaces = 'err'
+
+        [linters.settings.no-trailing-spaces]
+        br_spaces = 4
+        list_item_empty_lines = true
+        strict = true
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("no-trailing-spaces").unwrap()
+        );
+        assert_eq!(4, parsed.linters.settings.trailing_spaces.br_spaces);
+        assert!(
+            parsed
+                .linters
+                .settings
+                .trailing_spaces
+                .list_item_empty_lines
+        );
+        assert!(parsed.linters.settings.trailing_spaces.strict);
+    }
+
+    #[test]
+    fn test_parse_md009_default_values() {
+        let config_str = r#"
+        [linters.severity]
+        no-trailing-spaces = 'warn'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("no-trailing-spaces").unwrap()
+        );
+        // Test default values
+        assert_eq!(2, parsed.linters.settings.trailing_spaces.br_spaces);
+        assert!(
+            !parsed
+                .linters
+                .settings
+                .trailing_spaces
+                .list_item_empty_lines
+        );
+        assert!(!parsed.linters.settings.trailing_spaces.strict);
     }
 }

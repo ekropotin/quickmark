@@ -1,0 +1,35 @@
+# Configuration for testing MD009 strict mode
+
+[linters.severity]
+# Enable only MD009 
+no-trailing-spaces = "err"
+
+# Disable all other rules
+heading-increment = "off"
+heading-style = "off"
+ul-style = "off"
+list-indent = "off"
+line-length = "off"
+commands-show-output = "off"
+no-missing-space-atx = "off"
+no-multiple-space-atx = "off"
+no-multiple-space-closed-atx = "off"
+no-space-in-emphasis = "off"
+no-space-in-code = "off"
+blanks-around-headings = "off"
+no-duplicate-heading = "off"
+single-h1 = "off"
+blanks-around-fences = "off"
+blanks-around-lists = "off"
+no-inline-html = "off"
+no-bare-urls = "off"
+required-headings = "off"
+link-fragments = "off"
+reference-links-images = "off"
+link-image-reference-definitions = "off"
+
+[linters.settings.no-trailing-spaces]
+# Strict mode settings
+br_spaces = 2
+list_item_empty_lines = false  
+strict = true

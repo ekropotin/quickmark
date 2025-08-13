@@ -169,6 +169,23 @@ impl Default for MD007UlIndentTable {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub struct MD009TrailingSpacesTable {
+    pub br_spaces: usize,
+    pub list_item_empty_lines: bool,
+    pub strict: bool,
+}
+
+impl Default for MD009TrailingSpacesTable {
+    fn default() -> Self {
+        Self {
+            br_spaces: 2,
+            list_item_empty_lines: false,
+            strict: false,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct MD031FencedCodeBlanksTable {
     pub list_items: bool,
 }
@@ -195,6 +212,7 @@ pub struct LintersSettingsTable {
     pub heading_style: MD003HeadingStyleTable,
     pub ul_style: MD004UlStyleTable,
     pub ul_indent: MD007UlIndentTable,
+    pub trailing_spaces: MD009TrailingSpacesTable,
     pub line_length: MD013LineLengthTable,
     pub headings_blanks: MD022HeadingsBlanksTable,
     pub single_h1: MD025SingleH1Table,
@@ -246,10 +264,11 @@ mod test {
 
     use crate::config::{
         HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
-        MD004UlStyleTable, MD007UlIndentTable, MD013LineLengthTable, MD022HeadingsBlanksTable,
-        MD024MultipleHeadingsTable, MD025SingleH1Table, MD031FencedCodeBlanksTable,
-        MD033InlineHtmlTable, MD043RequiredHeadingsTable, MD051LinkFragmentsTable,
-        MD052ReferenceLinksImagesTable, MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
+        MD004UlStyleTable, MD007UlIndentTable, MD009TrailingSpacesTable, MD013LineLengthTable,
+        MD022HeadingsBlanksTable, MD024MultipleHeadingsTable, MD025SingleH1Table,
+        MD031FencedCodeBlanksTable, MD033InlineHtmlTable, MD043RequiredHeadingsTable,
+        MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
+        MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -312,6 +331,7 @@ mod test {
                 },
                 ul_style: MD004UlStyleTable::default(),
                 ul_indent: MD007UlIndentTable::default(),
+                trailing_spaces: MD009TrailingSpacesTable::default(),
                 line_length: MD013LineLengthTable::default(),
                 headings_blanks: MD022HeadingsBlanksTable::default(),
                 single_h1: MD025SingleH1Table::default(),

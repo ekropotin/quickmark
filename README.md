@@ -152,7 +152,7 @@ allowed_elements = []
 - [x] **[MD004](docs/rules/md004.md)** *ul-style* - Unordered list style consistency
 - [x] **[MD005](docs/rules/md005.md)** *list-indent* - Inconsistent indentation for list items at the same level
 - [x] **[MD007](docs/rules/md007.md)** *ul-indent* - Unordered list indentation consistency
-- [ ] **MD009** *no-trailing-spaces* - Trailing spaces at end of lines
+- [x] **[MD009](docs/rules/md009.md)** *no-trailing-spaces* - Trailing spaces at end of lines
 - [ ] **MD010** *no-hard-tabs* - Hard tabs should not be used
 - [ ] **MD011** *no-reversed-links* - Reversed link syntax
 - [ ] **MD012** *no-multiple-blanks* - Multiple consecutive blank lines

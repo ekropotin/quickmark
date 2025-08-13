@@ -355,6 +355,7 @@ mod test {
                     },
                     ul_style: config::MD004UlStyleTable::default(),
                     ul_indent: config::MD007UlIndentTable::default(),
+                    trailing_spaces: config::MD009TrailingSpacesTable::default(),
                     line_length: config::MD013LineLengthTable::default(),
                     headings_blanks: config::MD022HeadingsBlanksTable::default(),
                     single_h1: config::MD025SingleH1Table::default(),

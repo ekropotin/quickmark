@@ -17,9 +17,11 @@ You'd also need to create new samples for that rule in `test-samples` directory,
 
 ## 4. Parity validation
 
-You must validate that the implementation is consistent with markdownlinter. This must be done via running both linters against test samples and when analyzing the output. If any inconsistencies found - you must fix them.
+You must validate that the implementation is consistent with markdownlinter.
+Parity means the reported violations should match in type, quantity as well as in reported lines/character positions.
+This must be done via running both linters against test samples and when analyzing the output. If any inconsistencies found - you must fix them, embracing the TDD approach outlined above.
 In case of controversy, use github/Commonmark standards as a source of truth.
-Assume markdownlinter is already installed on this machine locally. For any found actual inconsistency, add a unit test.
+Assume markdownlinter is already installed on this machine locally.
 
 ## 5. Documentation update
 
