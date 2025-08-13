@@ -186,6 +186,23 @@ impl Default for MD009TrailingSpacesTable {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub struct MD010HardTabsTable {
+    pub code_blocks: bool,
+    pub ignore_code_languages: Vec<String>,
+    pub spaces_per_tab: usize,
+}
+
+impl Default for MD010HardTabsTable {
+    fn default() -> Self {
+        Self {
+            code_blocks: true,
+            ignore_code_languages: Vec::new(),
+            spaces_per_tab: 1,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct MD031FencedCodeBlanksTable {
     pub list_items: bool,
 }
@@ -213,6 +230,7 @@ pub struct LintersSettingsTable {
     pub ul_style: MD004UlStyleTable,
     pub ul_indent: MD007UlIndentTable,
     pub trailing_spaces: MD009TrailingSpacesTable,
+    pub hard_tabs: MD010HardTabsTable,
     pub line_length: MD013LineLengthTable,
     pub headings_blanks: MD022HeadingsBlanksTable,
     pub single_h1: MD025SingleH1Table,
@@ -264,10 +282,10 @@ mod test {
 
     use crate::config::{
         HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
-        MD004UlStyleTable, MD007UlIndentTable, MD009TrailingSpacesTable, MD013LineLengthTable,
-        MD022HeadingsBlanksTable, MD024MultipleHeadingsTable, MD025SingleH1Table,
-        MD031FencedCodeBlanksTable, MD033InlineHtmlTable, MD043RequiredHeadingsTable,
-        MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
+        MD004UlStyleTable, MD007UlIndentTable, MD009TrailingSpacesTable, MD010HardTabsTable,
+        MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable,
+        MD025SingleH1Table, MD031FencedCodeBlanksTable, MD033InlineHtmlTable,
+        MD043RequiredHeadingsTable, MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
         MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
     };
 
@@ -332,6 +350,7 @@ mod test {
                 ul_style: MD004UlStyleTable::default(),
                 ul_indent: MD007UlIndentTable::default(),
                 trailing_spaces: MD009TrailingSpacesTable::default(),
+                hard_tabs: MD010HardTabsTable::default(),
                 line_length: MD013LineLengthTable::default(),
                 headings_blanks: MD022HeadingsBlanksTable::default(),
                 single_h1: MD025SingleH1Table::default(),

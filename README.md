@@ -145,7 +145,7 @@ allowed_elements = []
 
 ## Rules
 
-**Implementation Progress: 22/52 rules completed (42.3%)**
+**Implementation Progress: 23/52 rules completed (44.2%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -153,7 +153,7 @@ allowed_elements = []
 - [x] **[MD005](docs/rules/md005.md)** *list-indent* - Inconsistent indentation for list items at the same level
 - [x] **[MD007](docs/rules/md007.md)** *ul-indent* - Unordered list indentation consistency
 - [x] **[MD009](docs/rules/md009.md)** *no-trailing-spaces* - Trailing spaces at end of lines
-- [ ] **MD010** *no-hard-tabs* - Hard tabs should not be used
+- [x] **[MD010](docs/rules/md010.md)** *no-hard-tabs* - Hard tabs should not be used
 - [ ] **MD011** *no-reversed-links* - Reversed link syntax
 - [ ] **MD012** *no-multiple-blanks* - Multiple consecutive blank lines
 - [x] **[MD013](docs/rules/md013.md)** *line-length* - Line length limits with configurable exceptions

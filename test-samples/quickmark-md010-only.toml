@@ -1,0 +1,37 @@
+# Configuration for testing MD010 (hard tabs) rule only
+
+[linters.severity]
+# Enable only MD010
+no-hard-tabs = "err"
+
+# Disable all other rules
+heading-increment = "off"
+heading-style = "off" 
+ul-style = "off"
+ul-indent = "off"
+no-trailing-spaces = "off"
+line-length = "off"
+commands-show-output = "off"
+no-missing-space-atx = "off"
+no-multiple-space-atx = "off"
+no-missing-space-closed-atx = "off"
+no-multiple-space-closed-atx = "off"
+ol-prefix = "off"
+blanks-around-fences = "off"
+blanks-around-lists = "off"
+blanks-around-headings = "off"
+heading-start-left = "off"
+no-duplicate-heading = "off"
+single-h1 = "off"
+no-alt-text = "off"
+no-bare-urls = "off"
+no-inline-html = "off"
+link-fragments = "off"
+reference-links-images = "off"
+link-image-reference-definitions = "off"
+
+[linters.settings.no-hard-tabs]
+# Default settings: check all code blocks, no ignored languages, 1 space per tab
+code_blocks = true
+ignore_code_languages = []
+spaces_per_tab = 1
