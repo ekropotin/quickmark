@@ -70,6 +70,10 @@ fn default_spaces_per_tab() -> usize {
     1
 }
 
+fn default_one() -> usize {
+    1
+}
+
 fn default_empty_code_languages() -> Vec<String> {
     Vec::new()
 }
@@ -131,6 +135,18 @@ impl Default for TomlMD010HardTabsTable {
             ignore_code_languages: Vec::new(),
             spaces_per_tab: 1,
         }
+    }
+}
+
+#[derive(Deserialize)]
+struct TomlMD012MultipleBlankLinesTable {
+    #[serde(default = "default_one")]
+    maximum: usize,
+}
+
+impl Default for TomlMD012MultipleBlankLinesTable {
+    fn default() -> Self {
+        Self { maximum: 1 }
     }
 }
 
@@ -302,6 +318,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "no-hard-tabs")]
     #[serde(default)]
     hard_tabs: TomlMD010HardTabsTable,
+    #[serde(rename = "no-multiple-blanks")]
+    #[serde(default)]
+    multiple_blank_lines: TomlMD012MultipleBlankLinesTable,
     #[serde(rename = "line-length")]
     #[serde(default)]
     line_length: TomlMD013LineLengthTable,
@@ -432,6 +451,9 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
                 code_blocks: toml_config.linters.settings.hard_tabs.code_blocks,
                 ignore_code_languages: toml_config.linters.settings.hard_tabs.ignore_code_languages,
                 spaces_per_tab: toml_config.linters.settings.hard_tabs.spaces_per_tab,
+            },
+            multiple_blank_lines: quickmark_linter::config::MD012MultipleBlankLinesTable {
+                maximum: toml_config.linters.settings.multiple_blank_lines.maximum,
             },
             line_length: MD013LineLengthTable {
                 line_length: toml_config.linters.settings.line_length.line_length,

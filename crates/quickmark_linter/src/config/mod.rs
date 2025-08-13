@@ -203,6 +203,17 @@ impl Default for MD010HardTabsTable {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub struct MD012MultipleBlankLinesTable {
+    pub maximum: usize,
+}
+
+impl Default for MD012MultipleBlankLinesTable {
+    fn default() -> Self {
+        Self { maximum: 1 }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct MD031FencedCodeBlanksTable {
     pub list_items: bool,
 }
@@ -231,6 +242,7 @@ pub struct LintersSettingsTable {
     pub ul_indent: MD007UlIndentTable,
     pub trailing_spaces: MD009TrailingSpacesTable,
     pub hard_tabs: MD010HardTabsTable,
+    pub multiple_blank_lines: MD012MultipleBlankLinesTable,
     pub line_length: MD013LineLengthTable,
     pub headings_blanks: MD022HeadingsBlanksTable,
     pub single_h1: MD025SingleH1Table,
@@ -283,10 +295,10 @@ mod test {
     use crate::config::{
         HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
         MD004UlStyleTable, MD007UlIndentTable, MD009TrailingSpacesTable, MD010HardTabsTable,
-        MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable,
-        MD025SingleH1Table, MD031FencedCodeBlanksTable, MD033InlineHtmlTable,
-        MD043RequiredHeadingsTable, MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
-        MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
+        MD012MultipleBlankLinesTable, MD013LineLengthTable, MD022HeadingsBlanksTable,
+        MD024MultipleHeadingsTable, MD025SingleH1Table, MD031FencedCodeBlanksTable,
+        MD033InlineHtmlTable, MD043RequiredHeadingsTable, MD051LinkFragmentsTable,
+        MD052ReferenceLinksImagesTable, MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -359,6 +371,7 @@ mod test {
                 ul_indent: MD007UlIndentTable::default(),
                 trailing_spaces: MD009TrailingSpacesTable::default(),
                 hard_tabs: MD010HardTabsTable::default(),
+                multiple_blank_lines: MD012MultipleBlankLinesTable::default(),
                 line_length: MD013LineLengthTable::default(),
                 headings_blanks: MD022HeadingsBlanksTable::default(),
                 single_h1: MD025SingleH1Table::default(),

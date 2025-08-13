@@ -116,7 +116,14 @@ impl Context {
         source: &str,
         root_node: &Node,
     ) -> Self {
-        let lines: Vec<String> = source.lines().map(String::from).collect();
+        // Parse lines in a way that's compatible with markdownlint's line counting
+        // markdownlint counts a trailing newline as creating an additional empty line
+        let mut lines: Vec<String> = source.lines().map(String::from).collect();
+
+        // If the source ends with a newline, add an empty line to match markdownlint's behavior
+        if source.ends_with('\n') {
+            lines.push(String::new());
+        }
         let node_cache = Self::build_node_cache(root_node);
 
         Self {
@@ -357,6 +364,7 @@ mod test {
                     ul_indent: config::MD007UlIndentTable::default(),
                     trailing_spaces: config::MD009TrailingSpacesTable::default(),
                     hard_tabs: config::MD010HardTabsTable::default(),
+                    multiple_blank_lines: config::MD012MultipleBlankLinesTable::default(),
                     line_length: config::MD013LineLengthTable::default(),
                     headings_blanks: config::MD022HeadingsBlanksTable::default(),
                     single_h1: config::MD025SingleH1Table::default(),
