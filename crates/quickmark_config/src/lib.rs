@@ -1,8 +1,9 @@
 use anyhow::Result;
 use quickmark_linter::config::{
-    normalize_severities, HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
-    MD007UlIndentTable, MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable,
-    MD025SingleH1Table, MD033InlineHtmlTable, QuickmarkConfig, RuleSeverity,
+    normalize_severities, CodeBlockStyle, HeadingStyle, LintersSettingsTable, LintersTable,
+    MD003HeadingStyleTable, MD007UlIndentTable, MD013LineLengthTable, MD022HeadingsBlanksTable,
+    MD024MultipleHeadingsTable, MD025SingleH1Table, MD033InlineHtmlTable, MD046CodeBlockStyleTable,
+    QuickmarkConfig, RuleSeverity,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -49,6 +50,16 @@ enum TomlUlStyle {
 }
 
 #[derive(Deserialize)]
+enum TomlCodeBlockStyle {
+    #[serde(rename = "consistent")]
+    Consistent,
+    #[serde(rename = "fenced")]
+    Fenced,
+    #[serde(rename = "indented")]
+    Indented,
+}
+
+#[derive(Deserialize)]
 struct TomlMD003HeadingStyleTable {
     style: TomlHeadingStyle,
 }
@@ -56,6 +67,11 @@ struct TomlMD003HeadingStyleTable {
 #[derive(Deserialize)]
 struct TomlMD004UlStyleTable {
     style: TomlUlStyle,
+}
+
+#[derive(Deserialize)]
+struct TomlMD046CodeBlockStyleTable {
+    style: TomlCodeBlockStyle,
 }
 
 fn default_indent() -> usize {
@@ -347,6 +363,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "fenced-code-language")]
     #[serde(default)]
     fenced_code_language: TomlMD040FencedCodeLanguageTable,
+    #[serde(rename = "code-block-style")]
+    #[serde(default)]
+    code_block_style: TomlMD046CodeBlockStyleTable,
     #[serde(rename = "no-duplicate-heading")]
     #[serde(default)]
     multiple_headings: TomlMD024MultipleHeadingsTable,
@@ -394,6 +413,14 @@ impl Default for TomlMD004UlStyleTable {
     }
 }
 
+impl Default for TomlMD046CodeBlockStyleTable {
+    fn default() -> Self {
+        Self {
+            style: TomlCodeBlockStyle::Consistent,
+        }
+    }
+}
+
 fn convert_toml_severity(toml_severity: TomlRuleSeverity) -> RuleSeverity {
     match toml_severity {
         TomlRuleSeverity::Error => RuleSeverity::Error,
@@ -420,6 +447,14 @@ fn convert_toml_ul_style(toml_style: TomlUlStyle) -> quickmark_linter::config::U
         TomlUlStyle::Dash => quickmark_linter::config::UlStyle::Dash,
         TomlUlStyle::Plus => quickmark_linter::config::UlStyle::Plus,
         TomlUlStyle::Sublist => quickmark_linter::config::UlStyle::Sublist,
+    }
+}
+
+fn convert_toml_code_block_style(toml_style: TomlCodeBlockStyle) -> CodeBlockStyle {
+    match toml_style {
+        TomlCodeBlockStyle::Consistent => CodeBlockStyle::Consistent,
+        TomlCodeBlockStyle::Fenced => CodeBlockStyle::Fenced,
+        TomlCodeBlockStyle::Indented => CodeBlockStyle::Indented,
     }
 }
 
@@ -505,6 +540,11 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
                     .settings
                     .fenced_code_language
                     .language_only,
+            },
+            code_block_style: MD046CodeBlockStyleTable {
+                style: convert_toml_code_block_style(
+                    toml_config.linters.settings.code_block_style.style,
+                ),
             },
             multiple_headings: MD024MultipleHeadingsTable {
                 siblings_only: toml_config.linters.settings.multiple_headings.siblings_only,
@@ -1189,5 +1229,66 @@ mod tests {
             .ignore_code_languages
             .is_empty());
         assert_eq!(1, parsed.linters.settings.hard_tabs.spaces_per_tab);
+    }
+
+    #[test]
+    fn test_parse_md046_code_block_style_config() {
+        let config_str = r#"
+        [linters.severity]
+        code-block-style = 'err'
+
+        [linters.settings.code-block-style]
+        style = 'fenced'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("code-block-style").unwrap()
+        );
+        assert_eq!(
+            CodeBlockStyle::Fenced,
+            parsed.linters.settings.code_block_style.style
+        );
+    }
+
+    #[test]
+    fn test_parse_md046_indented_style_config() {
+        let config_str = r#"
+        [linters.severity]
+        code-block-style = 'warn'
+
+        [linters.settings.code-block-style]
+        style = 'indented'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("code-block-style").unwrap()
+        );
+        assert_eq!(
+            CodeBlockStyle::Indented,
+            parsed.linters.settings.code_block_style.style
+        );
+    }
+
+    #[test]
+    fn test_parse_md046_default_values() {
+        let config_str = r#"
+        [linters.severity]
+        code-block-style = 'warn'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("code-block-style").unwrap()
+        );
+        // Test default values
+        assert_eq!(
+            CodeBlockStyle::Consistent,
+            parsed.linters.settings.code_block_style.style
+        );
     }
 }

@@ -371,6 +371,7 @@ mod test {
                     fenced_code_blanks: config::MD031FencedCodeBlanksTable::default(),
                     inline_html: config::MD033InlineHtmlTable::default(),
                     fenced_code_language: config::MD040FencedCodeLanguageTable::default(),
+                    code_block_style: config::MD046CodeBlockStyleTable::default(),
                     multiple_headings: config::MD024MultipleHeadingsTable::default(),
                     required_headings: config::MD043RequiredHeadingsTable::default(),
                     link_fragments: config::MD051LinkFragmentsTable::default(),

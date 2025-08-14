@@ -85,6 +85,7 @@ blanks-around-fences = 'err'
 blanks-around-lists = 'err'
 no-duplicate-heading = 'err'
 required-headings = 'err'
+code-block-style = 'err'
 link-fragments = 'warn'
 reference-links-images = 'err'
 link-image-reference-definitions = 'err'
@@ -145,11 +146,14 @@ allowed_elements = []
 [linters.settings.fenced-code-language]
 allowed_languages = []
 language_only = false
+
+[linters.settings.code-block-style]
+style = 'consistent'
 ```
 
 ## Rules
 
-**Implementation Progress: 25/52 rules completed (48.1%)**
+**Implementation Progress: 26/52 rules completed (50.0%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -190,7 +194,7 @@ language_only = false
 - [x] **[MD043](docs/rules/md043.md)** *required-headings* - Required heading structure
 - [ ] **MD044** *proper-names* - Proper names with correct capitalization
 - [ ] **MD045** *no-alt-text* - Images should have alternate text
-- [ ] **MD046** *code-block-style* - Code block style consistency
+- [x] **[MD046](docs/rules/md046.md)** *code-block-style* - Code block style consistency
 - [ ] **MD047** *single-trailing-newline* - Files should end with a single newline
 - [ ] **MD048** *code-fence-style* - Code fence style consistency
 - [ ] **MD049** *emphasis-style* - Emphasis style consistency
