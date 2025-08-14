@@ -86,6 +86,7 @@ blanks-around-lists = 'err'
 no-duplicate-heading = 'err'
 required-headings = 'err'
 code-block-style = 'err'
+code-fence-style = 'err'
 link-fragments = 'warn'
 reference-links-images = 'err'
 link-image-reference-definitions = 'err'
@@ -149,11 +150,14 @@ language_only = false
 
 [linters.settings.code-block-style]
 style = 'consistent'
+
+[linters.settings.code-fence-style]
+style = 'consistent'
 ```
 
 ## Rules
 
-**Implementation Progress: 26/52 rules completed (50.0%)**
+**Implementation Progress: 27/52 rules completed (51.9%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -196,7 +200,7 @@ style = 'consistent'
 - [ ] **MD045** *no-alt-text* - Images should have alternate text
 - [x] **[MD046](docs/rules/md046.md)** *code-block-style* - Code block style consistency
 - [ ] **MD047** *single-trailing-newline* - Files should end with a single newline
-- [ ] **MD048** *code-fence-style* - Code fence style consistency
+- [x] **[MD048](docs/rules/md048.md)** *code-fence-style* - Code fence style consistency
 - [ ] **MD049** *emphasis-style* - Emphasis style consistency
 - [ ] **MD050** *strong-style* - Strong style consistency
 - [x] **[MD051](docs/rules/md051.md)** *link-fragments* - Link fragments should be valid
