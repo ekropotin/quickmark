@@ -300,6 +300,21 @@ impl Default for TomlMD026TrailingPunctuationTable {
     }
 }
 
+#[derive(Deserialize)]
+struct TomlMD027BlockquoteSpacesTable {
+    #[serde(default = "default_blockquote_list_items")]
+    list_items: bool,
+}
+impl Default for TomlMD027BlockquoteSpacesTable {
+    fn default() -> Self {
+        Self { list_items: true }
+    }
+}
+
+fn default_blockquote_list_items() -> bool {
+    true
+}
+
 fn default_lines_config() -> Vec<i32> {
     vec![1]
 }
@@ -390,6 +405,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "no-trailing-punctuation")]
     #[serde(default)]
     trailing_punctuation: TomlMD026TrailingPunctuationTable,
+    #[serde(rename = "no-multiple-space-blockquote")]
+    #[serde(default)]
+    blockquote_spaces: TomlMD027BlockquoteSpacesTable,
     #[serde(rename = "blanks-around-fences")]
     #[serde(default)]
     fenced_code_blanks: TomlMD031FencedCodeBlanksTable,
@@ -584,6 +602,9 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
                     .settings
                     .trailing_punctuation
                     .punctuation,
+            },
+            blockquote_spaces: quickmark_linter::config::MD027BlockquoteSpacesTable {
+                list_items: toml_config.linters.settings.blockquote_spaces.list_items,
             },
             fenced_code_blanks: quickmark_linter::config::MD031FencedCodeBlanksTable {
                 list_items: toml_config.linters.settings.fenced_code_blanks.list_items,
