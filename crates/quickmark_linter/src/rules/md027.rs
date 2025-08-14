@@ -166,10 +166,7 @@ impl MD027Linter {
                 if prefix.chars().all(|c| c.is_ascii_digit())
                     || (prefix.len() == 1 && prefix.chars().all(|c| c.is_ascii_alphabetic()))
                 {
-                    return text
-                        .chars()
-                        .nth(pos + 1)
-                        .is_some_and(|c| c.is_whitespace());
+                    return text.chars().nth(pos + 1).is_some_and(|c| c.is_whitespace());
                 }
             }
         }
