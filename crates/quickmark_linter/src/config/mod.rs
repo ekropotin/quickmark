@@ -241,6 +241,32 @@ pub struct MD040FencedCodeLanguageTable {
     pub language_only: bool,
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub enum CodeBlockStyle {
+    Consistent,
+    Fenced,
+    Indented,
+}
+
+impl Default for CodeBlockStyle {
+    fn default() -> Self {
+        Self::Consistent
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct MD046CodeBlockStyleTable {
+    pub style: CodeBlockStyle,
+}
+
+impl Default for MD046CodeBlockStyleTable {
+    fn default() -> Self {
+        Self {
+            style: CodeBlockStyle::Consistent,
+        }
+    }
+}
+
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct LintersSettingsTable {
     pub heading_style: MD003HeadingStyleTable,
@@ -255,6 +281,7 @@ pub struct LintersSettingsTable {
     pub fenced_code_blanks: MD031FencedCodeBlanksTable,
     pub inline_html: MD033InlineHtmlTable,
     pub fenced_code_language: MD040FencedCodeLanguageTable,
+    pub code_block_style: MD046CodeBlockStyleTable,
     pub multiple_headings: MD024MultipleHeadingsTable,
     pub required_headings: MD043RequiredHeadingsTable,
     pub link_fragments: MD051LinkFragmentsTable,
@@ -305,7 +332,7 @@ mod test {
         MD012MultipleBlankLinesTable, MD013LineLengthTable, MD022HeadingsBlanksTable,
         MD024MultipleHeadingsTable, MD025SingleH1Table, MD031FencedCodeBlanksTable,
         MD033InlineHtmlTable, MD040FencedCodeLanguageTable, MD043RequiredHeadingsTable,
-        MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
+        MD046CodeBlockStyleTable, MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
         MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
     };
 
@@ -386,6 +413,7 @@ mod test {
                 fenced_code_blanks: MD031FencedCodeBlanksTable::default(),
                 inline_html: MD033InlineHtmlTable::default(),
                 fenced_code_language: MD040FencedCodeLanguageTable::default(),
+                code_block_style: MD046CodeBlockStyleTable::default(),
                 multiple_headings: MD024MultipleHeadingsTable::default(),
                 required_headings: MD043RequiredHeadingsTable::default(),
                 link_fragments: MD051LinkFragmentsTable::default(),
