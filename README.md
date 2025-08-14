@@ -163,7 +163,7 @@ style = 'consistent'
 
 ## Rules
 
-**Implementation Progress: 30/52 rules completed (57.7%)**
+**Implementation Progress: 31/52 rules completed (59.6%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -186,7 +186,7 @@ style = 'consistent'
 - [x] **[MD025](docs/rules/md025.md)** *single-h1* - Multiple top-level headings
 - [x] **[MD026](docs/rules/md026.md)** *no-trailing-punctuation* - Trailing punctuation in headings
 - [x] **[MD027](docs/rules/md027.md)** *no-multiple-space-blockquote* - Multiple spaces after blockquote symbol
-- [ ] **MD028** *no-blanks-blockquote* - Blank lines inside blockquotes
+- [x] **[MD028](docs/rules/md028.md)** *no-blanks-blockquote* - Blank lines inside blockquotes
 - [ ] **MD029** *ol-prefix* - Ordered list item prefix consistency
 - [ ] **MD030** *list-marker-space* - Spaces after list markers
 - [x] **[MD031](docs/rules/md031.md)** *blanks-around-fences* - Fenced code blocks surrounded by blank lines
