@@ -721,6 +721,20 @@ mod tests {
     use quickmark_linter::config::{HeadingStyle, RuleSeverity};
 
     #[test]
+    fn test_parse_md028_config() {
+        let config_str = r#"
+        [linters.severity]
+        no-blanks-blockquote = 'warn'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("no-blanks-blockquote").unwrap()
+        );
+    }
+
+    #[test]
     fn test_parse_toml_config_with_invalid_rules() {
         let config_str = r#"
         [linters.severity]
