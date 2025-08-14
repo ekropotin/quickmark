@@ -1391,4 +1391,32 @@ mod tests {
             parsed.linters.settings.code_fence_style.style
         );
     }
+
+    #[test]
+    fn test_parse_md023_heading_start_left_config() {
+        let config_str = r#"
+        [linters.severity]
+        heading-start-left = 'warn'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("heading-start-left").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_parse_md023_id_config() {
+        let config_str = r#"
+        [linters.severity]
+        MD023 = 'err'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("heading-start-left").unwrap()
+        );
+    }
 }
