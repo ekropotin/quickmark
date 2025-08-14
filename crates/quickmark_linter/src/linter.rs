@@ -137,7 +137,7 @@ impl Context {
 
     /// Get the full document content as a string reference
     /// Returns a reference to the original document content stored during initialization
-    pub fn get_document_content(&self) -> std::cell::Ref<String> {
+    pub fn get_document_content(&self) -> std::cell::Ref<'_, String> {
         self.document_content.borrow()
     }
 
@@ -372,6 +372,7 @@ mod test {
                     inline_html: config::MD033InlineHtmlTable::default(),
                     fenced_code_language: config::MD040FencedCodeLanguageTable::default(),
                     code_block_style: config::MD046CodeBlockStyleTable::default(),
+                    code_fence_style: config::MD048CodeFenceStyleTable::default(),
                     multiple_headings: config::MD024MultipleHeadingsTable::default(),
                     required_headings: config::MD043RequiredHeadingsTable::default(),
                     link_fragments: config::MD051LinkFragmentsTable::default(),
