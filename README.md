@@ -80,6 +80,7 @@ no-missing-space-closed-atx = 'err'
 no-multiple-space-atx = 'err'
 no-multiple-space-closed-atx = 'err'
 blanks-around-headings = 'err'
+heading-start-left = 'err'
 single-h1 = 'err'
 blanks-around-fences = 'err'
 blanks-around-lists = 'err'
@@ -157,7 +158,7 @@ style = 'consistent'
 
 ## Rules
 
-**Implementation Progress: 27/52 rules completed (51.9%)**
+**Implementation Progress: 28/52 rules completed (53.8%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -175,7 +176,7 @@ style = 'consistent'
 - [x] **[MD020](docs/rules/md020.md)** *no-missing-space-closed-atx* - Space inside closed ATX headings
 - [x] **[MD021](docs/rules/md021.md)** *no-multiple-space-closed-atx* - Multiple spaces in closed ATX headings
 - [x] **[MD022](docs/rules/md022.md)** *blanks-around-headings* - Headings surrounded by blank lines
-- [ ] **MD023** *heading-start-left* - Headings start at beginning of line
+- [x] **[MD023](docs/rules/md023.md)** *heading-start-left* - Headings must start at the beginning of the line
 - [x] **[MD024](docs/rules/md024.md)** *no-duplicate-heading* - Multiple headings with same content
 - [x] **[MD025](docs/rules/md025.md)** *single-h1* - Multiple top-level headings
 - [ ] **MD026** *no-trailing-punctuation* - Trailing punctuation in headings
