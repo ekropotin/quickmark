@@ -265,6 +265,10 @@ fn default_front_matter_title() -> String {
     r"^\s*title\s*[:=]".to_string()
 }
 
+fn default_trailing_punctuation() -> String {
+    ".,;:!。，；：！".to_string() // Default punctuation without '?'
+}
+
 #[derive(Deserialize)]
 struct TomlMD025SingleH1Table {
     #[serde(default = "default_level_1")]
@@ -278,6 +282,20 @@ impl Default for TomlMD025SingleH1Table {
         Self {
             level: 1,
             front_matter_title: r"^\s*title\s*[:=]".to_string(),
+        }
+    }
+}
+
+#[derive(Deserialize)]
+struct TomlMD026TrailingPunctuationTable {
+    #[serde(default = "default_trailing_punctuation")]
+    punctuation: String,
+}
+
+impl Default for TomlMD026TrailingPunctuationTable {
+    fn default() -> Self {
+        Self {
+            punctuation: ".,;:!。，；：！".to_string(),
         }
     }
 }
@@ -369,6 +387,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "single-h1")]
     #[serde(default)]
     single_h1: TomlMD025SingleH1Table,
+    #[serde(rename = "no-trailing-punctuation")]
+    #[serde(default)]
+    trailing_punctuation: TomlMD026TrailingPunctuationTable,
     #[serde(rename = "blanks-around-fences")]
     #[serde(default)]
     fenced_code_blanks: TomlMD031FencedCodeBlanksTable,
@@ -556,6 +577,13 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
             single_h1: MD025SingleH1Table {
                 level: toml_config.linters.settings.single_h1.level,
                 front_matter_title: toml_config.linters.settings.single_h1.front_matter_title,
+            },
+            trailing_punctuation: quickmark_linter::config::MD026TrailingPunctuationTable {
+                punctuation: toml_config
+                    .linters
+                    .settings
+                    .trailing_punctuation
+                    .punctuation,
             },
             fenced_code_blanks: quickmark_linter::config::MD031FencedCodeBlanksTable {
                 list_items: toml_config.linters.settings.fenced_code_blanks.list_items,
@@ -1417,6 +1445,79 @@ mod tests {
         assert_eq!(
             RuleSeverity::Error,
             *parsed.linters.severity.get("heading-start-left").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_parse_md026_trailing_punctuation_config() {
+        let config_str = r#"
+        [linters.severity]
+        no-trailing-punctuation = 'warn'
+
+        [linters.settings.no-trailing-punctuation]
+        punctuation = '.,;:'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed
+                .linters
+                .severity
+                .get("no-trailing-punctuation")
+                .unwrap()
+        );
+        assert_eq!(
+            ".,;:".to_string(),
+            parsed.linters.settings.trailing_punctuation.punctuation
+        );
+    }
+
+    #[test]
+    fn test_parse_md026_empty_punctuation_config() {
+        let config_str = r#"
+        [linters.severity]
+        no-trailing-punctuation = 'off'
+
+        [linters.settings.no-trailing-punctuation]
+        punctuation = ''
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Off,
+            *parsed
+                .linters
+                .severity
+                .get("no-trailing-punctuation")
+                .unwrap()
+        );
+        assert_eq!(
+            "".to_string(),
+            parsed.linters.settings.trailing_punctuation.punctuation
+        );
+    }
+
+    #[test]
+    fn test_parse_md026_default_punctuation_config() {
+        let config_str = r#"
+        [linters.severity]
+        no-trailing-punctuation = 'err'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed
+                .linters
+                .severity
+                .get("no-trailing-punctuation")
+                .unwrap()
+        );
+        // Should use default punctuation when not specified
+        assert_eq!(
+            ".,;:!。，；：！".to_string(),
+            parsed.linters.settings.trailing_punctuation.punctuation
         );
     }
 }

@@ -368,6 +368,7 @@ mod test {
                     line_length: config::MD013LineLengthTable::default(),
                     headings_blanks: config::MD022HeadingsBlanksTable::default(),
                     single_h1: config::MD025SingleH1Table::default(),
+                    trailing_punctuation: config::MD026TrailingPunctuationTable::default(),
                     fenced_code_blanks: config::MD031FencedCodeBlanksTable::default(),
                     inline_html: config::MD033InlineHtmlTable::default(),
                     fenced_code_language: config::MD040FencedCodeLanguageTable::default(),
