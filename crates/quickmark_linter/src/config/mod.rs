@@ -235,13 +235,11 @@ pub struct MD033InlineHtmlTable {
     pub allowed_elements: Vec<String>,
 }
 
-#[derive(Debug, PartialEq, Clone)]
-#[derive(Default)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct MD040FencedCodeLanguageTable {
     pub allowed_languages: Vec<String>,
     pub language_only: bool,
 }
-
 
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct LintersSettingsTable {
