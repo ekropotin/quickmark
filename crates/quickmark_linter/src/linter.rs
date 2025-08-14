@@ -370,6 +370,7 @@ mod test {
                     single_h1: config::MD025SingleH1Table::default(),
                     fenced_code_blanks: config::MD031FencedCodeBlanksTable::default(),
                     inline_html: config::MD033InlineHtmlTable::default(),
+                    fenced_code_language: config::MD040FencedCodeLanguageTable::default(),
                     multiple_headings: config::MD024MultipleHeadingsTable::default(),
                     required_headings: config::MD043RequiredHeadingsTable::default(),
                     link_fragments: config::MD051LinkFragmentsTable::default(),

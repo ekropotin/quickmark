@@ -302,6 +302,14 @@ struct TomlMD033InlineHtmlTable {
 }
 
 #[derive(Deserialize, Default)]
+struct TomlMD040FencedCodeLanguageTable {
+    #[serde(default = "default_empty_vec")]
+    allowed_languages: Vec<String>,
+    #[serde(default = "default_false")]
+    language_only: bool,
+}
+
+#[derive(Deserialize, Default)]
 struct TomlLintersSettingsTable {
     #[serde(rename = "heading-style")]
     #[serde(default)]
@@ -336,6 +344,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "no-inline-html")]
     #[serde(default)]
     inline_html: TomlMD033InlineHtmlTable,
+    #[serde(rename = "fenced-code-language")]
+    #[serde(default)]
+    fenced_code_language: TomlMD040FencedCodeLanguageTable,
     #[serde(rename = "no-duplicate-heading")]
     #[serde(default)]
     multiple_headings: TomlMD024MultipleHeadingsTable,
@@ -482,6 +493,18 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
             },
             inline_html: MD033InlineHtmlTable {
                 allowed_elements: toml_config.linters.settings.inline_html.allowed_elements,
+            },
+            fenced_code_language: quickmark_linter::config::MD040FencedCodeLanguageTable {
+                allowed_languages: toml_config
+                    .linters
+                    .settings
+                    .fenced_code_language
+                    .allowed_languages,
+                language_only: toml_config
+                    .linters
+                    .settings
+                    .fenced_code_language
+                    .language_only,
             },
             multiple_headings: MD024MultipleHeadingsTable {
                 siblings_only: toml_config.linters.settings.multiple_headings.siblings_only,

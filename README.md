@@ -141,11 +141,15 @@ ignored_definitions = ["//"]
 
 [linters.settings.no-inline-html]
 allowed_elements = []
+
+[linters.settings.fenced-code-language]
+allowed_languages = []
+language_only = false
 ```
 
 ## Rules
 
-**Implementation Progress: 24/52 rules completed (46.2%)**
+**Implementation Progress: 25/52 rules completed (48.1%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -180,7 +184,7 @@ allowed_elements = []
 - [ ] **MD037** *no-space-in-emphasis* - Spaces inside emphasis markers
 - [ ] **MD038** *no-space-in-code* - Spaces inside code span elements
 - [ ] **MD039** *no-space-in-links* - Spaces inside link text
-- [ ] **MD040** *fenced-code-language* - Language specified for fenced code blocks
+- [x] **MD040** *fenced-code-language* - Language specified for fenced code blocks
 - [ ] **MD041** *first-line-heading* - First line should be top-level heading
 - [ ] **MD042** *no-empty-links* - Empty links
 - [x] **[MD043](docs/rules/md043.md)** *required-headings* - Required heading structure
