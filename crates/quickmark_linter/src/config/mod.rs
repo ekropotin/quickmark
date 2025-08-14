@@ -243,6 +243,17 @@ impl MD026TrailingPunctuationTable {
     }
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub struct MD027BlockquoteSpacesTable {
+    pub list_items: bool,
+}
+
+impl Default for MD027BlockquoteSpacesTable {
+    fn default() -> Self {
+        Self { list_items: true }
+    }
+}
+
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct MD033InlineHtmlTable {
     pub allowed_elements: Vec<String>,
@@ -318,6 +329,7 @@ pub struct LintersSettingsTable {
     pub headings_blanks: MD022HeadingsBlanksTable,
     pub single_h1: MD025SingleH1Table,
     pub trailing_punctuation: MD026TrailingPunctuationTable,
+    pub blockquote_spaces: MD027BlockquoteSpacesTable,
     pub fenced_code_blanks: MD031FencedCodeBlanksTable,
     pub inline_html: MD033InlineHtmlTable,
     pub fenced_code_language: MD040FencedCodeLanguageTable,
@@ -372,9 +384,9 @@ mod test {
         MD004UlStyleTable, MD007UlIndentTable, MD009TrailingSpacesTable, MD010HardTabsTable,
         MD012MultipleBlankLinesTable, MD013LineLengthTable, MD022HeadingsBlanksTable,
         MD024MultipleHeadingsTable, MD025SingleH1Table, MD026TrailingPunctuationTable,
-        MD031FencedCodeBlanksTable, MD033InlineHtmlTable, MD040FencedCodeLanguageTable,
-        MD043RequiredHeadingsTable, MD046CodeBlockStyleTable, MD048CodeFenceStyleTable,
-        MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
+        MD027BlockquoteSpacesTable, MD031FencedCodeBlanksTable, MD033InlineHtmlTable,
+        MD040FencedCodeLanguageTable, MD043RequiredHeadingsTable, MD046CodeBlockStyleTable,
+        MD048CodeFenceStyleTable, MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
         MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
     };
 
@@ -453,6 +465,7 @@ mod test {
                 headings_blanks: MD022HeadingsBlanksTable::default(),
                 single_h1: MD025SingleH1Table::default(),
                 trailing_punctuation: MD026TrailingPunctuationTable::default(),
+                blockquote_spaces: MD027BlockquoteSpacesTable::default(),
                 fenced_code_blanks: MD031FencedCodeBlanksTable::default(),
                 inline_html: MD033InlineHtmlTable::default(),
                 fenced_code_language: MD040FencedCodeLanguageTable::default(),

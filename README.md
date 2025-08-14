@@ -83,6 +83,7 @@ blanks-around-headings = 'err'
 heading-start-left = 'err'
 single-h1 = 'err'
 no-trailing-punctuation = 'err'
+no-multiple-space-blockquote = 'err'
 blanks-around-fences = 'err'
 blanks-around-lists = 'err'
 no-duplicate-heading = 'err'
@@ -162,7 +163,7 @@ style = 'consistent'
 
 ## Rules
 
-**Implementation Progress: 29/52 rules completed (55.8%)**
+**Implementation Progress: 30/52 rules completed (57.7%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -184,7 +185,7 @@ style = 'consistent'
 - [x] **[MD024](docs/rules/md024.md)** *no-duplicate-heading* - Multiple headings with same content
 - [x] **[MD025](docs/rules/md025.md)** *single-h1* - Multiple top-level headings
 - [x] **[MD026](docs/rules/md026.md)** *no-trailing-punctuation* - Trailing punctuation in headings
-- [ ] **MD027** *no-multiple-space-blockquote* - Multiple spaces after blockquote
+- [x] **[MD027](docs/rules/md027.md)** *no-multiple-space-blockquote* - Multiple spaces after blockquote symbol
 - [ ] **MD028** *no-blanks-blockquote* - Blank lines inside blockquotes
 - [ ] **MD029** *ol-prefix* - Ordered list item prefix consistency
 - [ ] **MD030** *list-marker-space* - Spaces after list markers
