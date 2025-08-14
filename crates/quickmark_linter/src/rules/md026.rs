@@ -114,9 +114,8 @@ impl RuleLinter for MD026Linter {
 
 // Helper function to detect HTML entities
 fn is_html_entity(text: &str) -> bool {
-    static HTML_ENTITY_RE: Lazy<Regex> = Lazy::new(|| {
-        Regex::new(r"&(?:[a-zA-Z\d]+|#\d+|#x[0-9a-fA-F]+);$").unwrap()
-    });
+    static HTML_ENTITY_RE: Lazy<Regex> =
+        Lazy::new(|| Regex::new(r"&(?:[a-zA-Z\d]+|#\d+|#x[0-9a-fA-F]+);$").unwrap());
     HTML_ENTITY_RE.is_match(text.trim())
 }
 
@@ -315,7 +314,8 @@ mod test {
     #[test]
     fn test_empty_punctuation_allows_all() {
         let config = test_config("");
-        let input = "# This heading has period.\n## This heading has exclamation!\n### This has comma,";
+        let input =
+            "# This heading has period.\n## This heading has exclamation!\n### This has comma,";
 
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
@@ -355,7 +355,8 @@ mod test {
     #[test]
     fn test_mixed_valid_and_invalid() {
         let config = test_default_config();
-        let input = "# Good heading\n## Bad heading.\n### Another good heading\n#### Another bad heading!";
+        let input =
+            "# Good heading\n## Bad heading.\n### Another good heading\n#### Another bad heading!";
 
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
