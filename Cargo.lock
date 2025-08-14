@@ -906,8 +906,6 @@ dependencies = [
  "predicates",
  "quickmark_config",
  "quickmark_linter",
- "tree-sitter",
- "tree-sitter-md",
 ]
 
 [[package]]
