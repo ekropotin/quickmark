@@ -1,0 +1,2 @@
+[linters.severity]
+no-space-in-code = 'err'
