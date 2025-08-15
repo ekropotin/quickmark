@@ -3,7 +3,8 @@ use quickmark_linter::config::{
     normalize_severities, CodeBlockStyle, CodeFenceStyle, HeadingStyle, LintersSettingsTable,
     LintersTable, MD003HeadingStyleTable, MD007UlIndentTable, MD013LineLengthTable,
     MD022HeadingsBlanksTable, MD024MultipleHeadingsTable, MD025SingleH1Table, MD033InlineHtmlTable,
-    MD046CodeBlockStyleTable, MD048CodeFenceStyleTable, QuickmarkConfig, RuleSeverity,
+    MD035HrStyleTable, MD046CodeBlockStyleTable, MD048CodeFenceStyleTable, QuickmarkConfig,
+    RuleSeverity,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -404,6 +405,24 @@ struct TomlMD033InlineHtmlTable {
     allowed_elements: Vec<String>,
 }
 
+fn default_hr_style() -> String {
+    "consistent".to_string()
+}
+
+#[derive(Deserialize)]
+struct TomlMD035HrStyleTable {
+    #[serde(default = "default_hr_style")]
+    style: String,
+}
+
+impl Default for TomlMD035HrStyleTable {
+    fn default() -> Self {
+        Self {
+            style: "consistent".to_string(),
+        }
+    }
+}
+
 #[derive(Deserialize, Default)]
 struct TomlMD040FencedCodeLanguageTable {
     #[serde(default = "default_empty_vec")]
@@ -456,6 +475,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "no-inline-html")]
     #[serde(default)]
     inline_html: TomlMD033InlineHtmlTable,
+    #[serde(rename = "hr-style")]
+    #[serde(default)]
+    hr_style: TomlMD035HrStyleTable,
     #[serde(rename = "fenced-code-language")]
     #[serde(default)]
     fenced_code_language: TomlMD040FencedCodeLanguageTable,
@@ -659,6 +681,9 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
             },
             inline_html: MD033InlineHtmlTable {
                 allowed_elements: toml_config.linters.settings.inline_html.allowed_elements,
+            },
+            hr_style: MD035HrStyleTable {
+                style: toml_config.linters.settings.hr_style.style,
             },
             fenced_code_language: quickmark_linter::config::MD040FencedCodeLanguageTable {
                 allowed_languages: toml_config
@@ -1645,5 +1670,42 @@ mod tests {
         assert_eq!(1, parsed.linters.settings.list_marker_space.ol_single);
         assert_eq!(1, parsed.linters.settings.list_marker_space.ul_multi);
         assert_eq!(1, parsed.linters.settings.list_marker_space.ol_multi);
+    }
+
+    #[test]
+    fn test_parse_md035_hr_style_config() {
+        let config_str = r#"
+        [linters.severity]
+        hr-style = 'err'
+
+        [linters.settings.hr-style]
+        style = '---'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("hr-style").unwrap()
+        );
+        assert_eq!("---".to_string(), parsed.linters.settings.hr_style.style);
+    }
+
+    #[test]
+    fn test_parse_md035_hr_style_defaults() {
+        let config_str = r#"
+        [linters.severity]
+        hr-style = 'warn'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("hr-style").unwrap()
+        );
+        // Should use default when setting not specified
+        assert_eq!(
+            "consistent".to_string(),
+            parsed.linters.settings.hr_style.style
+        );
     }
 }

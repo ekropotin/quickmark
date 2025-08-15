@@ -29,6 +29,7 @@ pub mod md031;
 pub mod md032;
 pub mod md033;
 pub mod md034;
+pub mod md035;
 pub mod md040;
 pub mod md043;
 pub mod md046;
@@ -88,6 +89,7 @@ pub const ALL_RULES: &[Rule] = &[
     md032::MD032,
     md033::MD033,
     md034::MD034,
+    md035::MD035,
     md040::MD040,
     md043::MD043,
     md046::MD046,
