@@ -195,7 +195,7 @@ style = 'consistent'
 - [x] **[MD034](docs/rules/md034.md)** *no-bare-urls* - Bare URLs without proper formatting
 - [x] **[MD035](docs/rules/md035.md)** *hr-style* - Horizontal rule style consistency
 - [x] **[MD036](docs/rules/md036.md)** *no-emphasis-as-heading* - Emphasis used instead of heading
-- [ ] **MD037** *no-space-in-emphasis* - Spaces inside emphasis markers
+- [x] **[MD037](docs/rules/md037.md)** *no-space-in-emphasis* - Spaces inside emphasis markers
 - [ ] **MD038** *no-space-in-code* - Spaces inside code span elements
 - [ ] **MD039** *no-space-in-links* - Spaces inside link text
 - [x] **MD040** *fenced-code-language* - Language specified for fenced code blocks
