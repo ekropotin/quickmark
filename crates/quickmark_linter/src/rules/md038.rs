@@ -129,7 +129,7 @@ impl MD038Linter {
 
             self.violations.push(RuleViolation::new(
                 &MD038,
-                format!("{} [Context: leading whitespace]", VIOLATION_MESSAGE),
+                format!("{VIOLATION_MESSAGE} [Context: leading whitespace]"),
                 self.context.file_path.clone(),
                 range_from_tree_sitter(&violation_range),
             ));
@@ -164,7 +164,7 @@ impl MD038Linter {
 
             self.violations.push(RuleViolation::new(
                 &MD038,
-                format!("{} [Context: trailing whitespace]", VIOLATION_MESSAGE),
+                format!("{VIOLATION_MESSAGE} [Context: trailing whitespace]"),
                 self.context.file_path.clone(),
                 range_from_tree_sitter(&violation_range),
             ));
@@ -194,11 +194,8 @@ impl MD038Linter {
 
 impl RuleLinter for MD038Linter {
     fn feed(&mut self, node: &Node) {
-        match node.kind() {
-            "inline" => {
-                self.check_inline_content(node);
-            }
-            _ => {}
+        if node.kind() == "inline" {
+            self.check_inline_content(node);
         }
     }
 
