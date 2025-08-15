@@ -361,6 +361,7 @@ mod test {
                         style: config::HeadingStyle::ATX,
                     },
                     ul_style: config::MD004UlStyleTable::default(),
+                    ol_prefix: config::MD029OlPrefixTable::default(),
                     ul_indent: config::MD007UlIndentTable::default(),
                     trailing_spaces: config::MD009TrailingSpacesTable::default(),
                     hard_tabs: config::MD010HardTabsTable::default(),

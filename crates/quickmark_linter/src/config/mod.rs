@@ -28,6 +28,14 @@ pub enum UlStyle {
     Sublist,
 }
 
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum OlPrefixStyle {
+    One,
+    Ordered,
+    OneOrOrdered,
+    Zero,
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct MD003HeadingStyleTable {
     pub style: HeadingStyle,
@@ -50,6 +58,19 @@ impl Default for MD004UlStyleTable {
     fn default() -> Self {
         Self {
             style: UlStyle::Consistent,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct MD029OlPrefixTable {
+    pub style: OlPrefixStyle,
+}
+
+impl Default for MD029OlPrefixTable {
+    fn default() -> Self {
+        Self {
+            style: OlPrefixStyle::OneOrOrdered,
         }
     }
 }
@@ -321,6 +342,7 @@ impl Default for MD048CodeFenceStyleTable {
 pub struct LintersSettingsTable {
     pub heading_style: MD003HeadingStyleTable,
     pub ul_style: MD004UlStyleTable,
+    pub ol_prefix: MD029OlPrefixTable,
     pub ul_indent: MD007UlIndentTable,
     pub trailing_spaces: MD009TrailingSpacesTable,
     pub hard_tabs: MD010HardTabsTable,
@@ -384,10 +406,10 @@ mod test {
         MD004UlStyleTable, MD007UlIndentTable, MD009TrailingSpacesTable, MD010HardTabsTable,
         MD012MultipleBlankLinesTable, MD013LineLengthTable, MD022HeadingsBlanksTable,
         MD024MultipleHeadingsTable, MD025SingleH1Table, MD026TrailingPunctuationTable,
-        MD027BlockquoteSpacesTable, MD031FencedCodeBlanksTable, MD033InlineHtmlTable,
-        MD040FencedCodeLanguageTable, MD043RequiredHeadingsTable, MD046CodeBlockStyleTable,
-        MD048CodeFenceStyleTable, MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
-        MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
+        MD027BlockquoteSpacesTable, MD029OlPrefixTable, MD031FencedCodeBlanksTable,
+        MD033InlineHtmlTable, MD040FencedCodeLanguageTable, MD043RequiredHeadingsTable,
+        MD046CodeBlockStyleTable, MD048CodeFenceStyleTable, MD051LinkFragmentsTable,
+        MD052ReferenceLinksImagesTable, MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -457,6 +479,7 @@ mod test {
                     style: HeadingStyle::ATX,
                 },
                 ul_style: MD004UlStyleTable::default(),
+                ol_prefix: MD029OlPrefixTable::default(),
                 ul_indent: MD007UlIndentTable::default(),
                 trailing_spaces: MD009TrailingSpacesTable::default(),
                 hard_tabs: MD010HardTabsTable::default(),

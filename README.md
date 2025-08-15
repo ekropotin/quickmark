@@ -84,6 +84,7 @@ heading-start-left = 'err'
 single-h1 = 'err'
 no-trailing-punctuation = 'err'
 no-multiple-space-blockquote = 'err'
+ol-prefix = 'err'
 blanks-around-fences = 'err'
 blanks-around-lists = 'err'
 no-duplicate-heading = 'err'
@@ -100,6 +101,9 @@ style = 'consistent'
 
 [linters.settings.ul-style]
 style = 'consistent'
+
+[linters.settings.ol-prefix]
+style = 'one_or_ordered'
 
 [linters.settings.ul-indent]
 indent = 2
@@ -163,7 +167,7 @@ style = 'consistent'
 
 ## Rules
 
-**Implementation Progress: 31/52 rules completed (59.6%)**
+**Implementation Progress: 32/52 rules completed (61.5%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -187,7 +191,7 @@ style = 'consistent'
 - [x] **[MD026](docs/rules/md026.md)** *no-trailing-punctuation* - Trailing punctuation in headings
 - [x] **[MD027](docs/rules/md027.md)** *no-multiple-space-blockquote* - Multiple spaces after blockquote symbol
 - [x] **[MD028](docs/rules/md028.md)** *no-blanks-blockquote* - Blank lines inside blockquotes
-- [ ] **MD029** *ol-prefix* - Ordered list item prefix consistency
+- [x] **[MD029](docs/rules/md029.md)** *ol-prefix* - Ordered list item prefix consistency
 - [ ] **MD030** *list-marker-space* - Spaces after list markers
 - [x] **[MD031](docs/rules/md031.md)** *blanks-around-fences* - Fenced code blocks surrounded by blank lines
 - [x] **[MD032](docs/rules/md032.md)** *blanks-around-lists* - Lists surrounded by blank lines

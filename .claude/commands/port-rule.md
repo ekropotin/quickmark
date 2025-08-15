@@ -19,9 +19,13 @@ You'd also need to create new samples for that rule in `test-samples` directory,
 
 You must validate that the implementation is consistent with markdownlinter.
 Parity means the reported violations should match in type, quantity as well as in reported lines/character positions.
-This must be done via running both linters against test samples and when analyzing the output. If any inconsistencies found - you must fix them, embracing the TDD approach outlined above.
-In case of controversy, use github/Commonmark standards as a source of truth.
-Assume markdownlinter is already installed on this machine locally.
+This must be done via running both linters against test samples and when analyzing the output. If any inconsistencies found - you must fix them.
+
+### Important considerations
+
+    - Even minior deviations of behaviour from markdownlint are not acceptable. 100% parity MUST be achived. The only exception is quickmark's behaviour which is more aligned with the Commonmark specification.
+    - For fixing inconsistencies, TDD approach MUST be used. Every discovered edge case should be covered by test.
+    - `markdownlint` is avaliable as global tool on this machine. Just call it from pwd.
 
 ## 5. Documentation update
 
