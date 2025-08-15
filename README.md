@@ -163,7 +163,7 @@ style = 'consistent'
 
 ## Rules
 
-**Implementation Progress: 31/52 rules completed (59.6%)**
+**Implementation Progress: 32/52 rules completed (61.5%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -194,7 +194,7 @@ style = 'consistent'
 - [x] **[MD033](docs/rules/md033.md)** *no-inline-html* - Inline HTML usage
 - [x] **[MD034](docs/rules/md034.md)** *no-bare-urls* - Bare URLs without proper formatting
 - [x] **[MD035](docs/rules/md035.md)** *hr-style* - Horizontal rule style consistency
-- [ ] **MD036** *no-emphasis-as-heading* - Emphasis used instead of heading
+- [x] **[MD036](docs/rules/md036.md)** *no-emphasis-as-heading* - Emphasis used instead of heading
 - [ ] **MD037** *no-space-in-emphasis* - Spaces inside emphasis markers
 - [ ] **MD038** *no-space-in-code* - Spaces inside code span elements
 - [ ] **MD039** *no-space-in-links* - Spaces inside link text

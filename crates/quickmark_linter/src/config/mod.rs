@@ -244,6 +244,19 @@ impl MD026TrailingPunctuationTable {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub struct MD036EmphasisAsHeadingTable {
+    pub punctuation: String,
+}
+
+impl Default for MD036EmphasisAsHeadingTable {
+    fn default() -> Self {
+        Self {
+            punctuation: ".,;:!?。，；：！？".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct MD027BlockquoteSpacesTable {
     pub list_items: bool,
 }
@@ -366,6 +379,7 @@ pub struct LintersSettingsTable {
     pub fenced_code_blanks: MD031FencedCodeBlanksTable,
     pub inline_html: MD033InlineHtmlTable,
     pub hr_style: MD035HrStyleTable,
+    pub emphasis_as_heading: MD036EmphasisAsHeadingTable,
     pub fenced_code_language: MD040FencedCodeLanguageTable,
     pub code_block_style: MD046CodeBlockStyleTable,
     pub code_fence_style: MD048CodeFenceStyleTable,
@@ -419,9 +433,9 @@ mod test {
         MD012MultipleBlankLinesTable, MD013LineLengthTable, MD022HeadingsBlanksTable,
         MD024MultipleHeadingsTable, MD025SingleH1Table, MD026TrailingPunctuationTable,
         MD027BlockquoteSpacesTable, MD030ListMarkerSpaceTable, MD031FencedCodeBlanksTable,
-        MD033InlineHtmlTable, MD035HrStyleTable, MD040FencedCodeLanguageTable,
-        MD043RequiredHeadingsTable, MD046CodeBlockStyleTable, MD048CodeFenceStyleTable,
-        MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
+        MD033InlineHtmlTable, MD035HrStyleTable, MD036EmphasisAsHeadingTable,
+        MD040FencedCodeLanguageTable, MD043RequiredHeadingsTable, MD046CodeBlockStyleTable,
+        MD048CodeFenceStyleTable, MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
         MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
     };
 
@@ -505,6 +519,7 @@ mod test {
                 fenced_code_blanks: MD031FencedCodeBlanksTable::default(),
                 inline_html: MD033InlineHtmlTable::default(),
                 hr_style: MD035HrStyleTable::default(),
+                emphasis_as_heading: MD036EmphasisAsHeadingTable::default(),
                 fenced_code_language: MD040FencedCodeLanguageTable::default(),
                 code_block_style: MD046CodeBlockStyleTable::default(),
                 code_fence_style: MD048CodeFenceStyleTable::default(),
