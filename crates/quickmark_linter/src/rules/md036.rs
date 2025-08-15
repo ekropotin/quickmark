@@ -20,10 +20,10 @@ impl MD036Linter {
     }
 
     fn is_meaningful_node(node: &Node) -> bool {
-        match node.kind() {
-            "text" | "emphasis" | "strong_emphasis" | "inline" => true,
-            _ => false,
-        }
+        matches!(
+            node.kind(),
+            "text" | "emphasis" | "strong_emphasis" | "inline"
+        )
     }
 
     fn extract_text_content(&self, node: &Node) -> String {
