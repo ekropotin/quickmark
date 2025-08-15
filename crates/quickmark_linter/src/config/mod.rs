@@ -28,6 +28,14 @@ pub enum UlStyle {
     Sublist,
 }
 
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum OlPrefixStyle {
+    One,
+    Ordered,
+    OneOrOrdered,
+    Zero,
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct MD003HeadingStyleTable {
     pub style: HeadingStyle,
@@ -50,6 +58,19 @@ impl Default for MD004UlStyleTable {
     fn default() -> Self {
         Self {
             style: UlStyle::Consistent,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct MD029OlPrefixTable {
+    pub style: OlPrefixStyle,
+}
+
+impl Default for MD029OlPrefixTable {
+    fn default() -> Self {
+        Self {
+            style: OlPrefixStyle::OneOrOrdered,
         }
     }
 }
@@ -504,6 +525,7 @@ impl Default for MD035HrStyleTable {
 pub struct LintersSettingsTable {
     pub heading_style: MD003HeadingStyleTable,
     pub ul_style: MD004UlStyleTable,
+    pub ol_prefix: MD029OlPrefixTable,
     pub ul_indent: MD007UlIndentTable,
     pub trailing_spaces: MD009TrailingSpacesTable,
     pub hard_tabs: MD010HardTabsTable,
@@ -576,13 +598,14 @@ mod test {
         MD004UlStyleTable, MD007UlIndentTable, MD009TrailingSpacesTable, MD010HardTabsTable,
         MD012MultipleBlankLinesTable, MD013LineLengthTable, MD022HeadingsBlanksTable,
         MD024MultipleHeadingsTable, MD025SingleH1Table, MD026TrailingPunctuationTable,
-        MD027BlockquoteSpacesTable, MD030ListMarkerSpaceTable, MD031FencedCodeBlanksTable,
-        MD033InlineHtmlTable, MD035HrStyleTable, MD036EmphasisAsHeadingTable,
-        MD040FencedCodeLanguageTable, MD041FirstLineHeadingTable, MD043RequiredHeadingsTable,
-        MD046CodeBlockStyleTable, MD048CodeFenceStyleTable, MD049EmphasisStyleTable,
-        MD050StrongStyleTable, MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
-        MD053LinkImageReferenceDefinitionsTable, MD054LinkImageStyleTable,
-        MD055TablePipeStyleTable, MD059DescriptiveLinkTextTable, RuleSeverity,
+        MD027BlockquoteSpacesTable, MD029OlPrefixTable, MD030ListMarkerSpaceTable,
+        MD031FencedCodeBlanksTable, MD033InlineHtmlTable, MD035HrStyleTable,
+        MD036EmphasisAsHeadingTable, MD040FencedCodeLanguageTable, MD041FirstLineHeadingTable,
+        MD043RequiredHeadingsTable, MD046CodeBlockStyleTable, MD048CodeFenceStyleTable,
+        MD049EmphasisStyleTable, MD050StrongStyleTable, MD051LinkFragmentsTable,
+        MD052ReferenceLinksImagesTable, MD053LinkImageReferenceDefinitionsTable,
+        MD054LinkImageStyleTable, MD055TablePipeStyleTable, MD059DescriptiveLinkTextTable,
+        RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -652,6 +675,8 @@ mod test {
                     style: HeadingStyle::ATX,
                 },
                 ul_style: MD004UlStyleTable::default(),
+                ol_prefix: MD029OlPrefixTable::default(),
+                list_marker_space: MD030ListMarkerSpaceTable::default(),
                 ul_indent: MD007UlIndentTable::default(),
                 trailing_spaces: MD009TrailingSpacesTable::default(),
                 hard_tabs: MD010HardTabsTable::default(),
@@ -662,7 +687,6 @@ mod test {
                 first_line_heading: MD041FirstLineHeadingTable::default(),
                 trailing_punctuation: MD026TrailingPunctuationTable::default(),
                 blockquote_spaces: MD027BlockquoteSpacesTable::default(),
-                list_marker_space: MD030ListMarkerSpaceTable::default(),
                 fenced_code_blanks: MD031FencedCodeBlanksTable::default(),
                 inline_html: MD033InlineHtmlTable::default(),
                 hr_style: MD035HrStyleTable::default(),
