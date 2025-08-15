@@ -432,6 +432,16 @@ struct TomlMD040FencedCodeLanguageTable {
 }
 
 #[derive(Deserialize, Default)]
+struct TomlMD036EmphasisAsHeadingTable {
+    #[serde(default = "default_md036_punctuation")]
+    punctuation: String,
+}
+
+fn default_md036_punctuation() -> String {
+    ".,;:!?。，；：！？".to_string()
+}
+
+#[derive(Deserialize, Default)]
 struct TomlLintersSettingsTable {
     #[serde(rename = "heading-style")]
     #[serde(default)]
@@ -502,6 +512,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "link-image-reference-definitions")]
     #[serde(default)]
     link_image_reference_definitions: TomlMD053LinkImageReferenceDefinitionsTable,
+    #[serde(rename = "no-emphasis-as-heading")]
+    #[serde(default)]
+    emphasis_as_heading: TomlMD036EmphasisAsHeadingTable,
 }
 
 #[derive(Deserialize, Default)]
@@ -684,6 +697,9 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
             },
             hr_style: MD035HrStyleTable {
                 style: toml_config.linters.settings.hr_style.style,
+            },
+            emphasis_as_heading: quickmark_linter::config::MD036EmphasisAsHeadingTable {
+                punctuation: toml_config.linters.settings.emphasis_as_heading.punctuation,
             },
             fenced_code_language: quickmark_linter::config::MD040FencedCodeLanguageTable {
                 allowed_languages: toml_config
