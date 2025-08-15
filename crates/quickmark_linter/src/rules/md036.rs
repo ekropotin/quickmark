@@ -262,8 +262,6 @@ impl RuleLinter for MD036Linter {
     }
 }
 
-
-
 pub const MD036: Rule = Rule {
     id: "MD036",
     alias: "no-emphasis-as-heading",
