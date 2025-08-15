@@ -373,6 +373,7 @@ mod test {
                     list_marker_space: config::MD030ListMarkerSpaceTable::default(),
                     fenced_code_blanks: config::MD031FencedCodeBlanksTable::default(),
                     inline_html: config::MD033InlineHtmlTable::default(),
+                    hr_style: config::MD035HrStyleTable::default(),
                     fenced_code_language: config::MD040FencedCodeLanguageTable::default(),
                     code_block_style: config::MD046CodeBlockStyleTable::default(),
                     code_fence_style: config::MD048CodeFenceStyleTable::default(),

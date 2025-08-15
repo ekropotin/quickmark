@@ -193,7 +193,7 @@ style = 'consistent'
 - [x] **[MD032](docs/rules/md032.md)** *blanks-around-lists* - Lists surrounded by blank lines
 - [x] **[MD033](docs/rules/md033.md)** *no-inline-html* - Inline HTML usage
 - [x] **[MD034](docs/rules/md034.md)** *no-bare-urls* - Bare URLs without proper formatting
-- [ ] **MD035** *hr-style* - Horizontal rule style consistency
+- [x] **[MD035](docs/rules/md035.md)** *hr-style* - Horizontal rule style consistency
 - [ ] **MD036** *no-emphasis-as-heading* - Emphasis used instead of heading
 - [ ] **MD037** *no-space-in-emphasis* - Spaces inside emphasis markers
 - [ ] **MD038** *no-space-in-code* - Spaces inside code span elements
