@@ -188,7 +188,7 @@ style = 'consistent'
 - [x] **[MD027](docs/rules/md027.md)** *no-multiple-space-blockquote* - Multiple spaces after blockquote symbol
 - [x] **[MD028](docs/rules/md028.md)** *no-blanks-blockquote* - Blank lines inside blockquotes
 - [ ] **MD029** *ol-prefix* - Ordered list item prefix consistency
-- [ ] **MD030** *list-marker-space* - Spaces after list markers
+- [x] **[MD030](docs/rules/md030.md)** *list-marker-space* - Spaces after list markers
 - [x] **[MD031](docs/rules/md031.md)** *blanks-around-fences* - Fenced code blocks surrounded by blank lines
 - [x] **[MD032](docs/rules/md032.md)** *blanks-around-lists* - Lists surrounded by blank lines
 - [x] **[MD033](docs/rules/md033.md)** *no-inline-html* - Inline HTML usage

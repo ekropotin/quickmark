@@ -315,6 +315,45 @@ fn default_blockquote_list_items() -> bool {
     true
 }
 
+#[derive(Deserialize)]
+struct TomlMD030ListMarkerSpaceTable {
+    #[serde(default = "default_ul_single")]
+    ul_single: usize,
+    #[serde(default = "default_ol_single")]
+    ol_single: usize,
+    #[serde(default = "default_ul_multi")]
+    ul_multi: usize,
+    #[serde(default = "default_ol_multi")]
+    ol_multi: usize,
+}
+
+impl Default for TomlMD030ListMarkerSpaceTable {
+    fn default() -> Self {
+        Self {
+            ul_single: 1,
+            ol_single: 1,
+            ul_multi: 1,
+            ol_multi: 1,
+        }
+    }
+}
+
+fn default_ul_single() -> usize {
+    1
+}
+
+fn default_ol_single() -> usize {
+    1
+}
+
+fn default_ul_multi() -> usize {
+    1
+}
+
+fn default_ol_multi() -> usize {
+    1
+}
+
 fn default_lines_config() -> Vec<i32> {
     vec![1]
 }
@@ -408,6 +447,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "no-multiple-space-blockquote")]
     #[serde(default)]
     blockquote_spaces: TomlMD027BlockquoteSpacesTable,
+    #[serde(rename = "list-marker-space")]
+    #[serde(default)]
+    list_marker_space: TomlMD030ListMarkerSpaceTable,
     #[serde(rename = "blanks-around-fences")]
     #[serde(default)]
     fenced_code_blanks: TomlMD031FencedCodeBlanksTable,
@@ -605,6 +647,12 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
             },
             blockquote_spaces: quickmark_linter::config::MD027BlockquoteSpacesTable {
                 list_items: toml_config.linters.settings.blockquote_spaces.list_items,
+            },
+            list_marker_space: quickmark_linter::config::MD030ListMarkerSpaceTable {
+                ul_single: toml_config.linters.settings.list_marker_space.ul_single,
+                ol_single: toml_config.linters.settings.list_marker_space.ol_single,
+                ul_multi: toml_config.linters.settings.list_marker_space.ul_multi,
+                ol_multi: toml_config.linters.settings.list_marker_space.ol_multi,
             },
             fenced_code_blanks: quickmark_linter::config::MD031FencedCodeBlanksTable {
                 list_items: toml_config.linters.settings.fenced_code_blanks.list_items,
@@ -1554,5 +1602,48 @@ mod tests {
             ".,;:!。，；：！".to_string(),
             parsed.linters.settings.trailing_punctuation.punctuation
         );
+    }
+
+    #[test]
+    fn test_parse_md030_list_marker_space_config() {
+        let config_str = r#"
+        [linters.severity]
+        list-marker-space = 'warn'
+
+        [linters.settings.list-marker-space]
+        ul_single = 2
+        ol_single = 1
+        ul_multi = 3
+        ol_multi = 2
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("list-marker-space").unwrap()
+        );
+        assert_eq!(2, parsed.linters.settings.list_marker_space.ul_single);
+        assert_eq!(1, parsed.linters.settings.list_marker_space.ol_single);
+        assert_eq!(3, parsed.linters.settings.list_marker_space.ul_multi);
+        assert_eq!(2, parsed.linters.settings.list_marker_space.ol_multi);
+    }
+
+    #[test]
+    fn test_parse_md030_list_marker_space_defaults() {
+        let config_str = r#"
+        [linters.severity]
+        list-marker-space = 'err'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("list-marker-space").unwrap()
+        );
+        // Should use defaults when settings not specified
+        assert_eq!(1, parsed.linters.settings.list_marker_space.ul_single);
+        assert_eq!(1, parsed.linters.settings.list_marker_space.ol_single);
+        assert_eq!(1, parsed.linters.settings.list_marker_space.ul_multi);
+        assert_eq!(1, parsed.linters.settings.list_marker_space.ol_multi);
     }
 }
