@@ -259,6 +259,25 @@ pub struct MD033InlineHtmlTable {
     pub allowed_elements: Vec<String>,
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub struct MD030ListMarkerSpaceTable {
+    pub ul_single: usize,
+    pub ol_single: usize,
+    pub ul_multi: usize,
+    pub ol_multi: usize,
+}
+
+impl Default for MD030ListMarkerSpaceTable {
+    fn default() -> Self {
+        Self {
+            ul_single: 1,
+            ol_single: 1,
+            ul_multi: 1,
+            ol_multi: 1,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct MD040FencedCodeLanguageTable {
     pub allowed_languages: Vec<String>,
@@ -330,6 +349,7 @@ pub struct LintersSettingsTable {
     pub single_h1: MD025SingleH1Table,
     pub trailing_punctuation: MD026TrailingPunctuationTable,
     pub blockquote_spaces: MD027BlockquoteSpacesTable,
+    pub list_marker_space: MD030ListMarkerSpaceTable,
     pub fenced_code_blanks: MD031FencedCodeBlanksTable,
     pub inline_html: MD033InlineHtmlTable,
     pub fenced_code_language: MD040FencedCodeLanguageTable,
@@ -384,10 +404,10 @@ mod test {
         MD004UlStyleTable, MD007UlIndentTable, MD009TrailingSpacesTable, MD010HardTabsTable,
         MD012MultipleBlankLinesTable, MD013LineLengthTable, MD022HeadingsBlanksTable,
         MD024MultipleHeadingsTable, MD025SingleH1Table, MD026TrailingPunctuationTable,
-        MD027BlockquoteSpacesTable, MD031FencedCodeBlanksTable, MD033InlineHtmlTable,
-        MD040FencedCodeLanguageTable, MD043RequiredHeadingsTable, MD046CodeBlockStyleTable,
-        MD048CodeFenceStyleTable, MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
-        MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
+        MD027BlockquoteSpacesTable, MD030ListMarkerSpaceTable, MD031FencedCodeBlanksTable,
+        MD033InlineHtmlTable, MD040FencedCodeLanguageTable, MD043RequiredHeadingsTable,
+        MD046CodeBlockStyleTable, MD048CodeFenceStyleTable, MD051LinkFragmentsTable,
+        MD052ReferenceLinksImagesTable, MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -466,6 +486,7 @@ mod test {
                 single_h1: MD025SingleH1Table::default(),
                 trailing_punctuation: MD026TrailingPunctuationTable::default(),
                 blockquote_spaces: MD027BlockquoteSpacesTable::default(),
+                list_marker_space: MD030ListMarkerSpaceTable::default(),
                 fenced_code_blanks: MD031FencedCodeBlanksTable::default(),
                 inline_html: MD033InlineHtmlTable::default(),
                 fenced_code_language: MD040FencedCodeLanguageTable::default(),
