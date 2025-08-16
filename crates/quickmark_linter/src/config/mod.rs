@@ -115,6 +115,29 @@ impl Default for MD053LinkImageReferenceDefinitionsTable {
     }
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub struct MD054LinkImageStyleTable {
+    pub autolink: bool,
+    pub inline: bool,
+    pub full: bool,
+    pub collapsed: bool,
+    pub shortcut: bool,
+    pub url_inline: bool,
+}
+
+impl Default for MD054LinkImageStyleTable {
+    fn default() -> Self {
+        Self {
+            autolink: true,
+            inline: true,
+            full: true,
+            collapsed: true,
+            shortcut: true,
+            url_inline: true,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct MD024MultipleHeadingsTable {
     pub siblings_only: bool,
@@ -460,6 +483,7 @@ pub struct LintersSettingsTable {
     pub link_fragments: MD051LinkFragmentsTable,
     pub reference_links_images: MD052ReferenceLinksImagesTable,
     pub link_image_reference_definitions: MD053LinkImageReferenceDefinitionsTable,
+    pub link_image_style: MD054LinkImageStyleTable,
 }
 
 #[derive(Debug, Default, PartialEq, Clone)]
@@ -509,7 +533,7 @@ mod test {
         MD040FencedCodeLanguageTable, MD041FirstLineHeadingTable, MD043RequiredHeadingsTable,
         MD046CodeBlockStyleTable, MD048CodeFenceStyleTable, MD049EmphasisStyleTable,
         MD050StrongStyleTable, MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
-        MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
+        MD053LinkImageReferenceDefinitionsTable, MD054LinkImageStyleTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -605,6 +629,7 @@ mod test {
                 reference_links_images: MD052ReferenceLinksImagesTable::default(),
                 link_image_reference_definitions: MD053LinkImageReferenceDefinitionsTable::default(
                 ),
+                link_image_style: MD054LinkImageStyleTable::default(),
             },
         });
 

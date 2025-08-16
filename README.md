@@ -171,7 +171,7 @@ style = 'consistent'
 
 ## Rules
 
-**Implementation Progress: 38/52 rules completed (73.1%)**
+**Implementation Progress: 39/52 rules completed (75.0%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -220,7 +220,7 @@ style = 'consistent'
 - [x] **[MD051](docs/rules/md051.md)** *link-fragments* - Link fragments should be valid
 - [x] **[MD052](docs/rules/md052.md)** *reference-links-images* - Reference links should be defined
 - [x] **[MD053](docs/rules/md053.md)** *link-image-reference-definitions* - Reference definitions should be needed
-- [ ] **MD054** *link-image-style* - Link and image style
+- [x] **[MD054](docs/rules/MD054.md)** *link-image-style* - Link and image style
 - [ ] **MD055** *table-pipe-style* - Table pipe style
 - [ ] **MD056** *table-column-count* - Table column count
 - [ ] **MD058** *blanks-around-tables* - Tables should be surrounded by blank lines
