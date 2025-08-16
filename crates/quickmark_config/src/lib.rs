@@ -4,7 +4,7 @@ use quickmark_linter::config::{
     LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD007UlIndentTable,
     MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable, MD025SingleH1Table,
     MD033InlineHtmlTable, MD035HrStyleTable, MD046CodeBlockStyleTable, MD048CodeFenceStyleTable,
-    MD049EmphasisStyleTable, QuickmarkConfig, RuleSeverity,
+    MD049EmphasisStyleTable, MD050StrongStyleTable, QuickmarkConfig, RuleSeverity, StrongStyle,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -81,6 +81,16 @@ enum TomlEmphasisStyle {
 }
 
 #[derive(Deserialize)]
+enum TomlStrongStyle {
+    #[serde(rename = "consistent")]
+    Consistent,
+    #[serde(rename = "asterisk")]
+    Asterisk,
+    #[serde(rename = "underscore")]
+    Underscore,
+}
+
+#[derive(Deserialize)]
 struct TomlMD003HeadingStyleTable {
     style: TomlHeadingStyle,
 }
@@ -103,6 +113,11 @@ struct TomlMD048CodeFenceStyleTable {
 #[derive(Deserialize)]
 struct TomlMD049EmphasisStyleTable {
     style: TomlEmphasisStyle,
+}
+
+#[derive(Deserialize)]
+struct TomlMD050StrongStyleTable {
+    style: TomlStrongStyle,
 }
 
 fn default_indent() -> usize {
@@ -542,6 +557,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "emphasis-style")]
     #[serde(default)]
     emphasis_style: TomlMD049EmphasisStyleTable,
+    #[serde(rename = "strong-style")]
+    #[serde(default)]
+    strong_style: TomlMD050StrongStyleTable,
     #[serde(rename = "no-duplicate-heading")]
     #[serde(default)]
     multiple_headings: TomlMD024MultipleHeadingsTable,
@@ -616,6 +634,14 @@ impl Default for TomlMD049EmphasisStyleTable {
     }
 }
 
+impl Default for TomlMD050StrongStyleTable {
+    fn default() -> Self {
+        Self {
+            style: TomlStrongStyle::Consistent,
+        }
+    }
+}
+
 fn convert_toml_severity(toml_severity: TomlRuleSeverity) -> RuleSeverity {
     match toml_severity {
         TomlRuleSeverity::Error => RuleSeverity::Error,
@@ -666,6 +692,14 @@ fn convert_toml_emphasis_style(toml_style: TomlEmphasisStyle) -> EmphasisStyle {
         TomlEmphasisStyle::Consistent => EmphasisStyle::Consistent,
         TomlEmphasisStyle::Asterisk => EmphasisStyle::Asterisk,
         TomlEmphasisStyle::Underscore => EmphasisStyle::Underscore,
+    }
+}
+
+fn convert_toml_strong_style(toml_style: TomlStrongStyle) -> StrongStyle {
+    match toml_style {
+        TomlStrongStyle::Consistent => StrongStyle::Consistent,
+        TomlStrongStyle::Asterisk => StrongStyle::Asterisk,
+        TomlStrongStyle::Underscore => StrongStyle::Underscore,
     }
 }
 
@@ -801,6 +835,9 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
                 style: convert_toml_emphasis_style(
                     toml_config.linters.settings.emphasis_style.style,
                 ),
+            },
+            strong_style: MD050StrongStyleTable {
+                style: convert_toml_strong_style(toml_config.linters.settings.strong_style.style),
             },
             multiple_headings: MD024MultipleHeadingsTable {
                 siblings_only: toml_config.linters.settings.multiple_headings.siblings_only,
