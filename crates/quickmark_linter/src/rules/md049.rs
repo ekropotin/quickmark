@@ -180,7 +180,7 @@ impl MD049Linter {
 
                 self.violations.push(RuleViolation::new(
                     &MD049,
-                    format!("Expected: {}; Actual: {}", expected_style, actual_style),
+                    format!("Expected: {expected_style}; Actual: {actual_style}"),
                     self.context.file_path.clone(),
                     range_from_tree_sitter(&range),
                 ));
@@ -317,7 +317,7 @@ mod test {
             .filter(|v| v.rule().id == "MD049")
             .collect();
         // Should find violations for the inconsistent emphasis (underscore when asterisk was first)
-        assert!(md049_violations.len() > 0);
+        assert!(!md049_violations.is_empty());
     }
 
     #[test]
@@ -347,6 +347,6 @@ mod test {
             .filter(|v| v.rule().id == "MD049")
             .collect();
         // Should find violations for the inconsistent nested emphasis
-        assert!(md049_violations.len() > 0);
+        assert!(!md049_violations.is_empty());
     }
 }
