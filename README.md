@@ -88,6 +88,7 @@ no-multiple-space-blockquote = 'err'
 blanks-around-fences = 'err'
 blanks-around-lists = 'err'
 no-duplicate-heading = 'err'
+no-empty-links = 'err'
 required-headings = 'err'
 code-block-style = 'err'
 code-fence-style = 'err'
@@ -169,7 +170,7 @@ style = 'consistent'
 
 ## Rules
 
-**Implementation Progress: 35/52 rules completed (67.3%)**
+**Implementation Progress: 36/52 rules completed (69.2%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -206,7 +207,7 @@ style = 'consistent'
 - [x] **[MD039](docs/rules/md039.md)** *no-space-in-links* - Spaces inside link text
 - [x] **[MD040](docs/rules/md040.md)** *fenced-code-language* - Language specified for fenced code blocks
 - [x] **[MD041](docs/rules/md041.md)** *first-line-heading* - First line should be top-level heading
-- [ ] **MD042** *no-empty-links* - Empty links
+- [x] **[MD042](docs/rules/md042.md)** *no-empty-links* - Empty links
 - [x] **[MD043](docs/rules/md043.md)** *required-headings* - Required heading structure
 - [ ] **MD044** *proper-names* - Proper names with correct capitalization
 - [ ] **MD045** *no-alt-text* - Images should have alternate text
