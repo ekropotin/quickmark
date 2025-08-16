@@ -4,7 +4,8 @@ use quickmark_linter::config::{
     LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD007UlIndentTable,
     MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable, MD025SingleH1Table,
     MD033InlineHtmlTable, MD035HrStyleTable, MD046CodeBlockStyleTable, MD048CodeFenceStyleTable,
-    MD049EmphasisStyleTable, MD050StrongStyleTable, QuickmarkConfig, RuleSeverity, StrongStyle,
+    MD049EmphasisStyleTable, MD050StrongStyleTable, MD054LinkImageStyleTable, QuickmarkConfig,
+    RuleSeverity, StrongStyle,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -278,6 +279,22 @@ struct TomlMD052ReferenceLinksImagesTable {
 struct TomlMD053LinkImageReferenceDefinitionsTable {
     #[serde(default = "default_ignored_definitions")]
     ignored_definitions: Vec<String>,
+}
+
+#[derive(Deserialize, Default)]
+struct TomlMD054LinkImageStyleTable {
+    #[serde(default = "default_true")]
+    autolink: bool,
+    #[serde(default = "default_true")]
+    inline: bool,
+    #[serde(default = "default_true")]
+    full: bool,
+    #[serde(default = "default_true")]
+    collapsed: bool,
+    #[serde(default = "default_true")]
+    shortcut: bool,
+    #[serde(default = "default_true")]
+    url_inline: bool,
 }
 
 #[derive(Deserialize, Default)]
@@ -575,6 +592,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "link-image-reference-definitions")]
     #[serde(default)]
     link_image_reference_definitions: TomlMD053LinkImageReferenceDefinitionsTable,
+    #[serde(rename = "link-image-style")]
+    #[serde(default)]
+    link_image_style: TomlMD054LinkImageStyleTable,
     #[serde(rename = "no-emphasis-as-heading")]
     #[serde(default)]
     emphasis_as_heading: TomlMD036EmphasisAsHeadingTable,
@@ -875,6 +895,14 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
                         .link_image_reference_definitions
                         .ignored_definitions,
                 },
+            link_image_style: MD054LinkImageStyleTable {
+                autolink: toml_config.linters.settings.link_image_style.autolink,
+                inline: toml_config.linters.settings.link_image_style.inline,
+                full: toml_config.linters.settings.link_image_style.full,
+                collapsed: toml_config.linters.settings.link_image_style.collapsed,
+                shortcut: toml_config.linters.settings.link_image_style.shortcut,
+                url_inline: toml_config.linters.settings.link_image_style.url_inline,
+            },
         },
     }))
 }
