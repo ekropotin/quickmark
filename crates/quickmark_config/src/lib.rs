@@ -1,10 +1,10 @@
 use anyhow::Result;
 use quickmark_linter::config::{
-    normalize_severities, CodeBlockStyle, CodeFenceStyle, HeadingStyle, LintersSettingsTable,
-    LintersTable, MD003HeadingStyleTable, MD007UlIndentTable, MD013LineLengthTable,
-    MD022HeadingsBlanksTable, MD024MultipleHeadingsTable, MD025SingleH1Table, MD033InlineHtmlTable,
-    MD035HrStyleTable, MD046CodeBlockStyleTable, MD048CodeFenceStyleTable, QuickmarkConfig,
-    RuleSeverity,
+    normalize_severities, CodeBlockStyle, CodeFenceStyle, EmphasisStyle, HeadingStyle,
+    LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD007UlIndentTable,
+    MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable, MD025SingleH1Table,
+    MD033InlineHtmlTable, MD035HrStyleTable, MD046CodeBlockStyleTable, MD048CodeFenceStyleTable,
+    MD049EmphasisStyleTable, QuickmarkConfig, RuleSeverity,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -71,6 +71,16 @@ enum TomlCodeFenceStyle {
 }
 
 #[derive(Deserialize)]
+enum TomlEmphasisStyle {
+    #[serde(rename = "consistent")]
+    Consistent,
+    #[serde(rename = "asterisk")]
+    Asterisk,
+    #[serde(rename = "underscore")]
+    Underscore,
+}
+
+#[derive(Deserialize)]
 struct TomlMD003HeadingStyleTable {
     style: TomlHeadingStyle,
 }
@@ -88,6 +98,11 @@ struct TomlMD046CodeBlockStyleTable {
 #[derive(Deserialize)]
 struct TomlMD048CodeFenceStyleTable {
     style: TomlCodeFenceStyle,
+}
+
+#[derive(Deserialize)]
+struct TomlMD049EmphasisStyleTable {
+    style: TomlEmphasisStyle,
 }
 
 fn default_indent() -> usize {
@@ -524,6 +539,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "code-fence-style")]
     #[serde(default)]
     code_fence_style: TomlMD048CodeFenceStyleTable,
+    #[serde(rename = "emphasis-style")]
+    #[serde(default)]
+    emphasis_style: TomlMD049EmphasisStyleTable,
     #[serde(rename = "no-duplicate-heading")]
     #[serde(default)]
     multiple_headings: TomlMD024MultipleHeadingsTable,
@@ -590,6 +608,14 @@ impl Default for TomlMD048CodeFenceStyleTable {
     }
 }
 
+impl Default for TomlMD049EmphasisStyleTable {
+    fn default() -> Self {
+        Self {
+            style: TomlEmphasisStyle::Consistent,
+        }
+    }
+}
+
 fn convert_toml_severity(toml_severity: TomlRuleSeverity) -> RuleSeverity {
     match toml_severity {
         TomlRuleSeverity::Error => RuleSeverity::Error,
@@ -632,6 +658,14 @@ fn convert_toml_code_fence_style(toml_style: TomlCodeFenceStyle) -> CodeFenceSty
         TomlCodeFenceStyle::Consistent => CodeFenceStyle::Consistent,
         TomlCodeFenceStyle::Backtick => CodeFenceStyle::Backtick,
         TomlCodeFenceStyle::Tilde => CodeFenceStyle::Tilde,
+    }
+}
+
+fn convert_toml_emphasis_style(toml_style: TomlEmphasisStyle) -> EmphasisStyle {
+    match toml_style {
+        TomlEmphasisStyle::Consistent => EmphasisStyle::Consistent,
+        TomlEmphasisStyle::Asterisk => EmphasisStyle::Asterisk,
+        TomlEmphasisStyle::Underscore => EmphasisStyle::Underscore,
     }
 }
 
@@ -761,6 +795,11 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
             code_fence_style: MD048CodeFenceStyleTable {
                 style: convert_toml_code_fence_style(
                     toml_config.linters.settings.code_fence_style.style,
+                ),
+            },
+            emphasis_style: MD049EmphasisStyleTable {
+                style: convert_toml_emphasis_style(
+                    toml_config.linters.settings.emphasis_style.style,
                 ),
             },
             multiple_headings: MD024MultipleHeadingsTable {
@@ -1882,6 +1921,88 @@ mod tests {
                 .severity
                 .get("single-trailing-newline")
                 .unwrap()
+        );
+    }
+
+    #[test]
+    fn test_parse_md049_emphasis_style_asterisk_config() {
+        let config_str = r#"
+        [linters.severity]
+        emphasis-style = 'err'
+
+        [linters.settings.emphasis-style]
+        style = 'asterisk'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("emphasis-style").unwrap()
+        );
+        assert_eq!(
+            EmphasisStyle::Asterisk,
+            parsed.linters.settings.emphasis_style.style
+        );
+    }
+
+    #[test]
+    fn test_parse_md049_emphasis_style_underscore_config() {
+        let config_str = r#"
+        [linters.severity]
+        emphasis-style = 'warn'
+
+        [linters.settings.emphasis-style]
+        style = 'underscore'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("emphasis-style").unwrap()
+        );
+        assert_eq!(
+            EmphasisStyle::Underscore,
+            parsed.linters.settings.emphasis_style.style
+        );
+    }
+
+    #[test]
+    fn test_parse_md049_emphasis_style_consistent_config() {
+        let config_str = r#"
+        [linters.severity]
+        emphasis-style = 'err'
+
+        [linters.settings.emphasis-style]
+        style = 'consistent'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("emphasis-style").unwrap()
+        );
+        assert_eq!(
+            EmphasisStyle::Consistent,
+            parsed.linters.settings.emphasis_style.style
+        );
+    }
+
+    #[test]
+    fn test_parse_md049_emphasis_style_default_values() {
+        let config_str = r#"
+        [linters.severity]
+        emphasis-style = 'warn'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("emphasis-style").unwrap()
+        );
+        // Test default value
+        assert_eq!(
+            EmphasisStyle::Consistent,
+            parsed.linters.settings.emphasis_style.style
         );
     }
 }
