@@ -1792,4 +1792,32 @@ mod tests {
             *parsed.linters.severity.get("no-space-in-links").unwrap()
         );
     }
+
+    #[test]
+    fn test_parse_md042_no_empty_links_config() {
+        let config_str = r#"
+        [linters.severity]
+        no-empty-links = 'err'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("no-empty-links").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_parse_md042_no_empty_links_warning() {
+        let config_str = r#"
+        [linters.severity]
+        no-empty-links = 'warn'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("no-empty-links").unwrap()
+        );
+    }
 }
