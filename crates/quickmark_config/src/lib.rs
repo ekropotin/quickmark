@@ -1559,6 +1559,20 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_md023_id_config() {
+        let config_str = r#"
+        [linters.severity]
+        heading-start-left = 'err'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("heading-start-left").unwrap()
+        );
+    }
+
+    #[test]
     fn test_parse_md026_trailing_punctuation_config() {
         let config_str = r#"
         [linters.severity]
