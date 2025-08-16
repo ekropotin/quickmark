@@ -1,11 +1,26 @@
 use std::rc::Rc;
 
+use once_cell::sync::Lazy;
+use regex::Regex;
 use tree_sitter::Node;
 
 use crate::{
     linter::{range_from_tree_sitter, RuleViolation},
     rules::{Context, Rule, RuleLinter, RuleType},
 };
+
+// Using once_cell::sync::Lazy for safe, one-time compilation of regexes.
+// Regular inline links: [text](url) - but NOT images ![text](url)
+static RE_INLINE_LINK: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(?:^|[^!])\[([^\]]*)\]\(([^)]+)\)").unwrap());
+
+// Reference links: [text][ref] - but NOT images ![text][ref]
+static RE_REF_LINK: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(?:^|[^!])\[([^\]]*)\]\[([^\]]+)\]").unwrap());
+
+// Collapsed reference links: [text][] - but NOT images ![text][]
+static RE_COLLAPSED_REF_LINK: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(?:^|[^!])\[([^\]]+)\]\[\]").unwrap());
 
 /// MD039 - Spaces inside link text
 ///
@@ -57,33 +72,21 @@ impl MD039Linter {
     }
 
     fn check_text_for_link_patterns(&mut self, text: &str, node: &Node) {
-        // Regular inline links: [text](url) - but NOT images ![text](url)
-        for caps in regex::Regex::new(r"(?:^|[^!])\[([^\]]*)\]\(([^)]+)\)")
-            .unwrap()
-            .captures_iter(text)
-        {
+        for caps in RE_INLINE_LINK.captures_iter(text) {
             if let Some(label_match) = caps.get(1) {
                 let label_text = label_match.as_str();
                 self.check_label_for_spaces(label_text, node);
             }
         }
 
-        // Reference links: [text][ref] - but NOT images ![text][ref]
-        for caps in regex::Regex::new(r"(?:^|[^!])\[([^\]]*)\]\[([^\]]+)\]")
-            .unwrap()
-            .captures_iter(text)
-        {
+        for caps in RE_REF_LINK.captures_iter(text) {
             if let Some(label_match) = caps.get(1) {
                 let label_text = label_match.as_str();
                 self.check_label_for_spaces(label_text, node);
             }
         }
 
-        // Collapsed reference links: [text][] - but NOT images ![text][]
-        for caps in regex::Regex::new(r"(?:^|[^!])\[([^\]]+)\]\[\]")
-            .unwrap()
-            .captures_iter(text)
-        {
+        for caps in RE_COLLAPSED_REF_LINK.captures_iter(text) {
             if let Some(label_match) = caps.get(1) {
                 let label_text = label_match.as_str();
                 self.check_label_for_spaces(label_text, node);
@@ -143,7 +146,7 @@ impl MD039Linter {
 
     fn create_space_violation(&mut self, node: &Node, is_leading: bool) {
         let space_type = if is_leading { "leading" } else { "trailing" };
-        let message = format!("Spaces inside link text ({})", space_type);
+        let message = format!("Spaces inside link text ({space_type})");
 
         self.violations.push(RuleViolation::new(
             &MD039,
@@ -160,7 +163,7 @@ pub const MD039: Rule = Rule {
     tags: &["whitespace", "links"],
     description: "Spaces inside link text",
     rule_type: RuleType::Token,
-    required_nodes: &["link"], // We need link nodes to check for spaces in link text
+    required_nodes: &["link", "inline"], // We need link nodes to check for spaces in link text
     new_linter: |context| Box::new(MD039Linter::new(context)),
 };
 
