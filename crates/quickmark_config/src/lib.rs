@@ -1562,7 +1562,7 @@ mod tests {
     fn test_parse_md023_id_config() {
         let config_str = r#"
         [linters.severity]
-        MD023 = 'err'
+        heading-start-left = 'err'
         "#;
 
         let parsed = parse_toml_config(config_str).unwrap();
@@ -1722,6 +1722,34 @@ mod tests {
         assert_eq!(
             "consistent".to_string(),
             parsed.linters.settings.hr_style.style
+        );
+    }
+
+    #[test]
+    fn test_parse_md039_no_space_in_links_config() {
+        let config_str = r#"
+        [linters.severity]
+        no-space-in-links = 'err'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("no-space-in-links").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_parse_md039_no_space_in_links_warning() {
+        let config_str = r#"
+        [linters.severity]
+        no-space-in-links = 'warn'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("no-space-in-links").unwrap()
         );
     }
 }
