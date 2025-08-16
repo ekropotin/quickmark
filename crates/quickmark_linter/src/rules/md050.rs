@@ -18,14 +18,23 @@ pub(crate) struct MD050Linter {
     context: Rc<Context>,
     violations: Vec<RuleViolation>,
     first_strong_marker: Option<StrongMarkerType>,
+    line_start_bytes: Vec<usize>,
 }
 
 impl MD050Linter {
     pub fn new(context: Rc<Context>) -> Self {
+        let line_start_bytes = {
+            let content = context.get_document_content();
+            std::iter::once(0)
+                .chain(content.match_indices('\n').map(|(i, _)| i + 1))
+                .collect()
+        };
+
         Self {
             context,
             violations: Vec::new(),
             first_strong_marker: None,
+            line_start_bytes,
         }
     }
 
@@ -33,14 +42,13 @@ impl MD050Linter {
         // Check if this node is inside a code span or code block
         let mut current = Some(*node);
         while let Some(node_to_check) = current {
-            match node_to_check.kind() {
-                "code_span" | "fenced_code_block" | "indented_code_block" => {
-                    return true;
-                }
-                _ => {
-                    current = node_to_check.parent();
-                }
+            if matches!(
+                node_to_check.kind(),
+                "code_span" | "fenced_code_block" | "indented_code_block"
+            ) {
+                return true;
             }
+            current = node_to_check.parent();
         }
         false
     }
@@ -56,8 +64,9 @@ impl MD050Linter {
             node.utf8_text(content.as_bytes()).unwrap_or("").to_string()
         };
 
-        // Find all strong emphasis patterns in the text
-        self.find_strong_patterns(&text, node_start_byte);
+        if !text.is_empty() {
+            self.find_strong_patterns(&text, node_start_byte);
+        }
     }
 
     fn find_strong_patterns(&mut self, text: &str, text_start_byte: usize) {
@@ -156,7 +165,7 @@ impl MD050Linter {
 
                         self.violations.push(RuleViolation::new(
                             &MD050,
-                            format!("Expected: {}; Actual: {}", expected_style, actual_style),
+                            format!("Expected: {expected_style}; Actual: {actual_style}"),
                             self.context.file_path.clone(),
                             range_from_tree_sitter(&range),
                         ));
@@ -174,33 +183,16 @@ impl MD050Linter {
     }
 
     fn byte_to_point(&self, byte_pos: usize) -> tree_sitter::Point {
-        let source = self.context.get_document_content();
-        let mut line = 0;
-        let mut column = 0;
-
-        for (i, ch) in source.char_indices() {
-            if i >= byte_pos {
-                break;
-            }
-            if ch == '\n' {
-                line += 1;
-                column = 0;
-            } else {
-                column += 1;
-            }
-        }
-
+        let line = self.line_start_bytes.partition_point(|&x| x <= byte_pos) - 1;
+        let column = byte_pos - self.line_start_bytes[line];
         tree_sitter::Point { row: line, column }
     }
 }
 
 impl RuleLinter for MD050Linter {
     fn feed(&mut self, node: &Node) {
-        match node.kind() {
-            "text" | "inline" => {
-                self.find_strong_violations_in_text(node);
-            }
-            _ => {}
+        if matches!(node.kind(), "text" | "inline") {
+            self.find_strong_violations_in_text(node);
         }
     }
 
@@ -376,7 +368,7 @@ mod test {
     #[test]
     fn test_strong_emphasis_inconsistent() {
         let config = test_config_with_style(StrongStyle::Consistent);
-        let input = "This has ***strong emphasis*** and ___inconsistent___.";
+        let input = "This has ***strong emphasis*** and ___inconsistent___. ";
 
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
