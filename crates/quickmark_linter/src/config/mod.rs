@@ -137,6 +137,23 @@ impl Default for MD025SingleH1Table {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub struct MD041FirstLineHeadingTable {
+    pub allow_preamble: bool,
+    pub front_matter_title: String,
+    pub level: u8,
+}
+
+impl Default for MD041FirstLineHeadingTable {
+    fn default() -> Self {
+        Self {
+            allow_preamble: false,
+            front_matter_title: r"^\s*title\s*[:=]".to_string(),
+            level: 1,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct MD022HeadingsBlanksTable {
     pub lines_above: Vec<i32>,
     pub lines_below: Vec<i32>,
@@ -373,6 +390,7 @@ pub struct LintersSettingsTable {
     pub line_length: MD013LineLengthTable,
     pub headings_blanks: MD022HeadingsBlanksTable,
     pub single_h1: MD025SingleH1Table,
+    pub first_line_heading: MD041FirstLineHeadingTable,
     pub trailing_punctuation: MD026TrailingPunctuationTable,
     pub blockquote_spaces: MD027BlockquoteSpacesTable,
     pub list_marker_space: MD030ListMarkerSpaceTable,
@@ -434,9 +452,9 @@ mod test {
         MD024MultipleHeadingsTable, MD025SingleH1Table, MD026TrailingPunctuationTable,
         MD027BlockquoteSpacesTable, MD030ListMarkerSpaceTable, MD031FencedCodeBlanksTable,
         MD033InlineHtmlTable, MD035HrStyleTable, MD036EmphasisAsHeadingTable,
-        MD040FencedCodeLanguageTable, MD043RequiredHeadingsTable, MD046CodeBlockStyleTable,
-        MD048CodeFenceStyleTable, MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
-        MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
+        MD040FencedCodeLanguageTable, MD041FirstLineHeadingTable, MD043RequiredHeadingsTable,
+        MD046CodeBlockStyleTable, MD048CodeFenceStyleTable, MD051LinkFragmentsTable,
+        MD052ReferenceLinksImagesTable, MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -513,6 +531,7 @@ mod test {
                 line_length: MD013LineLengthTable::default(),
                 headings_blanks: MD022HeadingsBlanksTable::default(),
                 single_h1: MD025SingleH1Table::default(),
+                first_line_heading: MD041FirstLineHeadingTable::default(),
                 trailing_punctuation: MD026TrailingPunctuationTable::default(),
                 blockquote_spaces: MD027BlockquoteSpacesTable::default(),
                 list_marker_space: MD030ListMarkerSpaceTable::default(),

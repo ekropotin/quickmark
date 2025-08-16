@@ -266,6 +266,10 @@ fn default_front_matter_title() -> String {
     r"^\s*title\s*[:=]".to_string()
 }
 
+fn default_allow_preamble() -> bool {
+    false
+}
+
 fn default_trailing_punctuation() -> String {
     ".,;:!。，；：！".to_string() // Default punctuation without '?'
 }
@@ -283,6 +287,26 @@ impl Default for TomlMD025SingleH1Table {
         Self {
             level: 1,
             front_matter_title: r"^\s*title\s*[:=]".to_string(),
+        }
+    }
+}
+
+#[derive(Deserialize)]
+struct TomlMD041FirstLineHeadingTable {
+    #[serde(default = "default_allow_preamble")]
+    allow_preamble: bool,
+    #[serde(default = "default_front_matter_title")]
+    front_matter_title: String,
+    #[serde(default = "default_level_1")]
+    level: u8,
+}
+
+impl Default for TomlMD041FirstLineHeadingTable {
+    fn default() -> Self {
+        Self {
+            allow_preamble: false,
+            front_matter_title: r"^\s*title\s*[:=]".to_string(),
+            level: 1,
         }
     }
 }
@@ -470,6 +494,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "single-h1")]
     #[serde(default)]
     single_h1: TomlMD025SingleH1Table,
+    #[serde(rename = "first-line-heading")]
+    #[serde(default)]
+    first_line_heading: TomlMD041FirstLineHeadingTable,
     #[serde(rename = "no-trailing-punctuation")]
     #[serde(default)]
     trailing_punctuation: TomlMD026TrailingPunctuationTable,
@@ -672,6 +699,19 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
             single_h1: MD025SingleH1Table {
                 level: toml_config.linters.settings.single_h1.level,
                 front_matter_title: toml_config.linters.settings.single_h1.front_matter_title,
+            },
+            first_line_heading: quickmark_linter::config::MD041FirstLineHeadingTable {
+                allow_preamble: toml_config
+                    .linters
+                    .settings
+                    .first_line_heading
+                    .allow_preamble,
+                front_matter_title: toml_config
+                    .linters
+                    .settings
+                    .first_line_heading
+                    .front_matter_title,
+                level: toml_config.linters.settings.first_line_heading.level,
             },
             trailing_punctuation: quickmark_linter::config::MD026TrailingPunctuationTable {
                 punctuation: toml_config

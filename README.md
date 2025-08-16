@@ -82,6 +82,7 @@ no-multiple-space-closed-atx = 'err'
 blanks-around-headings = 'err'
 heading-start-left = 'err'
 single-h1 = 'err'
+first-line-heading = 'err'
 no-trailing-punctuation = 'err'
 no-multiple-space-blockquote = 'err'
 blanks-around-fences = 'err'
@@ -129,6 +130,11 @@ allow_different_nesting = false
 level = 1
 front_matter_title = '^\s*title\s*[:=]'
 
+[linters.settings.first-line-heading]
+allow_preamble = false
+front_matter_title = '^\s*title\s*[:=]'
+level = 1
+
 [linters.settings.no-trailing-punctuation]
 punctuation = '.,;:!。，；：！'
 
@@ -163,7 +169,7 @@ style = 'consistent'
 
 ## Rules
 
-**Implementation Progress: 33/52 rules completed (63.5%)**
+**Implementation Progress: 35/52 rules completed (67.3%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -197,9 +203,9 @@ style = 'consistent'
 - [x] **[MD036](docs/rules/md036.md)** *no-emphasis-as-heading* - Emphasis used instead of heading
 - [x] **[MD037](docs/rules/md037.md)** *no-space-in-emphasis* - Spaces inside emphasis markers
 - [x] **[MD038](docs/rules/md038.md)** *no-space-in-code* - Spaces inside code span elements
-- [ ] **MD039** *no-space-in-links* - Spaces inside link text
-- [x] **MD040** *fenced-code-language* - Language specified for fenced code blocks
-- [ ] **MD041** *first-line-heading* - First line should be top-level heading
+- [x] **[MD039](docs/rules/md039.md)** *no-space-in-links* - Spaces inside link text
+- [x] **[MD040](docs/rules/md040.md)** *fenced-code-language* - Language specified for fenced code blocks
+- [x] **[MD041](docs/rules/md041.md)** *first-line-heading* - First line should be top-level heading
 - [ ] **MD042** *no-empty-links* - Empty links
 - [x] **[MD043](docs/rules/md043.md)** *required-headings* - Required heading structure
 - [ ] **MD044** *proper-names* - Proper names with correct capitalization
