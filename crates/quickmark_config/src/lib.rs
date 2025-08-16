@@ -1848,4 +1848,40 @@ mod tests {
             *parsed.linters.severity.get("no-alt-text").unwrap()
         );
     }
+
+    #[test]
+    fn test_parse_md047_single_trailing_newline_config() {
+        let config_str = r#"
+        [linters.severity]
+        single-trailing-newline = 'err'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed
+                .linters
+                .severity
+                .get("single-trailing-newline")
+                .unwrap()
+        );
+    }
+
+    #[test]
+    fn test_parse_md047_single_trailing_newline_warning() {
+        let config_str = r#"
+        [linters.severity]
+        single-trailing-newline = 'warn'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed
+                .linters
+                .severity
+                .get("single-trailing-newline")
+                .unwrap()
+        );
+    }
 }
