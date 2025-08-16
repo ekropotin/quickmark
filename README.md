@@ -92,6 +92,7 @@ no-empty-links = 'err'
 required-headings = 'err'
 code-block-style = 'err'
 code-fence-style = 'err'
+single-trailing-newline = 'err'
 link-fragments = 'warn'
 reference-links-images = 'err'
 link-image-reference-definitions = 'err'
@@ -170,7 +171,7 @@ style = 'consistent'
 
 ## Rules
 
-**Implementation Progress: 37/52 rules completed (71.2%)**
+**Implementation Progress: 38/52 rules completed (73.1%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -212,7 +213,7 @@ style = 'consistent'
 - [ ] **MD044** *proper-names* - Proper names with correct capitalization
 - [x] **[MD045](docs/rules/md045.md)** *no-alt-text* - Images should have alternate text
 - [x] **[MD046](docs/rules/md046.md)** *code-block-style* - Code block style consistency
-- [ ] **MD047** *single-trailing-newline* - Files should end with a single newline
+- [x] **[MD047](docs/rules/md047.md)** *single-trailing-newline* - Files should end with a single newline
 - [x] **[MD048](docs/rules/md048.md)** *code-fence-style* - Code fence style consistency
 - [ ] **MD049** *emphasis-style* - Emphasis style consistency
 - [ ] **MD050** *strong-style* - Strong style consistency
