@@ -328,6 +328,13 @@ pub enum CodeFenceStyle {
     Tilde,
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub enum EmphasisStyle {
+    Consistent,
+    Asterisk,
+    Underscore,
+}
+
 impl Default for CodeBlockStyle {
     fn default() -> Self {
         Self::Consistent
@@ -335,6 +342,12 @@ impl Default for CodeBlockStyle {
 }
 
 impl Default for CodeFenceStyle {
+    fn default() -> Self {
+        Self::Consistent
+    }
+}
+
+impl Default for EmphasisStyle {
     fn default() -> Self {
         Self::Consistent
     }
@@ -362,6 +375,19 @@ impl Default for MD048CodeFenceStyleTable {
     fn default() -> Self {
         Self {
             style: CodeFenceStyle::Consistent,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct MD049EmphasisStyleTable {
+    pub style: EmphasisStyle,
+}
+
+impl Default for MD049EmphasisStyleTable {
+    fn default() -> Self {
+        Self {
+            style: EmphasisStyle::Consistent,
         }
     }
 }
@@ -401,6 +427,7 @@ pub struct LintersSettingsTable {
     pub fenced_code_language: MD040FencedCodeLanguageTable,
     pub code_block_style: MD046CodeBlockStyleTable,
     pub code_fence_style: MD048CodeFenceStyleTable,
+    pub emphasis_style: MD049EmphasisStyleTable,
     pub multiple_headings: MD024MultipleHeadingsTable,
     pub required_headings: MD043RequiredHeadingsTable,
     pub link_fragments: MD051LinkFragmentsTable,
@@ -453,8 +480,9 @@ mod test {
         MD027BlockquoteSpacesTable, MD030ListMarkerSpaceTable, MD031FencedCodeBlanksTable,
         MD033InlineHtmlTable, MD035HrStyleTable, MD036EmphasisAsHeadingTable,
         MD040FencedCodeLanguageTable, MD041FirstLineHeadingTable, MD043RequiredHeadingsTable,
-        MD046CodeBlockStyleTable, MD048CodeFenceStyleTable, MD051LinkFragmentsTable,
-        MD052ReferenceLinksImagesTable, MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
+        MD046CodeBlockStyleTable, MD048CodeFenceStyleTable, MD049EmphasisStyleTable,
+        MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
+        MD053LinkImageReferenceDefinitionsTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -542,6 +570,7 @@ mod test {
                 fenced_code_language: MD040FencedCodeLanguageTable::default(),
                 code_block_style: MD046CodeBlockStyleTable::default(),
                 code_fence_style: MD048CodeFenceStyleTable::default(),
+                emphasis_style: MD049EmphasisStyleTable::default(),
                 multiple_headings: MD024MultipleHeadingsTable::default(),
                 required_headings: MD043RequiredHeadingsTable::default(),
                 link_fragments: MD051LinkFragmentsTable::default(),
