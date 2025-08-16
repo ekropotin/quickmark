@@ -216,7 +216,7 @@ style = 'consistent'
 - [x] **[MD047](docs/rules/md047.md)** *single-trailing-newline* - Files should end with a single newline
 - [x] **[MD048](docs/rules/md048.md)** *code-fence-style* - Code fence style consistency
 - [x] **[MD049](docs/rules/md049.md)** *emphasis-style* - Emphasis style consistency
-- [ ] **MD050** *strong-style* - Strong style consistency
+- [x] **[MD050](docs/rules/md050.md)** *strong-style* - Strong style consistency
 - [x] **[MD051](docs/rules/md051.md)** *link-fragments* - Link fragments should be valid
 - [x] **[MD052](docs/rules/md052.md)** *reference-links-images* - Reference links should be defined
 - [x] **[MD053](docs/rules/md053.md)** *link-image-reference-definitions* - Reference definitions should be needed
