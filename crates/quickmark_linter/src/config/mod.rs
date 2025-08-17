@@ -166,6 +166,24 @@ impl Default for MD055TablePipeStyleTable {
     }
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub struct MD059DescriptiveLinkTextTable {
+    pub prohibited_texts: Vec<String>,
+}
+
+impl Default for MD059DescriptiveLinkTextTable {
+    fn default() -> Self {
+        Self {
+            prohibited_texts: vec![
+                "click here".to_string(),
+                "here".to_string(),
+                "link".to_string(),
+                "more".to_string(),
+            ],
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct MD024MultipleHeadingsTable {
     pub siblings_only: bool,
@@ -513,6 +531,7 @@ pub struct LintersSettingsTable {
     pub link_image_reference_definitions: MD053LinkImageReferenceDefinitionsTable,
     pub link_image_style: MD054LinkImageStyleTable,
     pub table_pipe_style: MD055TablePipeStyleTable,
+    pub descriptive_link_text: MD059DescriptiveLinkTextTable,
 }
 
 #[derive(Debug, Default, PartialEq, Clone)]
@@ -563,7 +582,7 @@ mod test {
         MD046CodeBlockStyleTable, MD048CodeFenceStyleTable, MD049EmphasisStyleTable,
         MD050StrongStyleTable, MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
         MD053LinkImageReferenceDefinitionsTable, MD054LinkImageStyleTable,
-        MD055TablePipeStyleTable, RuleSeverity,
+        MD055TablePipeStyleTable, MD059DescriptiveLinkTextTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -661,6 +680,7 @@ mod test {
                 ),
                 link_image_style: MD054LinkImageStyleTable::default(),
                 table_pipe_style: MD055TablePipeStyleTable::default(),
+                descriptive_link_text: MD059DescriptiveLinkTextTable::default(),
             },
         });
 
