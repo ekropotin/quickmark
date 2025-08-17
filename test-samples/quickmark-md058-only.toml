@@ -1,0 +1,22 @@
+[linters]
+
+[linters.severity]
+# Enable only MD058 (blanks-around-tables)
+"blanks-around-tables" = "err"
+
+# Disable all other rules
+"heading-increment" = "off"
+"heading-style" = "off"
+"list-style" = "off"
+"list-indent" = "off"
+"trailing-spaces" = "off"
+"hard-tabs" = "off"
+"multiple-blank-lines" = "off"
+"line-length" = "off"
+"blanks-around-headings" = "off"
+"single-title" = "off"
+"multiple-headings" = "off"
+"hr-style" = "off"
+"inline-html" = "off"
+"table-pipe-style" = "off"
+"table-column-count" = "off"
