@@ -5,7 +5,8 @@ use quickmark_linter::config::{
     MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable, MD025SingleH1Table,
     MD033InlineHtmlTable, MD035HrStyleTable, MD046CodeBlockStyleTable, MD048CodeFenceStyleTable,
     MD049EmphasisStyleTable, MD050StrongStyleTable, MD054LinkImageStyleTable,
-    MD055TablePipeStyleTable, MD059DescriptiveLinkTextTable, QuickmarkConfig, RuleSeverity, StrongStyle, TablePipeStyle,
+    MD055TablePipeStyleTable, MD059DescriptiveLinkTextTable, QuickmarkConfig, RuleSeverity,
+    StrongStyle, TablePipeStyle,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -975,7 +976,11 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
                 ),
             },
             descriptive_link_text: MD059DescriptiveLinkTextTable {
-                prohibited_texts: toml_config.linters.settings.descriptive_link_text.prohibited_texts,
+                prohibited_texts: toml_config
+                    .linters
+                    .settings
+                    .descriptive_link_text
+                    .prohibited_texts,
             },
         },
     }))
@@ -2158,11 +2163,23 @@ mod tests {
         let parsed = parse_toml_config(config_str).unwrap();
         assert_eq!(
             RuleSeverity::Error,
-            *parsed.linters.severity.get("descriptive-link-text").unwrap()
+            *parsed
+                .linters
+                .severity
+                .get("descriptive-link-text")
+                .unwrap()
         );
         assert_eq!(
-            vec!["click here".to_string(), "read more".to_string(), "see here".to_string()],
-            parsed.linters.settings.descriptive_link_text.prohibited_texts
+            vec![
+                "click here".to_string(),
+                "read more".to_string(),
+                "see here".to_string()
+            ],
+            parsed
+                .linters
+                .settings
+                .descriptive_link_text
+                .prohibited_texts
         );
     }
 
@@ -2176,12 +2193,25 @@ mod tests {
         let parsed = parse_toml_config(config_str).unwrap();
         assert_eq!(
             RuleSeverity::Warning,
-            *parsed.linters.severity.get("descriptive-link-text").unwrap()
+            *parsed
+                .linters
+                .severity
+                .get("descriptive-link-text")
+                .unwrap()
         );
         // Test default prohibited texts
         assert_eq!(
-            vec!["click here".to_string(), "here".to_string(), "link".to_string(), "more".to_string()],
-            parsed.linters.settings.descriptive_link_text.prohibited_texts
+            vec![
+                "click here".to_string(),
+                "here".to_string(),
+                "link".to_string(),
+                "more".to_string()
+            ],
+            parsed
+                .linters
+                .settings
+                .descriptive_link_text
+                .prohibited_texts
         );
     }
 }

@@ -11,16 +11,26 @@ use crate::{
 };
 
 // Regular inline links: [text](url) - but NOT images ![text](url)
-static RE_INLINE_LINK: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"(?:^|[^!])\[([^\]]*)\]\(([^)]+)\)").unwrap());
+static RE_INLINE_LINK: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?:^|[^!])\[([^\]]*)\]\(([^)]+)\)").expect("Failed to compile inline link regex")
+});
 
 // Reference links: [text][ref] - but NOT images ![text][ref]
-static RE_REF_LINK: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"(?:^|[^!])\[([^\]]*)\]\[([^\]]+)\]").unwrap());
+static RE_REF_LINK: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?:^|[^!])\[([^\]]*)\]\[([^\]]+)\]")
+        .expect("Failed to compile reference link regex")
+});
 
 // Collapsed reference links: [text][] - but NOT images ![text][]
-static RE_COLLAPSED_REF_LINK: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"(?:^|[^!])\[([^\]]+)\]\[\]").unwrap());
+static RE_COLLAPSED_REF_LINK: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?:^|[^!])\[([^\]]+)\]\[\]")
+        .expect("Failed to compile collapsed reference link regex")
+});
+
+static RE_NORMALIZE_PUNCTUATION: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"[\W_]+").expect("Failed to compile punctuation regex"));
+static RE_NORMALIZE_WHITESPACE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"\s+").expect("Failed to compile whitespace regex"));
 
 /// MD059 - Link text should be descriptive
 ///
@@ -54,11 +64,10 @@ impl MD059Linter {
 impl RuleLinter for MD059Linter {
     fn feed(&mut self, node: &Node) {
         // Process different possible link node types
-        if node.kind() == "link" {
-            self.check_link_text(node);
-        } else if node.kind() == "inline" {
-            // Check if this inline node contains links
-            self.check_inline_for_links(node);
+        match node.kind() {
+            "link" => self.check_link_text(node),
+            "inline" => self.check_inline_for_links(node),
+            _ => {}
         }
     }
 
@@ -79,7 +88,9 @@ impl MD059Linter {
         };
 
         // Parse the inline content for markdown links
-        self.check_text_for_link_patterns(&link_text, inline_node);
+        if !link_text.is_empty() {
+            self.check_text_for_link_patterns(&link_text, inline_node);
+        }
     }
 
     fn check_text_for_link_patterns(&mut self, text: &str, node: &Node) {
@@ -107,16 +118,14 @@ impl MD059Linter {
 
     fn check_link_text(&mut self, link_node: &Node) {
         // Extract the link text content from tree-sitter link nodes
-        let link_text = self.extract_link_text(link_node);
-        
-        if let Some(text) = link_text {
+        if let Some(text) = self.extract_link_text(link_node) {
             // Check if the link contains code or HTML content - if so, skip validation
             if self.contains_allowed_elements(link_node) {
                 return;
             }
 
             let normalized_text = normalize_text(&text);
-            
+
             if self.prohibited_texts.contains(&normalized_text) {
                 self.create_violation(link_node, &text);
             }
@@ -130,7 +139,7 @@ impl MD059Linter {
         }
 
         let normalized_text = normalize_text(label_text);
-        
+
         if self.prohibited_texts.contains(&normalized_text) {
             self.create_violation(node, label_text);
         }
@@ -139,16 +148,15 @@ impl MD059Linter {
     fn extract_link_text(&self, link_node: &Node) -> Option<String> {
         // Navigate the tree-sitter AST to find the link text
         // Links in markdown have structure like: link -> label -> [text content]
-        
         let document_content = self.context.document_content.borrow();
-        let bytes = document_content.as_bytes();
-        
+        let document_bytes = document_content.as_bytes();
+
         // Look for label child node
         for child in link_node.children(&mut link_node.walk()) {
             if child.kind() == "label" {
                 // Extract text from label, excluding the brackets
-                let label_text = child.utf8_text(bytes).unwrap_or("");
-                
+                let label_text = child.utf8_text(document_bytes).unwrap_or("");
+
                 // Remove the surrounding brackets
                 if label_text.starts_with('[') && label_text.ends_with(']') {
                     let inner_text = &label_text[1..label_text.len() - 1];
@@ -156,56 +164,41 @@ impl MD059Linter {
                 }
             }
         }
-        
+
         // Fallback: try to extract from the full link text
-        let full_text = link_node.utf8_text(bytes).unwrap_or("");
+        let full_text = link_node.utf8_text(document_bytes).unwrap_or("");
         if let Some(start) = full_text.find('[') {
             if let Some(end) = full_text[start..].find(']') {
                 let inner_text = &full_text[start + 1..start + end];
                 return Some(inner_text.to_string());
             }
         }
-        
+
         None
     }
 
     fn contains_allowed_elements(&self, link_node: &Node) -> bool {
-        // Check if the link contains code or HTML elements
-        // These are allowed and should not trigger violations
-        
+        // Check if the link contains code or HTML elements, which are allowed.
+        // This is an efficient, allocation-free, iterative pre-order traversal.
+        let allowed_types: &[&str] = &["code_span", "html_tag", "inline_html"];
         let mut cursor = link_node.walk();
-        
-        fn check_node_recursive(cursor: &mut tree_sitter::TreeCursor, allowed_types: &[&str]) -> bool {
-            let node = cursor.node();
-            
-            if allowed_types.contains(&node.kind()) {
+        loop {
+            if allowed_types.contains(&cursor.node().kind()) {
                 return true;
             }
-            
-            if cursor.goto_first_child() {
-                loop {
-                    if check_node_recursive(cursor, allowed_types) {
-                        cursor.goto_parent();
-                        return true;
-                    }
-                    
-                    if !cursor.goto_next_sibling() {
-                        break;
+            if !cursor.goto_first_child() {
+                while !cursor.goto_next_sibling() {
+                    if !cursor.goto_parent() {
+                        return false;
                     }
                 }
-                cursor.goto_parent();
             }
-            
-            false
         }
-        
-        let allowed_types = ["code_span", "html_tag", "inline_html"];
-        check_node_recursive(&mut cursor, &allowed_types)
     }
 
     fn create_violation(&mut self, node: &Node, link_text: &str) {
-        let message = format!("Link text should be descriptive: '{}'", link_text);
-        
+        let message = format!("Link text should be descriptive: '{link_text}'");
+
         self.violations.push(RuleViolation::new(
             &MD059,
             message,
@@ -219,15 +212,11 @@ impl MD059Linter {
 /// Removes punctuation and extra whitespace, converts to lowercase
 fn normalize_text(text: &str) -> String {
     // Replace all non-word and underscore characters with spaces
-    let step1 = regex::Regex::new(r"[\W_]+")
-        .unwrap()
-        .replace_all(text, " ");
-    
+    let step1 = RE_NORMALIZE_PUNCTUATION.replace_all(text, " ");
+
     // Replace multiple spaces with single space
-    let step2 = regex::Regex::new(r"\s+")
-        .unwrap() 
-        .replace_all(&step1, " ");
-    
+    let step2 = RE_NORMALIZE_WHITESPACE.replace_all(&step1, " ");
+
     // Convert to lowercase and trim
     step2.to_lowercase().trim().to_string()
 }
@@ -238,7 +227,7 @@ pub const MD059: Rule = Rule {
     tags: &["accessibility", "links"],
     description: "Link text should be descriptive",
     rule_type: RuleType::Token,
-    required_nodes: &["link", "inline"], 
+    required_nodes: &["link", "inline"],
     new_linter: |context| Box::new(MD059Linter::new(context)),
 };
 
@@ -294,7 +283,9 @@ mod test {
         assert_eq!(1, violations.len());
         let violation = &violations[0];
         assert_eq!("MD059", violation.rule().id);
-        assert!(violation.message().contains("Link text should be descriptive"));
+        assert!(violation
+            .message()
+            .contains("Link text should be descriptive"));
         assert!(violation.message().contains("click here"));
     }
 
@@ -302,17 +293,18 @@ mod test {
     fn test_prohibited_texts() {
         let test_cases = vec![
             "[here](url)",
-            "[link](url)", 
+            "[link](url)",
             "[more](url)",
             "[click here](url)",
         ];
 
         for input in test_cases {
             let config = test_config();
-            let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
+            let mut linter =
+                MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
             let violations = linter.analyze();
 
-            assert_eq!(1, violations.len(), "Failed for input: {}", input);
+            assert_eq!(1, violations.len(), "Failed for input: {input}");
             let violation = &violations[0];
             assert_eq!("MD059", violation.rule().id);
         }
