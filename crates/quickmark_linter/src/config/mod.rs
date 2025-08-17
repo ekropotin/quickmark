@@ -138,6 +138,34 @@ impl Default for MD054LinkImageStyleTable {
     }
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub enum TablePipeStyle {
+    Consistent,
+    LeadingAndTrailing,
+    LeadingOnly,
+    TrailingOnly,
+    NoLeadingOrTrailing,
+}
+
+impl Default for TablePipeStyle {
+    fn default() -> Self {
+        Self::Consistent
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct MD055TablePipeStyleTable {
+    pub style: TablePipeStyle,
+}
+
+impl Default for MD055TablePipeStyleTable {
+    fn default() -> Self {
+        Self {
+            style: TablePipeStyle::Consistent,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct MD024MultipleHeadingsTable {
     pub siblings_only: bool,
@@ -484,6 +512,7 @@ pub struct LintersSettingsTable {
     pub reference_links_images: MD052ReferenceLinksImagesTable,
     pub link_image_reference_definitions: MD053LinkImageReferenceDefinitionsTable,
     pub link_image_style: MD054LinkImageStyleTable,
+    pub table_pipe_style: MD055TablePipeStyleTable,
 }
 
 #[derive(Debug, Default, PartialEq, Clone)]
@@ -533,7 +562,8 @@ mod test {
         MD040FencedCodeLanguageTable, MD041FirstLineHeadingTable, MD043RequiredHeadingsTable,
         MD046CodeBlockStyleTable, MD048CodeFenceStyleTable, MD049EmphasisStyleTable,
         MD050StrongStyleTable, MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
-        MD053LinkImageReferenceDefinitionsTable, MD054LinkImageStyleTable, RuleSeverity,
+        MD053LinkImageReferenceDefinitionsTable, MD054LinkImageStyleTable,
+        MD055TablePipeStyleTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -630,6 +660,7 @@ mod test {
                 link_image_reference_definitions: MD053LinkImageReferenceDefinitionsTable::default(
                 ),
                 link_image_style: MD054LinkImageStyleTable::default(),
+                table_pipe_style: MD055TablePipeStyleTable::default(),
             },
         });
 

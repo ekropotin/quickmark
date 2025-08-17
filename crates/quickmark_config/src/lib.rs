@@ -4,8 +4,8 @@ use quickmark_linter::config::{
     LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD007UlIndentTable,
     MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable, MD025SingleH1Table,
     MD033InlineHtmlTable, MD035HrStyleTable, MD046CodeBlockStyleTable, MD048CodeFenceStyleTable,
-    MD049EmphasisStyleTable, MD050StrongStyleTable, MD054LinkImageStyleTable, QuickmarkConfig,
-    RuleSeverity, StrongStyle,
+    MD049EmphasisStyleTable, MD050StrongStyleTable, MD054LinkImageStyleTable,
+    MD055TablePipeStyleTable, QuickmarkConfig, RuleSeverity, StrongStyle, TablePipeStyle,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -92,6 +92,20 @@ enum TomlStrongStyle {
 }
 
 #[derive(Deserialize)]
+enum TomlTablePipeStyle {
+    #[serde(rename = "consistent")]
+    Consistent,
+    #[serde(rename = "leading_and_trailing")]
+    LeadingAndTrailing,
+    #[serde(rename = "leading_only")]
+    LeadingOnly,
+    #[serde(rename = "trailing_only")]
+    TrailingOnly,
+    #[serde(rename = "no_leading_or_trailing")]
+    NoLeadingOrTrailing,
+}
+
+#[derive(Deserialize)]
 struct TomlMD003HeadingStyleTable {
     style: TomlHeadingStyle,
 }
@@ -119,6 +133,11 @@ struct TomlMD049EmphasisStyleTable {
 #[derive(Deserialize)]
 struct TomlMD050StrongStyleTable {
     style: TomlStrongStyle,
+}
+
+#[derive(Deserialize)]
+struct TomlMD055TablePipeStyleTable {
+    style: TomlTablePipeStyle,
 }
 
 fn default_indent() -> usize {
@@ -595,6 +614,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "link-image-style")]
     #[serde(default)]
     link_image_style: TomlMD054LinkImageStyleTable,
+    #[serde(rename = "table-pipe-style")]
+    #[serde(default)]
+    table_pipe_style: TomlMD055TablePipeStyleTable,
     #[serde(rename = "no-emphasis-as-heading")]
     #[serde(default)]
     emphasis_as_heading: TomlMD036EmphasisAsHeadingTable,
@@ -662,6 +684,14 @@ impl Default for TomlMD050StrongStyleTable {
     }
 }
 
+impl Default for TomlMD055TablePipeStyleTable {
+    fn default() -> Self {
+        Self {
+            style: TomlTablePipeStyle::Consistent,
+        }
+    }
+}
+
 fn convert_toml_severity(toml_severity: TomlRuleSeverity) -> RuleSeverity {
     match toml_severity {
         TomlRuleSeverity::Error => RuleSeverity::Error,
@@ -720,6 +750,16 @@ fn convert_toml_strong_style(toml_style: TomlStrongStyle) -> StrongStyle {
         TomlStrongStyle::Consistent => StrongStyle::Consistent,
         TomlStrongStyle::Asterisk => StrongStyle::Asterisk,
         TomlStrongStyle::Underscore => StrongStyle::Underscore,
+    }
+}
+
+fn convert_toml_table_pipe_style(toml_style: TomlTablePipeStyle) -> TablePipeStyle {
+    match toml_style {
+        TomlTablePipeStyle::Consistent => TablePipeStyle::Consistent,
+        TomlTablePipeStyle::LeadingAndTrailing => TablePipeStyle::LeadingAndTrailing,
+        TomlTablePipeStyle::LeadingOnly => TablePipeStyle::LeadingOnly,
+        TomlTablePipeStyle::TrailingOnly => TablePipeStyle::TrailingOnly,
+        TomlTablePipeStyle::NoLeadingOrTrailing => TablePipeStyle::NoLeadingOrTrailing,
     }
 }
 
@@ -902,6 +942,11 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
                 collapsed: toml_config.linters.settings.link_image_style.collapsed,
                 shortcut: toml_config.linters.settings.link_image_style.shortcut,
                 url_inline: toml_config.linters.settings.link_image_style.url_inline,
+            },
+            table_pipe_style: MD055TablePipeStyleTable {
+                style: convert_toml_table_pipe_style(
+                    toml_config.linters.settings.table_pipe_style.style,
+                ),
             },
         },
     }))
