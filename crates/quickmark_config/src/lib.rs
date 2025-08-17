@@ -5,7 +5,8 @@ use quickmark_linter::config::{
     MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable, MD025SingleH1Table,
     MD033InlineHtmlTable, MD035HrStyleTable, MD046CodeBlockStyleTable, MD048CodeFenceStyleTable,
     MD049EmphasisStyleTable, MD050StrongStyleTable, MD054LinkImageStyleTable,
-    MD055TablePipeStyleTable, QuickmarkConfig, RuleSeverity, StrongStyle, TablePipeStyle,
+    MD055TablePipeStyleTable, MD059DescriptiveLinkTextTable, QuickmarkConfig, RuleSeverity,
+    StrongStyle, TablePipeStyle,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -531,6 +532,29 @@ fn default_md036_punctuation() -> String {
     ".,;:!?。，；：！？".to_string()
 }
 
+fn default_prohibited_texts() -> Vec<String> {
+    vec![
+        "click here".to_string(),
+        "here".to_string(),
+        "link".to_string(),
+        "more".to_string(),
+    ]
+}
+
+#[derive(Deserialize)]
+struct TomlMD059DescriptiveLinkTextTable {
+    #[serde(default = "default_prohibited_texts")]
+    prohibited_texts: Vec<String>,
+}
+
+impl Default for TomlMD059DescriptiveLinkTextTable {
+    fn default() -> Self {
+        Self {
+            prohibited_texts: default_prohibited_texts(),
+        }
+    }
+}
+
 #[derive(Deserialize, Default)]
 struct TomlLintersSettingsTable {
     #[serde(rename = "heading-style")]
@@ -620,6 +644,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "no-emphasis-as-heading")]
     #[serde(default)]
     emphasis_as_heading: TomlMD036EmphasisAsHeadingTable,
+    #[serde(rename = "descriptive-link-text")]
+    #[serde(default)]
+    descriptive_link_text: TomlMD059DescriptiveLinkTextTable,
 }
 
 #[derive(Deserialize, Default)]
@@ -947,6 +974,13 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
                 style: convert_toml_table_pipe_style(
                     toml_config.linters.settings.table_pipe_style.style,
                 ),
+            },
+            descriptive_link_text: MD059DescriptiveLinkTextTable {
+                prohibited_texts: toml_config
+                    .linters
+                    .settings
+                    .descriptive_link_text
+                    .prohibited_texts,
             },
         },
     }))
@@ -2113,6 +2147,71 @@ mod tests {
         assert_eq!(
             EmphasisStyle::Consistent,
             parsed.linters.settings.emphasis_style.style
+        );
+    }
+
+    #[test]
+    fn test_parse_md059_descriptive_link_text_config() {
+        let config_str = r#"
+        [linters.severity]
+        descriptive-link-text = 'err'
+
+        [linters.settings.descriptive-link-text]
+        prohibited_texts = ["click here", "read more", "see here"]
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed
+                .linters
+                .severity
+                .get("descriptive-link-text")
+                .unwrap()
+        );
+        assert_eq!(
+            vec![
+                "click here".to_string(),
+                "read more".to_string(),
+                "see here".to_string()
+            ],
+            parsed
+                .linters
+                .settings
+                .descriptive_link_text
+                .prohibited_texts
+        );
+    }
+
+    #[test]
+    fn test_parse_md059_default_values() {
+        let config_str = r#"
+        [linters.severity]
+        descriptive-link-text = 'warn'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed
+                .linters
+                .severity
+                .get("descriptive-link-text")
+                .unwrap()
+        );
+        // Test default prohibited texts
+        assert_eq!(
+            vec![
+                "click here".to_string(),
+                "here".to_string(),
+                "link".to_string(),
+                "more".to_string()
+            ],
+            parsed
+                .linters
+                .settings
+                .descriptive_link_text
+                .prohibited_texts
         );
     }
 }

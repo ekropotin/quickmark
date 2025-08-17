@@ -99,6 +99,7 @@ link-image-reference-definitions = 'err'
 table-pipe-style = 'err'
 table-column-count = 'err'
 blanks-around-tables = 'err'
+descriptive-link-text = 'err'
 
 # see a specific rule's doc for details of configuration
 [linters.settings.heading-style]
@@ -173,11 +174,14 @@ style = 'consistent'
 
 [linters.settings.table-pipe-style]
 style = 'consistent'
+
+[linters.settings.descriptive-link-text]
+prohibited_texts = ["click here", "here", "link", "more"]
 ```
 
 ## Rules
 
-**Implementation Progress: 49/52 rules completed (94.2%)**
+**Implementation Progress: 50/52 rules completed (96.2%)**
 
 - [x] **[MD001](docs/rules/md001.md)** *heading-increment* - Heading levels should only increment by one level at a time
 - [x] **[MD003](docs/rules/md003.md)** *heading-style* - Consistent heading styles
@@ -230,4 +234,4 @@ style = 'consistent'
 - [x] **[MD055](docs/rules/md055.md)** *table-pipe-style* - Table pipe style
 - [x] **[MD056](docs/rules/md056.md)** *table-column-count* - Table column count
 - [x] **[MD058](docs/rules/md058.md)** *blanks-around-tables* - Tables should be surrounded by blank lines
-- [ ] **MD059** *descriptive-link-text* - Link text should be descriptive
+- [x] **[MD059](docs/rules/md059.md)** *descriptive-link-text* - Link text should be descriptive
