@@ -109,6 +109,7 @@ no-space-in-links = 'err'
 fenced-code-language = 'err'
 first-line-heading = 'err'
 no-empty-links = 'err'
+proper-names = 'err'
 required-headings = 'err'
 no-alt-text = 'err'
 code-block-style = 'err'
@@ -188,6 +189,11 @@ ignored_definitions = ["//"]
 
 [linters.settings.no-inline-html]
 allowed_elements = []
+
+[linters.settings.proper-names]
+names = []
+code_blocks = true
+html_elements = true
 
 [linters.settings.fenced-code-language]
 allowed_languages = []

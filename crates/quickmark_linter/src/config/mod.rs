@@ -205,6 +205,23 @@ impl Default for MD059DescriptiveLinkTextTable {
     }
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub struct MD044ProperNamesTable {
+    pub names: Vec<String>,
+    pub code_blocks: bool,
+    pub html_elements: bool,
+}
+
+impl Default for MD044ProperNamesTable {
+    fn default() -> Self {
+        Self {
+            names: Vec::new(),
+            code_blocks: true,
+            html_elements: true,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct MD024MultipleHeadingsTable {
     pub siblings_only: bool,
@@ -548,6 +565,7 @@ pub struct LintersSettingsTable {
     pub strong_style: MD050StrongStyleTable,
     pub multiple_headings: MD024MultipleHeadingsTable,
     pub required_headings: MD043RequiredHeadingsTable,
+    pub proper_names: MD044ProperNamesTable,
     pub link_fragments: MD051LinkFragmentsTable,
     pub reference_links_images: MD052ReferenceLinksImagesTable,
     pub link_image_reference_definitions: MD053LinkImageReferenceDefinitionsTable,
@@ -698,6 +716,7 @@ mod test {
                 strong_style: MD050StrongStyleTable::default(),
                 multiple_headings: MD024MultipleHeadingsTable::default(),
                 required_headings: MD043RequiredHeadingsTable::default(),
+                proper_names: MD044ProperNamesTable::default(),
                 link_fragments: MD051LinkFragmentsTable::default(),
                 reference_links_images: MD052ReferenceLinksImagesTable::default(),
                 link_image_reference_definitions: MD053LinkImageReferenceDefinitionsTable::default(
