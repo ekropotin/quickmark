@@ -2,9 +2,11 @@ use anyhow::Result;
 use quickmark_linter::config::{
     normalize_severities, CodeBlockStyle, CodeFenceStyle, EmphasisStyle, HeadingStyle,
     LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD007UlIndentTable,
+    MD009TrailingSpacesTable, MD010HardTabsTable, MD012MultipleBlankLinesTable,
     MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable, MD025SingleH1Table,
-    MD029OlPrefixTable, MD033InlineHtmlTable, MD035HrStyleTable, MD044ProperNamesTable,
-    MD046CodeBlockStyleTable, MD048CodeFenceStyleTable, MD049EmphasisStyleTable,
+    MD027BlockquoteSpacesTable, MD029OlPrefixTable, MD030ListMarkerSpaceTable,
+    MD033InlineHtmlTable, MD035HrStyleTable, MD041FirstLineHeadingTable,
+    MD044ProperNamesTable, MD046CodeBlockStyleTable, MD048CodeFenceStyleTable, MD049EmphasisStyleTable,
     MD050StrongStyleTable, MD054LinkImageStyleTable, MD055TablePipeStyleTable,
     MD059DescriptiveLinkTextTable, QuickmarkConfig, RuleSeverity, StrongStyle, TablePipeStyle,
 };
@@ -159,23 +161,23 @@ struct TomlMD055TablePipeStyleTable {
 }
 
 fn default_indent() -> usize {
-    2
+    MD007UlIndentTable::default().indent
 }
 
 fn default_br_spaces() -> usize {
-    2
+    MD009TrailingSpacesTable::default().br_spaces
 }
 
 fn default_spaces_per_tab() -> usize {
-    1
+    MD010HardTabsTable::default().spaces_per_tab
 }
 
 fn default_one() -> usize {
-    1
+    MD012MultipleBlankLinesTable::default().maximum
 }
 
 fn default_empty_code_languages() -> Vec<String> {
-    Vec::new()
+    MD010HardTabsTable::default().ignore_code_languages
 }
 
 #[derive(Deserialize)]
@@ -190,10 +192,11 @@ struct TomlMD007UlIndentTable {
 
 impl Default for TomlMD007UlIndentTable {
     fn default() -> Self {
+        let default_config = MD007UlIndentTable::default();
         Self {
-            indent: 2,
-            start_indent: 2,
-            start_indented: false,
+            indent: default_config.indent,
+            start_indent: default_config.start_indent,
+            start_indented: default_config.start_indented,
         }
     }
 }
@@ -210,10 +213,11 @@ struct TomlMD009TrailingSpacesTable {
 
 impl Default for TomlMD009TrailingSpacesTable {
     fn default() -> Self {
+        let default_config = MD009TrailingSpacesTable::default();
         Self {
-            br_spaces: 2,
-            list_item_empty_lines: false,
-            strict: false,
+            br_spaces: default_config.br_spaces,
+            list_item_empty_lines: default_config.list_item_empty_lines,
+            strict: default_config.strict,
         }
     }
 }
@@ -230,10 +234,11 @@ struct TomlMD010HardTabsTable {
 
 impl Default for TomlMD010HardTabsTable {
     fn default() -> Self {
+        let default_config = MD010HardTabsTable::default();
         Self {
-            code_blocks: true,
-            ignore_code_languages: Vec::new(),
-            spaces_per_tab: 1,
+            code_blocks: default_config.code_blocks,
+            ignore_code_languages: default_config.ignore_code_languages,
+            spaces_per_tab: default_config.spaces_per_tab,
         }
     }
 }
@@ -246,7 +251,10 @@ struct TomlMD012MultipleBlankLinesTable {
 
 impl Default for TomlMD012MultipleBlankLinesTable {
     fn default() -> Self {
-        Self { maximum: 1 }
+        let default_config = MD012MultipleBlankLinesTable::default();
+        Self { 
+            maximum: default_config.maximum 
+        }
     }
 }
 
@@ -272,33 +280,34 @@ struct TomlMD013LineLengthTable {
 
 impl Default for TomlMD013LineLengthTable {
     fn default() -> Self {
+        let default_config = MD013LineLengthTable::default();
         Self {
-            line_length: default_line_length(),
-            code_block_line_length: default_code_block_line_length(),
-            heading_line_length: default_heading_line_length(),
-            code_blocks: default_true(),
-            headings: default_true(),
-            tables: default_true(),
-            strict: default_false(),
-            stern: default_false(),
+            line_length: default_config.line_length,
+            code_block_line_length: default_config.code_block_line_length,
+            heading_line_length: default_config.heading_line_length,
+            code_blocks: default_config.code_blocks,
+            headings: default_config.headings,
+            tables: default_config.tables,
+            strict: default_config.strict,
+            stern: default_config.stern,
         }
     }
 }
 
 fn default_line_length() -> usize {
-    80
+    MD013LineLengthTable::default().line_length
 }
 fn default_code_block_line_length() -> usize {
-    80
+    MD013LineLengthTable::default().code_block_line_length
 }
 fn default_heading_line_length() -> usize {
-    80
+    MD013LineLengthTable::default().heading_line_length
 }
 fn default_true() -> bool {
-    true
+    MD013LineLengthTable::default().code_blocks // any boolean field that defaults to true
 }
 fn default_false() -> bool {
-    false
+    MD013LineLengthTable::default().strict // any boolean field that defaults to false
 }
 fn default_empty_string() -> String {
     String::new()
@@ -358,19 +367,19 @@ struct TomlMD024MultipleHeadingsTable {
 }
 
 fn default_level_1() -> u8 {
-    1
+    MD025SingleH1Table::default().level
 }
 
 fn default_front_matter_title() -> String {
-    r"^\s*title\s*[:=]".to_string()
+    MD025SingleH1Table::default().front_matter_title
 }
 
 fn default_allow_preamble() -> bool {
-    false
+    MD041FirstLineHeadingTable::default().allow_preamble
 }
 
 fn default_trailing_punctuation() -> String {
-    ".,;:!。，；：！".to_string() // Default punctuation without '?'
+    ".,;:!。，；：！".to_string()
 }
 
 #[derive(Deserialize)]
@@ -383,9 +392,10 @@ struct TomlMD025SingleH1Table {
 
 impl Default for TomlMD025SingleH1Table {
     fn default() -> Self {
+        let default_config = MD025SingleH1Table::default();
         Self {
-            level: 1,
-            front_matter_title: r"^\s*title\s*[:=]".to_string(),
+            level: default_config.level,
+            front_matter_title: default_config.front_matter_title,
         }
     }
 }
@@ -402,10 +412,11 @@ struct TomlMD041FirstLineHeadingTable {
 
 impl Default for TomlMD041FirstLineHeadingTable {
     fn default() -> Self {
+        let default_config = MD041FirstLineHeadingTable::default();
         Self {
-            allow_preamble: false,
-            front_matter_title: r"^\s*title\s*[:=]".to_string(),
-            level: 1,
+            allow_preamble: default_config.allow_preamble,
+            front_matter_title: default_config.front_matter_title,
+            level: default_config.level,
         }
     }
 }
@@ -431,12 +442,15 @@ struct TomlMD027BlockquoteSpacesTable {
 }
 impl Default for TomlMD027BlockquoteSpacesTable {
     fn default() -> Self {
-        Self { list_items: true }
+        let default_config = MD027BlockquoteSpacesTable::default();
+        Self { 
+            list_items: default_config.list_items 
+        }
     }
 }
 
 fn default_blockquote_list_items() -> bool {
-    true
+    MD027BlockquoteSpacesTable::default().list_items
 }
 
 #[derive(Deserialize)]
@@ -453,29 +467,30 @@ struct TomlMD030ListMarkerSpaceTable {
 
 impl Default for TomlMD030ListMarkerSpaceTable {
     fn default() -> Self {
+        let default_config = MD030ListMarkerSpaceTable::default();
         Self {
-            ul_single: 1,
-            ol_single: 1,
-            ul_multi: 1,
-            ol_multi: 1,
+            ul_single: default_config.ul_single,
+            ol_single: default_config.ol_single,
+            ul_multi: default_config.ul_multi,
+            ol_multi: default_config.ol_multi,
         }
     }
 }
 
 fn default_ul_single() -> usize {
-    1
+    MD030ListMarkerSpaceTable::default().ul_single
 }
 
 fn default_ol_single() -> usize {
-    1
+    MD030ListMarkerSpaceTable::default().ol_single
 }
 
 fn default_ul_multi() -> usize {
-    1
+    MD030ListMarkerSpaceTable::default().ul_multi
 }
 
 fn default_ol_multi() -> usize {
-    1
+    MD030ListMarkerSpaceTable::default().ol_multi
 }
 
 fn default_lines_config() -> Vec<i32> {
