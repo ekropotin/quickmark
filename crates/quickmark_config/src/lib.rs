@@ -3,10 +3,10 @@ use quickmark_linter::config::{
     normalize_severities, CodeBlockStyle, CodeFenceStyle, EmphasisStyle, HeadingStyle,
     LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD007UlIndentTable,
     MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable, MD025SingleH1Table,
-    MD033InlineHtmlTable, MD035HrStyleTable, MD046CodeBlockStyleTable, MD048CodeFenceStyleTable,
-    MD049EmphasisStyleTable, MD050StrongStyleTable, MD054LinkImageStyleTable,
-    MD055TablePipeStyleTable, MD059DescriptiveLinkTextTable, QuickmarkConfig, RuleSeverity,
-    StrongStyle, TablePipeStyle,
+    MD033InlineHtmlTable, MD035HrStyleTable, MD044ProperNamesTable, MD046CodeBlockStyleTable,
+    MD048CodeFenceStyleTable, MD049EmphasisStyleTable, MD050StrongStyleTable,
+    MD054LinkImageStyleTable, MD055TablePipeStyleTable, MD059DescriptiveLinkTextTable,
+    QuickmarkConfig, RuleSeverity, StrongStyle, TablePipeStyle,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -466,6 +466,26 @@ struct TomlMD043RequiredHeadingsTable {
     match_case: bool,
 }
 
+#[derive(Deserialize)]
+struct TomlMD044ProperNamesTable {
+    #[serde(default = "default_empty_vec")]
+    names: Vec<String>,
+    #[serde(default = "default_true")]
+    code_blocks: bool,
+    #[serde(default = "default_true")]
+    html_elements: bool,
+}
+
+impl Default for TomlMD044ProperNamesTable {
+    fn default() -> Self {
+        Self {
+            names: default_empty_vec(),
+            code_blocks: default_true(),
+            html_elements: default_true(),
+        }
+    }
+}
+
 #[derive(Deserialize, Default)]
 struct TomlMD022HeadingsBlanksTable {
     #[serde(default = "default_lines_config")]
@@ -626,6 +646,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "required-headings")]
     #[serde(default)]
     required_headings: TomlMD043RequiredHeadingsTable,
+    #[serde(rename = "proper-names")]
+    #[serde(default)]
+    proper_names: TomlMD044ProperNamesTable,
     #[serde(rename = "link-fragments")]
     #[serde(default)]
     link_fragments: TomlMD051LinkFragmentsTable,
@@ -953,6 +976,11 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
             required_headings: quickmark_linter::config::MD043RequiredHeadingsTable {
                 headings: toml_config.linters.settings.required_headings.headings,
                 match_case: toml_config.linters.settings.required_headings.match_case,
+            },
+            proper_names: MD044ProperNamesTable {
+                names: toml_config.linters.settings.proper_names.names,
+                code_blocks: toml_config.linters.settings.proper_names.code_blocks,
+                html_elements: toml_config.linters.settings.proper_names.html_elements,
             },
             link_image_reference_definitions:
                 quickmark_linter::config::MD053LinkImageReferenceDefinitionsTable {
@@ -2213,5 +2241,52 @@ mod tests {
                 .descriptive_link_text
                 .prohibited_texts
         );
+    }
+
+    #[test]
+    fn test_parse_md044_proper_names_config() {
+        let config_str = r#"
+        [linters.severity]
+        proper-names = 'err'
+
+        [linters.settings.proper-names]
+        names = ["JavaScript", "GitHub", "github.com"]
+        code_blocks = false
+        html_elements = true
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("proper-names").unwrap()
+        );
+        assert_eq!(
+            vec![
+                "JavaScript".to_string(),
+                "GitHub".to_string(),
+                "github.com".to_string()
+            ],
+            parsed.linters.settings.proper_names.names
+        );
+        assert!(!parsed.linters.settings.proper_names.code_blocks);
+        assert!(parsed.linters.settings.proper_names.html_elements);
+    }
+
+    #[test]
+    fn test_parse_md044_default_values() {
+        let config_str = r#"
+        [linters.severity]
+        proper-names = 'warn'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("proper-names").unwrap()
+        );
+        // Test default values
+        assert!(parsed.linters.settings.proper_names.names.is_empty());
+        assert!(parsed.linters.settings.proper_names.code_blocks);
+        assert!(parsed.linters.settings.proper_names.html_elements);
     }
 }
