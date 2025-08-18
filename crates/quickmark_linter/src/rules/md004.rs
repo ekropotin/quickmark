@@ -272,6 +272,75 @@ mod test {
         })
     }
 
+    fn test_config_asterisk() -> crate::config::QuickmarkConfig {
+        use crate::config::{
+            LintersSettingsTable, LintersTable, MD004UlStyleTable, QuickmarkConfig, RuleSeverity,
+            UlStyle,
+        };
+        use std::collections::HashMap;
+
+        let severity: HashMap<String, RuleSeverity> =
+            vec![("ul-style".to_string(), RuleSeverity::Error)]
+                .into_iter()
+                .collect();
+
+        QuickmarkConfig::new(LintersTable {
+            severity,
+            settings: LintersSettingsTable {
+                ul_style: MD004UlStyleTable {
+                    style: UlStyle::Asterisk,
+                },
+                ..Default::default()
+            },
+        })
+    }
+
+    fn test_config_dash() -> crate::config::QuickmarkConfig {
+        use crate::config::{
+            LintersSettingsTable, LintersTable, MD004UlStyleTable, QuickmarkConfig, RuleSeverity,
+            UlStyle,
+        };
+        use std::collections::HashMap;
+
+        let severity: HashMap<String, RuleSeverity> =
+            vec![("ul-style".to_string(), RuleSeverity::Error)]
+                .into_iter()
+                .collect();
+
+        QuickmarkConfig::new(LintersTable {
+            severity,
+            settings: LintersSettingsTable {
+                ul_style: MD004UlStyleTable {
+                    style: UlStyle::Dash,
+                },
+                ..Default::default()
+            },
+        })
+    }
+
+    fn test_config_plus() -> crate::config::QuickmarkConfig {
+        use crate::config::{
+            LintersSettingsTable, LintersTable, MD004UlStyleTable, QuickmarkConfig, RuleSeverity,
+            UlStyle,
+        };
+        use std::collections::HashMap;
+
+        let severity: HashMap<String, RuleSeverity> =
+            vec![("ul-style".to_string(), RuleSeverity::Error)]
+                .into_iter()
+                .collect();
+
+        QuickmarkConfig::new(LintersTable {
+            severity,
+            settings: LintersSettingsTable {
+                ul_style: MD004UlStyleTable {
+                    style: UlStyle::Plus,
+                },
+                ..Default::default()
+            },
+        })
+    }
+
     #[test]
     fn test_consistent_asterisk_passes() {
         let input = "* Item 1
@@ -327,16 +396,86 @@ mod test {
 
     #[test]
     fn test_asterisk_style_enforced() {
-        // TODO: This test will require implementing style configuration
-        // For now, just test that it doesn't crash
         let input = "- Item 1
 - Item 2
 ";
 
-        let config = test_config();
+        let config = test_config_asterisk();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
-        // Currently returns 0 because logic isn't implemented
+        // Should have violations for both items using dash instead of asterisk
+        assert_eq!(2, violations.len());
+        assert!(violations[0].message().contains("Expected: asterisk"));
+        assert!(violations[0].message().contains("Actual: dash"));
+    }
+
+    #[test]
+    fn test_dash_style_enforced() {
+        let input = "* Item 1
++ Item 2
+* Item 3
+";
+
+        let config = test_config_dash();
+        let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
+        let violations = linter.analyze();
+        // Should have violations for all items not using dash
+        assert_eq!(3, violations.len());
+        assert!(violations[0].message().contains("Expected: dash"));
+        assert!(violations[0].message().contains("Actual: asterisk"));
+    }
+
+    #[test]
+    fn test_plus_style_enforced() {
+        let input = "- Item 1
+* Item 2
+";
+
+        let config = test_config_plus();
+        let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
+        let violations = linter.analyze();
+        // Should have violations for both items not using plus
+        assert_eq!(2, violations.len());
+        assert!(violations[0].message().contains("Expected: plus"));
+        assert!(violations[0].message().contains("Actual: dash"));
+    }
+
+    #[test]
+    fn test_asterisk_style_passes() {
+        let input = "* Item 1
+* Item 2
+* Item 3
+";
+
+        let config = test_config_asterisk();
+        let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
+        let violations = linter.analyze();
+        assert_eq!(0, violations.len());
+    }
+
+    #[test]
+    fn test_dash_style_passes() {
+        let input = "- Item 1
+- Item 2
+- Item 3
+";
+
+        let config = test_config_dash();
+        let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
+        let violations = linter.analyze();
+        assert_eq!(0, violations.len());
+    }
+
+    #[test]
+    fn test_plus_style_passes() {
+        let input = "+ Item 1
++ Item 2
++ Item 3
+";
+
+        let config = test_config_plus();
+        let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
+        let violations = linter.analyze();
         assert_eq!(0, violations.len());
     }
 

@@ -250,7 +250,7 @@ impl Default for TomlMD012MultipleBlankLinesTable {
     }
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 struct TomlMD013LineLengthTable {
     #[serde(default = "default_line_length")]
     line_length: usize,
@@ -268,6 +268,21 @@ struct TomlMD013LineLengthTable {
     strict: bool,
     #[serde(default = "default_false")]
     stern: bool,
+}
+
+impl Default for TomlMD013LineLengthTable {
+    fn default() -> Self {
+        Self {
+            line_length: default_line_length(),
+            code_block_line_length: default_code_block_line_length(),
+            heading_line_length: default_heading_line_length(),
+            code_blocks: default_true(),
+            headings: default_true(),
+            tables: default_true(),
+            strict: default_false(),
+            stern: default_false(),
+        }
+    }
 }
 
 fn default_line_length() -> usize {
