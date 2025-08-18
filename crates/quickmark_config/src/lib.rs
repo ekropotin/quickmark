@@ -3,10 +3,10 @@ use quickmark_linter::config::{
     normalize_severities, CodeBlockStyle, CodeFenceStyle, EmphasisStyle, HeadingStyle,
     LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD007UlIndentTable,
     MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable, MD025SingleH1Table,
-    MD033InlineHtmlTable, MD035HrStyleTable, MD044ProperNamesTable, MD046CodeBlockStyleTable,
-    MD048CodeFenceStyleTable, MD049EmphasisStyleTable, MD050StrongStyleTable,
-    MD054LinkImageStyleTable, MD055TablePipeStyleTable, MD059DescriptiveLinkTextTable,
-    QuickmarkConfig, RuleSeverity, StrongStyle, TablePipeStyle,
+    MD029OlPrefixTable, MD033InlineHtmlTable, MD035HrStyleTable, MD044ProperNamesTable,
+    MD046CodeBlockStyleTable, MD048CodeFenceStyleTable, MD049EmphasisStyleTable,
+    MD050StrongStyleTable, MD054LinkImageStyleTable, MD055TablePipeStyleTable,
+    MD059DescriptiveLinkTextTable, QuickmarkConfig, RuleSeverity, StrongStyle, TablePipeStyle,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -50,6 +50,18 @@ enum TomlUlStyle {
     Plus,
     #[serde(rename = "sublist")]
     Sublist,
+}
+
+#[derive(Deserialize)]
+enum TomlOlPrefixStyle {
+    #[serde(rename = "one")]
+    One,
+    #[serde(rename = "ordered")]
+    Ordered,
+    #[serde(rename = "one_or_ordered")]
+    OneOrOrdered,
+    #[serde(rename = "zero")]
+    Zero,
 }
 
 #[derive(Deserialize)]
@@ -114,6 +126,11 @@ struct TomlMD003HeadingStyleTable {
 #[derive(Deserialize)]
 struct TomlMD004UlStyleTable {
     style: TomlUlStyle,
+}
+
+#[derive(Deserialize)]
+struct TomlMD029OlPrefixTable {
+    style: TomlOlPrefixStyle,
 }
 
 #[derive(Deserialize)]
@@ -583,6 +600,9 @@ struct TomlLintersSettingsTable {
     #[serde(rename = "ul-style")]
     #[serde(default)]
     ul_style: TomlMD004UlStyleTable,
+    #[serde(rename = "ol-prefix")]
+    #[serde(default)]
+    ol_prefix: TomlMD029OlPrefixTable,
     #[serde(rename = "ul-indent")]
     #[serde(default)]
     ul_indent: TomlMD007UlIndentTable,
@@ -702,6 +722,14 @@ impl Default for TomlMD004UlStyleTable {
     }
 }
 
+impl Default for TomlMD029OlPrefixTable {
+    fn default() -> Self {
+        Self {
+            style: TomlOlPrefixStyle::OneOrOrdered,
+        }
+    }
+}
+
 impl Default for TomlMD046CodeBlockStyleTable {
     fn default() -> Self {
         Self {
@@ -771,6 +799,17 @@ fn convert_toml_ul_style(toml_style: TomlUlStyle) -> quickmark_linter::config::U
     }
 }
 
+fn convert_toml_ol_prefix_style(
+    toml_style: TomlOlPrefixStyle,
+) -> quickmark_linter::config::OlPrefixStyle {
+    match toml_style {
+        TomlOlPrefixStyle::One => quickmark_linter::config::OlPrefixStyle::One,
+        TomlOlPrefixStyle::Ordered => quickmark_linter::config::OlPrefixStyle::Ordered,
+        TomlOlPrefixStyle::OneOrOrdered => quickmark_linter::config::OlPrefixStyle::OneOrOrdered,
+        TomlOlPrefixStyle::Zero => quickmark_linter::config::OlPrefixStyle::Zero,
+    }
+}
+
 fn convert_toml_code_block_style(toml_style: TomlCodeBlockStyle) -> CodeBlockStyle {
     match toml_style {
         TomlCodeBlockStyle::Consistent => CodeBlockStyle::Consistent,
@@ -833,6 +872,9 @@ pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
             },
             ul_style: quickmark_linter::config::MD004UlStyleTable {
                 style: convert_toml_ul_style(toml_config.linters.settings.ul_style.style),
+            },
+            ol_prefix: MD029OlPrefixTable {
+                style: convert_toml_ol_prefix_style(toml_config.linters.settings.ol_prefix.style),
             },
             ul_indent: MD007UlIndentTable {
                 indent: toml_config.linters.settings.ul_indent.indent,
@@ -1893,6 +1935,88 @@ mod tests {
         assert_eq!(
             ".,;:!。，；：！".to_string(),
             parsed.linters.settings.trailing_punctuation.punctuation
+        );
+    }
+
+    #[test]
+    fn test_parse_md029_ol_prefix_config() {
+        let config_str = r#"
+        [linters.severity]
+        ol-prefix = 'err'
+
+        [linters.settings.ol-prefix]
+        style = 'ordered'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("ol-prefix").unwrap()
+        );
+        assert_eq!(
+            quickmark_linter::config::OlPrefixStyle::Ordered,
+            parsed.linters.settings.ol_prefix.style
+        );
+    }
+
+    #[test]
+    fn test_parse_md029_one_style_config() {
+        let config_str = r#"
+        [linters.severity]
+        ol-prefix = 'warn'
+
+        [linters.settings.ol-prefix]
+        style = 'one'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("ol-prefix").unwrap()
+        );
+        assert_eq!(
+            quickmark_linter::config::OlPrefixStyle::One,
+            parsed.linters.settings.ol_prefix.style
+        );
+    }
+
+    #[test]
+    fn test_parse_md029_zero_style_config() {
+        let config_str = r#"
+        [linters.severity]
+        ol-prefix = 'warn'
+
+        [linters.settings.ol-prefix]
+        style = 'zero'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("ol-prefix").unwrap()
+        );
+        assert_eq!(
+            quickmark_linter::config::OlPrefixStyle::Zero,
+            parsed.linters.settings.ol_prefix.style
+        );
+    }
+
+    #[test]
+    fn test_parse_md029_default_values() {
+        let config_str = r#"
+        [linters.severity]
+        ol-prefix = 'warn'
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("ol-prefix").unwrap()
+        );
+        // Test default value (one_or_ordered)
+        assert_eq!(
+            quickmark_linter::config::OlPrefixStyle::OneOrOrdered,
+            parsed.linters.settings.ol_prefix.style
         );
     }
 
