@@ -1,4 +1,5 @@
 use regex::Regex;
+use std::collections::HashSet;
 use std::rc::Rc;
 
 use crate::{
@@ -10,6 +11,7 @@ pub(crate) struct MD044Linter {
     context: Rc<Context>,
     violations: Vec<RuleViolation>,
     name_regexes: Vec<(String, Regex)>, // (original_name, compiled_regex)
+    all_names: HashSet<String>,         // Added for performance
 }
 
 impl MD044Linter {
@@ -17,12 +19,16 @@ impl MD044Linter {
         let config = &context.config.linters.settings.proper_names;
         let mut name_regexes = Vec::new();
 
+        // Use a HashSet for efficient lookups of correct names
+        let all_names: HashSet<String> = config.names.iter().cloned().collect();
+
         // Sort names by length (longest first) to handle overlapping matches
         let mut names = config.names.clone();
         names.sort_by(|a, b| b.len().cmp(&a.len()).then_with(|| a.cmp(b)));
 
         for name in names {
             if !name.is_empty() {
+                // The original name is the "expected" name in case of a violation
                 if let Ok(regex) = create_name_regex(&name) {
                     name_regexes.push((name, regex));
                 }
@@ -33,6 +39,7 @@ impl MD044Linter {
             context,
             violations: Vec::new(),
             name_regexes,
+            all_names,
         }
     }
 
@@ -42,7 +49,7 @@ impl MD044Linter {
         match node_kind {
             // Code blocks and inline code
             "fenced_code_block" | "indented_code_block" | "code_span" => config.code_blocks,
-            // HTML elements and text
+            // HTML elements
             "html_block" | "html_inline" => config.html_elements,
             // Regular text content
             "text" | "paragraph" => true,
@@ -50,12 +57,19 @@ impl MD044Linter {
         }
     }
 
-    fn check_text_content(&mut self, text: &str, start_line: usize, start_column: usize) {
+    // This function is now immutable with respect to self and returns violations.
+    // This improves performance by allowing borrows of self.context in the caller (`feed`).
+    fn check_text_content(
+        &self,
+        text: &str,
+        start_line: usize,
+        start_column: usize,
+    ) -> Vec<RuleViolation> {
         if self.name_regexes.is_empty() {
-            return;
+            return Vec::new();
         }
 
-        let all_names = &self.context.config.linters.settings.proper_names.names;
+        let mut violations = Vec::new();
         let mut exclusion_ranges: Vec<(usize, usize)> = Vec::new(); // (start, end) byte ranges
 
         for (expected_name, regex) in &self.name_regexes {
@@ -73,9 +87,9 @@ impl MD044Linter {
                     continue;
                 }
 
-                // Skip if the matched text is an exact match of any configured name
-                if all_names.contains(&matched_text.to_string()) {
-                    // Add to exclusions even if it's valid to prevent overlaps
+                // Performance: Use HashSet for O(1) average lookup and avoid String allocation.
+                if self.all_names.contains(matched_text) {
+                    // Add to exclusions even if it's valid to prevent overlaps with shorter, incorrect names
                     exclusion_ranges.push((match_start, match_end));
                     continue;
                 }
@@ -94,17 +108,18 @@ impl MD044Linter {
                     },
                 };
 
-                self.violations.push(RuleViolation::new(
+                violations.push(RuleViolation::new(
                     &MD044,
-                    format!("Expected: {}; Actual: {}", expected_name, matched_text),
+                    format!("Expected: {expected_name}; Actual: {matched_text}"),
                     self.context.file_path.clone(),
                     range_from_tree_sitter(&range),
                 ));
 
-                // Add violation range to exclusions
+                // Add violation range to exclusions to prevent multiple reports on the same text
                 exclusion_ranges.push((match_start, match_end));
             }
         }
+        violations
     }
 }
 
@@ -117,14 +132,17 @@ impl RuleLinter for MD044Linter {
         let source = self.context.get_document_content();
         let start_byte = node.start_byte();
         let end_byte = node.end_byte();
-        let start_line = node.start_position().row;
-        let start_column = node.start_position().column;
 
         if end_byte <= source.len() {
-            let text = source[start_byte..end_byte].to_string();
-            drop(source); // Explicitly drop the borrow before calling check_text_content
+            // Performance: Avoid allocating a new String for each node.
+            // Pass a string slice directly. This is possible because check_text_content
+            // no longer needs a mutable borrow of `self`, resolving the borrow checker conflict.
+            let text_slice = &source[start_byte..end_byte];
+            let start_line = node.start_position().row;
+            let start_column = node.start_position().column;
 
-            self.check_text_content(&text, start_line, start_column);
+            let new_violations = self.check_text_content(text_slice, start_line, start_column);
+            self.violations.extend(new_violations);
         }
     }
 
@@ -133,24 +151,21 @@ impl RuleLinter for MD044Linter {
     }
 }
 
-// Helper function to create regex for a proper name
+// Helper function to create a case-insensitive regex for a proper name.
 fn create_name_regex(name: &str) -> Result<Regex, regex::Error> {
     let escaped_name = regex::escape(name);
 
-    // Word boundaries for the pattern, following original markdownlint logic
-    let start_boundary = if is_word_char(name.chars().next().unwrap_or('\0')) {
-        "\\b_*"
-    } else {
-        ""
-    };
-    let end_boundary = if is_word_char(name.chars().last().unwrap_or('\0')) {
-        "_*\\b"
-    } else {
-        ""
-    };
+    // Word boundaries for the pattern, following original markdownlint logic.
+    // This ensures we match whole words.
+    let starts_with_word_char = name.chars().next().is_some_and(is_word_char);
+    let ends_with_word_char = name.chars().last().is_some_and(is_word_char);
 
-    let pattern = format!("({})({}){}", start_boundary, escaped_name, end_boundary);
-    Regex::new(&format!("(?i){}", pattern))
+    let start_boundary = if starts_with_word_char { "\\b_*" } else { "" };
+    let end_boundary = if ends_with_word_char { "_*\\b" } else { "" };
+
+    // Performance: Use non-capturing groups (?:...) as we only need the full match.
+    let pattern = format!("(?i){start_boundary}{escaped_name}{end_boundary}");
+    Regex::new(&pattern)
 }
 
 // Helper function to check if a character is a word character (equivalent to \w in regex)
