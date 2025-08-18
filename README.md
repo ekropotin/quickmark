@@ -89,6 +89,7 @@ blanks-around-fences = 'err'
 blanks-around-lists = 'err'
 no-duplicate-heading = 'err'
 no-empty-links = 'err'
+proper-names = 'err'
 required-headings = 'err'
 code-block-style = 'err'
 code-fence-style = 'err'
@@ -162,6 +163,11 @@ ignored_definitions = ["//"]
 [linters.settings.no-inline-html]
 allowed_elements = []
 
+[linters.settings.proper-names]
+names = []
+code_blocks = true
+html_elements = true
+
 [linters.settings.fenced-code-language]
 allowed_languages = []
 language_only = false
@@ -220,7 +226,7 @@ prohibited_texts = ["click here", "here", "link", "more"]
 - [x] **[MD041](docs/rules/md041.md)** *first-line-heading* - First line should be top-level heading
 - [x] **[MD042](docs/rules/md042.md)** *no-empty-links* - Empty links
 - [x] **[MD043](docs/rules/md043.md)** *required-headings* - Required heading structure
-- [ ] **MD044** *proper-names* - Proper names with correct capitalization
+- [x] **[MD044](docs/rules/md044.md)** *proper-names* - Proper names with correct capitalization
 - [x] **[MD045](docs/rules/md045.md)** *no-alt-text* - Images should have alternate text
 - [x] **[MD046](docs/rules/md046.md)** *code-block-style* - Code block style consistency
 - [x] **[MD047](docs/rules/md047.md)** *single-trailing-newline* - Files should end with a single newline
