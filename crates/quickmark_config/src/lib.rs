@@ -3,10 +3,10 @@ use quickmark_linter::config::{
     normalize_severities, CodeBlockStyle, CodeFenceStyle, EmphasisStyle, HeadingStyle,
     LintersSettingsTable, LintersTable, MD003HeadingStyleTable, MD007UlIndentTable,
     MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable, MD025SingleH1Table,
-    MD029OlPrefixTable, MD033InlineHtmlTable, MD035HrStyleTable, MD046CodeBlockStyleTable,
-    MD048CodeFenceStyleTable, MD049EmphasisStyleTable, MD050StrongStyleTable,
-    MD054LinkImageStyleTable, MD055TablePipeStyleTable, MD059DescriptiveLinkTextTable,
-    QuickmarkConfig, RuleSeverity, StrongStyle, TablePipeStyle,
+    MD029OlPrefixTable, MD033InlineHtmlTable, MD035HrStyleTable, MD044ProperNamesTable,
+    MD046CodeBlockStyleTable, MD048CodeFenceStyleTable, MD049EmphasisStyleTable,
+    MD050StrongStyleTable, MD054LinkImageStyleTable, MD055TablePipeStyleTable,
+    MD059DescriptiveLinkTextTable, QuickmarkConfig, RuleSeverity, StrongStyle, TablePipeStyle,
 };
 use serde::Deserialize;
 use std::collections::HashMap;

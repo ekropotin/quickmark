@@ -619,11 +619,11 @@ mod test {
         MD027BlockquoteSpacesTable, MD029OlPrefixTable, MD030ListMarkerSpaceTable,
         MD031FencedCodeBlanksTable, MD033InlineHtmlTable, MD035HrStyleTable,
         MD036EmphasisAsHeadingTable, MD040FencedCodeLanguageTable, MD041FirstLineHeadingTable,
-        MD043RequiredHeadingsTable, MD046CodeBlockStyleTable, MD048CodeFenceStyleTable,
-        MD049EmphasisStyleTable, MD050StrongStyleTable, MD051LinkFragmentsTable,
-        MD052ReferenceLinksImagesTable, MD053LinkImageReferenceDefinitionsTable,
-        MD054LinkImageStyleTable, MD055TablePipeStyleTable, MD059DescriptiveLinkTextTable,
-        RuleSeverity,
+        MD043RequiredHeadingsTable, MD044ProperNamesTable, MD046CodeBlockStyleTable,
+        MD048CodeFenceStyleTable, MD049EmphasisStyleTable, MD050StrongStyleTable,
+        MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
+        MD053LinkImageReferenceDefinitionsTable, MD054LinkImageStyleTable,
+        MD055TablePipeStyleTable, MD059DescriptiveLinkTextTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
