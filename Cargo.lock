@@ -914,7 +914,6 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "quickmark_linter",
- "serde",
  "tempfile",
  "toml",
 ]
@@ -927,6 +926,7 @@ dependencies = [
  "linkify",
  "once_cell",
  "regex",
+ "serde",
  "tree-sitter",
  "tree-sitter-md",
 ]
