@@ -1,7 +1,6 @@
 use anyhow::Context;
 use clap::Parser;
-use quickmark_config::config_from_env_path_or_default;
-use quickmark_linter::config::{QuickmarkConfig, RuleSeverity};
+use quickmark_linter::config::{config_from_env_path_or_default, QuickmarkConfig, RuleSeverity};
 use quickmark_linter::linter::{MultiRuleLinter, RuleViolation};
 use std::cmp::min;
 use std::env;
