@@ -15,27 +15,8 @@ pub enum RuleSeverity {
     Off,
 }
 
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub enum HeadingStyle {
-    #[serde(rename = "consistent")]
-    Consistent,
-    #[serde(rename = "atx")]
-    ATX,
-    #[serde(rename = "setext")]
-    Setext,
-    #[serde(rename = "atx_closed")]
-    ATXClosed,
-    #[serde(rename = "setext_with_atx")]
-    SetextWithATX,
-    #[serde(rename = "setext_with_atx_closed")]
-    SetextWithATXClosed,
-}
-
-impl Default for HeadingStyle {
-    fn default() -> Self {
-        Self::Consistent
-    }
-}
+// Re-export MD003 configuration types for backward compatibility
+pub use crate::rules::md003::{HeadingStyle, MD003HeadingStyleTable};
 
 #[derive(Debug, PartialEq, Clone, Deserialize)]
 pub enum UlStyle {
@@ -72,20 +53,6 @@ pub enum OlPrefixStyle {
 impl Default for OlPrefixStyle {
     fn default() -> Self {
         Self::OneOrOrdered
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD003HeadingStyleTable {
-    #[serde(default)]
-    pub style: HeadingStyle,
-}
-
-impl Default for MD003HeadingStyleTable {
-    fn default() -> Self {
-        Self {
-            style: HeadingStyle::Consistent,
-        }
     }
 }
 

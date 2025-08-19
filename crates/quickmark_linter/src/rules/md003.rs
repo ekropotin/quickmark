@@ -1,13 +1,48 @@
 use core::fmt;
+use serde::Deserialize;
 use std::rc::Rc;
 use tree_sitter::Node;
 
-use crate::{
-    config::HeadingStyle,
-    linter::{range_from_tree_sitter, Context, RuleLinter, RuleViolation},
-};
+use crate::linter::{range_from_tree_sitter, Context, RuleLinter, RuleViolation};
 
 use super::{Rule, RuleType};
+
+// MD003-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub enum HeadingStyle {
+    #[serde(rename = "consistent")]
+    Consistent,
+    #[serde(rename = "atx")]
+    ATX,
+    #[serde(rename = "setext")]
+    Setext,
+    #[serde(rename = "atx_closed")]
+    ATXClosed,
+    #[serde(rename = "setext_with_atx")]
+    SetextWithATX,
+    #[serde(rename = "setext_with_atx_closed")]
+    SetextWithATXClosed,
+}
+
+impl Default for HeadingStyle {
+    fn default() -> Self {
+        Self::Consistent
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD003HeadingStyleTable {
+    #[serde(default)]
+    pub style: HeadingStyle,
+}
+
+impl Default for MD003HeadingStyleTable {
+    fn default() -> Self {
+        Self {
+            style: HeadingStyle::Consistent,
+        }
+    }
+}
 
 #[derive(PartialEq, Debug)]
 enum Style {
@@ -34,7 +69,9 @@ pub(crate) struct MD003Linter {
 
 impl MD003Linter {
     pub fn new(context: Rc<Context>) -> Self {
-        let enforced_style = match context.config.linters.settings.heading_style.style {
+        // Access MD003 config through the centralized config structure
+        let md003_config = &context.config.linters.settings.heading_style;
+        let enforced_style = match md003_config.style {
             HeadingStyle::ATX => Some(Style::Atx),
             HeadingStyle::Setext => Some(Style::Setext),
             HeadingStyle::ATXClosed => Some(Style::AtxClosed),
@@ -173,7 +210,8 @@ pub const MD003: Rule = Rule {
 mod test {
     use std::path::PathBuf;
 
-    use crate::config::{HeadingStyle, LintersSettingsTable, MD003HeadingStyleTable, RuleSeverity};
+    use super::{HeadingStyle, MD003HeadingStyleTable};
+    use crate::config::{LintersSettingsTable, RuleSeverity};
     use crate::linter::MultiRuleLinter;
     use crate::test_utils::test_helpers::test_config_with_settings;
 
