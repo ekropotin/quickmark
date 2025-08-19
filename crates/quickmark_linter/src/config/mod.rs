@@ -1,46 +1,83 @@
+use anyhow::Result;
+use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use std::{fs, path::Path};
-use serde::Deserialize;
-use anyhow::Result;
 
 use crate::rules::ALL_RULES;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub enum RuleSeverity {
+    #[serde(rename = "err")]
     Error,
+    #[serde(rename = "warn")]
     Warning,
+    #[serde(rename = "off")]
     Off,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub enum HeadingStyle {
+    #[serde(rename = "consistent")]
     Consistent,
+    #[serde(rename = "atx")]
     ATX,
+    #[serde(rename = "setext")]
     Setext,
+    #[serde(rename = "atx_closed")]
     ATXClosed,
+    #[serde(rename = "setext_with_atx")]
     SetextWithATX,
+    #[serde(rename = "setext_with_atx_closed")]
     SetextWithATXClosed,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+impl Default for HeadingStyle {
+    fn default() -> Self {
+        Self::Consistent
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub enum UlStyle {
+    #[serde(rename = "asterisk")]
     Asterisk,
+    #[serde(rename = "consistent")]
     Consistent,
+    #[serde(rename = "dash")]
     Dash,
+    #[serde(rename = "plus")]
     Plus,
+    #[serde(rename = "sublist")]
     Sublist,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+impl Default for UlStyle {
+    fn default() -> Self {
+        Self::Consistent
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, Deserialize)]
 pub enum OlPrefixStyle {
+    #[serde(rename = "one")]
     One,
+    #[serde(rename = "ordered")]
     Ordered,
+    #[serde(rename = "one_or_ordered")]
     OneOrOrdered,
+    #[serde(rename = "zero")]
     Zero,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+impl Default for OlPrefixStyle {
+    fn default() -> Self {
+        Self::OneOrOrdered
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD003HeadingStyleTable {
+    #[serde(default)]
     pub style: HeadingStyle,
 }
 
@@ -52,8 +89,9 @@ impl Default for MD003HeadingStyleTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD004UlStyleTable {
+    #[serde(default)]
     pub style: UlStyle,
 }
 
@@ -65,8 +103,9 @@ impl Default for MD004UlStyleTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD029OlPrefixTable {
+    #[serde(default)]
     pub style: OlPrefixStyle,
 }
 
@@ -78,15 +117,23 @@ impl Default for MD029OlPrefixTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD013LineLengthTable {
+    #[serde(default = "default_line_length")]
     pub line_length: usize,
+    #[serde(default = "default_code_block_line_length")]
     pub code_block_line_length: usize,
+    #[serde(default = "default_heading_line_length")]
     pub heading_line_length: usize,
+    #[serde(default = "default_true")]
     pub code_blocks: bool,
+    #[serde(default = "default_true")]
     pub headings: bool,
+    #[serde(default = "default_true")]
     pub tables: bool,
+    #[serde(default = "default_false")]
     pub strict: bool,
+    #[serde(default = "default_false")]
     pub stern: bool,
 }
 
@@ -105,15 +152,19 @@ impl Default for MD013LineLengthTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Default)]
+#[derive(Debug, PartialEq, Clone, Default, Deserialize)]
 pub struct MD051LinkFragmentsTable {
+    #[serde(default = "default_false")]
     pub ignore_case: bool,
+    #[serde(default = "default_empty_string")]
     pub ignored_pattern: String,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD052ReferenceLinksImagesTable {
+    #[serde(default = "default_false")]
     pub shortcut_syntax: bool,
+    #[serde(default = "default_ignored_labels")]
     pub ignored_labels: Vec<String>,
 }
 
@@ -126,8 +177,9 @@ impl Default for MD052ReferenceLinksImagesTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD053LinkImageReferenceDefinitionsTable {
+    #[serde(default = "default_ignored_definitions")]
     pub ignored_definitions: Vec<String>,
 }
 
@@ -139,13 +191,19 @@ impl Default for MD053LinkImageReferenceDefinitionsTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD054LinkImageStyleTable {
+    #[serde(default = "default_true")]
     pub autolink: bool,
+    #[serde(default = "default_true")]
     pub inline: bool,
+    #[serde(default = "default_true")]
     pub full: bool,
+    #[serde(default = "default_true")]
     pub collapsed: bool,
+    #[serde(default = "default_true")]
     pub shortcut: bool,
+    #[serde(default = "default_true")]
     pub url_inline: bool,
 }
 
@@ -162,12 +220,17 @@ impl Default for MD054LinkImageStyleTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub enum TablePipeStyle {
+    #[serde(rename = "consistent")]
     Consistent,
+    #[serde(rename = "leading_and_trailing")]
     LeadingAndTrailing,
+    #[serde(rename = "leading_only")]
     LeadingOnly,
+    #[serde(rename = "trailing_only")]
     TrailingOnly,
+    #[serde(rename = "no_leading_or_trailing")]
     NoLeadingOrTrailing,
 }
 
@@ -177,8 +240,9 @@ impl Default for TablePipeStyle {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD055TablePipeStyleTable {
+    #[serde(default)]
     pub style: TablePipeStyle,
 }
 
@@ -190,8 +254,9 @@ impl Default for MD055TablePipeStyleTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD059DescriptiveLinkTextTable {
+    #[serde(default = "default_prohibited_texts")]
     pub prohibited_texts: Vec<String>,
 }
 
@@ -208,10 +273,13 @@ impl Default for MD059DescriptiveLinkTextTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD044ProperNamesTable {
+    #[serde(default = "default_empty_vec")]
     pub names: Vec<String>,
+    #[serde(default = "default_true")]
     pub code_blocks: bool,
+    #[serde(default = "default_true")]
     pub html_elements: bool,
 }
 
@@ -225,15 +293,19 @@ impl Default for MD044ProperNamesTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Default)]
+#[derive(Debug, PartialEq, Clone, Default, Deserialize)]
 pub struct MD024MultipleHeadingsTable {
+    #[serde(default = "default_false")]
     pub siblings_only: bool,
+    #[serde(default = "default_false")]
     pub allow_different_nesting: bool,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD025SingleH1Table {
+    #[serde(default = "default_level_1")]
     pub level: u8,
+    #[serde(default = "default_front_matter_title")]
     pub front_matter_title: String,
 }
 
@@ -246,10 +318,13 @@ impl Default for MD025SingleH1Table {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD041FirstLineHeadingTable {
+    #[serde(default = "default_allow_preamble")]
     pub allow_preamble: bool,
+    #[serde(default = "default_front_matter_title")]
     pub front_matter_title: String,
+    #[serde(default = "default_level_1")]
     pub level: u8,
 }
 
@@ -263,9 +338,11 @@ impl Default for MD041FirstLineHeadingTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD022HeadingsBlanksTable {
+    #[serde(default = "default_lines_config")]
     pub lines_above: Vec<i32>,
+    #[serde(default = "default_lines_config")]
     pub lines_below: Vec<i32>,
 }
 
@@ -278,10 +355,13 @@ impl Default for MD022HeadingsBlanksTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD007UlIndentTable {
+    #[serde(default = "default_indent")]
     pub indent: usize,
+    #[serde(default = "default_indent")]
     pub start_indent: usize,
+    #[serde(default = "default_false")]
     pub start_indented: bool,
 }
 
@@ -295,10 +375,13 @@ impl Default for MD007UlIndentTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD009TrailingSpacesTable {
+    #[serde(default = "default_br_spaces")]
     pub br_spaces: usize,
+    #[serde(default = "default_false")]
     pub list_item_empty_lines: bool,
+    #[serde(default = "default_false")]
     pub strict: bool,
 }
 
@@ -312,10 +395,13 @@ impl Default for MD009TrailingSpacesTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD010HardTabsTable {
+    #[serde(default = "default_true")]
     pub code_blocks: bool,
+    #[serde(default = "default_empty_code_languages")]
     pub ignore_code_languages: Vec<String>,
+    #[serde(default = "default_spaces_per_tab")]
     pub spaces_per_tab: usize,
 }
 
@@ -329,8 +415,9 @@ impl Default for MD010HardTabsTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD012MultipleBlankLinesTable {
+    #[serde(default = "default_one")]
     pub maximum: usize,
 }
 
@@ -340,8 +427,9 @@ impl Default for MD012MultipleBlankLinesTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD031FencedCodeBlanksTable {
+    #[serde(default = "default_list_items_true")]
     pub list_items: bool,
 }
 
@@ -351,14 +439,17 @@ impl Default for MD031FencedCodeBlanksTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Default)]
+#[derive(Debug, PartialEq, Clone, Default, Deserialize)]
 pub struct MD043RequiredHeadingsTable {
+    #[serde(default = "default_empty_headings")]
     pub headings: Vec<String>,
+    #[serde(default = "default_false")]
     pub match_case: bool,
 }
 
-#[derive(Debug, PartialEq, Clone, Default)]
+#[derive(Debug, PartialEq, Clone, Default, Deserialize)]
 pub struct MD026TrailingPunctuationTable {
+    #[serde(default = "default_trailing_punctuation")]
     pub punctuation: String,
 }
 
@@ -370,8 +461,9 @@ impl MD026TrailingPunctuationTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD036EmphasisAsHeadingTable {
+    #[serde(default = "default_md036_punctuation")]
     pub punctuation: String,
 }
 
@@ -383,8 +475,9 @@ impl Default for MD036EmphasisAsHeadingTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD027BlockquoteSpacesTable {
+    #[serde(default = "default_blockquote_list_items")]
     pub list_items: bool,
 }
 
@@ -394,16 +487,21 @@ impl Default for MD027BlockquoteSpacesTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Default)]
+#[derive(Debug, PartialEq, Clone, Default, Deserialize)]
 pub struct MD033InlineHtmlTable {
+    #[serde(default = "default_empty_vec")]
     pub allowed_elements: Vec<String>,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD030ListMarkerSpaceTable {
+    #[serde(default = "default_ul_single")]
     pub ul_single: usize,
+    #[serde(default = "default_ol_single")]
     pub ol_single: usize,
+    #[serde(default = "default_ul_multi")]
     pub ul_multi: usize,
+    #[serde(default = "default_ol_multi")]
     pub ol_multi: usize,
 }
 
@@ -418,37 +516,51 @@ impl Default for MD030ListMarkerSpaceTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Default)]
+#[derive(Debug, PartialEq, Clone, Default, Deserialize)]
 pub struct MD040FencedCodeLanguageTable {
+    #[serde(default = "default_empty_vec")]
     pub allowed_languages: Vec<String>,
+    #[serde(default = "default_false")]
     pub language_only: bool,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub enum CodeBlockStyle {
+    #[serde(rename = "consistent")]
     Consistent,
+    #[serde(rename = "fenced")]
     Fenced,
+    #[serde(rename = "indented")]
     Indented,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub enum CodeFenceStyle {
+    #[serde(rename = "consistent")]
     Consistent,
+    #[serde(rename = "backtick")]
     Backtick,
+    #[serde(rename = "tilde")]
     Tilde,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub enum EmphasisStyle {
+    #[serde(rename = "consistent")]
     Consistent,
+    #[serde(rename = "asterisk")]
     Asterisk,
+    #[serde(rename = "underscore")]
     Underscore,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub enum StrongStyle {
+    #[serde(rename = "consistent")]
     Consistent,
+    #[serde(rename = "asterisk")]
     Asterisk,
+    #[serde(rename = "underscore")]
     Underscore,
 }
 
@@ -476,8 +588,9 @@ impl Default for StrongStyle {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD046CodeBlockStyleTable {
+    #[serde(default)]
     pub style: CodeBlockStyle,
 }
 
@@ -489,8 +602,9 @@ impl Default for MD046CodeBlockStyleTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD048CodeFenceStyleTable {
+    #[serde(default)]
     pub style: CodeFenceStyle,
 }
 
@@ -502,8 +616,9 @@ impl Default for MD048CodeFenceStyleTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD049EmphasisStyleTable {
+    #[serde(default)]
     pub style: EmphasisStyle,
 }
 
@@ -515,8 +630,9 @@ impl Default for MD049EmphasisStyleTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD050StrongStyleTable {
+    #[serde(default)]
     pub style: StrongStyle,
 }
 
@@ -528,8 +644,9 @@ impl Default for MD050StrongStyleTable {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD035HrStyleTable {
+    #[serde(default = "default_hr_style")]
     pub style: String,
 }
 
@@ -541,50 +658,117 @@ impl Default for MD035HrStyleTable {
     }
 }
 
-#[derive(Debug, Default, PartialEq, Clone)]
+#[derive(Debug, Default, PartialEq, Clone, Deserialize)]
 pub struct LintersSettingsTable {
+    #[serde(rename = "heading-style")]
+    #[serde(default)]
     pub heading_style: MD003HeadingStyleTable,
+    #[serde(rename = "ul-style")]
+    #[serde(default)]
     pub ul_style: MD004UlStyleTable,
+    #[serde(rename = "ol-prefix")]
+    #[serde(default)]
     pub ol_prefix: MD029OlPrefixTable,
+    #[serde(rename = "ul-indent")]
+    #[serde(default)]
     pub ul_indent: MD007UlIndentTable,
+    #[serde(rename = "no-trailing-spaces")]
+    #[serde(default)]
     pub trailing_spaces: MD009TrailingSpacesTable,
+    #[serde(rename = "no-hard-tabs")]
+    #[serde(default)]
     pub hard_tabs: MD010HardTabsTable,
+    #[serde(rename = "no-multiple-blanks")]
+    #[serde(default)]
     pub multiple_blank_lines: MD012MultipleBlankLinesTable,
+    #[serde(rename = "line-length")]
+    #[serde(default)]
     pub line_length: MD013LineLengthTable,
+    #[serde(rename = "blanks-around-headings")]
+    #[serde(default)]
     pub headings_blanks: MD022HeadingsBlanksTable,
+    #[serde(rename = "single-h1")]
+    #[serde(default)]
     pub single_h1: MD025SingleH1Table,
+    #[serde(rename = "first-line-heading")]
+    #[serde(default)]
     pub first_line_heading: MD041FirstLineHeadingTable,
+    #[serde(rename = "no-trailing-punctuation")]
+    #[serde(default)]
     pub trailing_punctuation: MD026TrailingPunctuationTable,
+    #[serde(rename = "no-multiple-space-blockquote")]
+    #[serde(default)]
     pub blockquote_spaces: MD027BlockquoteSpacesTable,
+    #[serde(rename = "list-marker-space")]
+    #[serde(default)]
     pub list_marker_space: MD030ListMarkerSpaceTable,
+    #[serde(rename = "blanks-around-fences")]
+    #[serde(default)]
     pub fenced_code_blanks: MD031FencedCodeBlanksTable,
+    #[serde(rename = "no-inline-html")]
+    #[serde(default)]
     pub inline_html: MD033InlineHtmlTable,
+    #[serde(rename = "hr-style")]
+    #[serde(default)]
     pub hr_style: MD035HrStyleTable,
+    #[serde(rename = "no-emphasis-as-heading")]
+    #[serde(default)]
     pub emphasis_as_heading: MD036EmphasisAsHeadingTable,
+    #[serde(rename = "fenced-code-language")]
+    #[serde(default)]
     pub fenced_code_language: MD040FencedCodeLanguageTable,
+    #[serde(rename = "code-block-style")]
+    #[serde(default)]
     pub code_block_style: MD046CodeBlockStyleTable,
+    #[serde(rename = "code-fence-style")]
+    #[serde(default)]
     pub code_fence_style: MD048CodeFenceStyleTable,
+    #[serde(rename = "emphasis-style")]
+    #[serde(default)]
     pub emphasis_style: MD049EmphasisStyleTable,
+    #[serde(rename = "strong-style")]
+    #[serde(default)]
     pub strong_style: MD050StrongStyleTable,
+    #[serde(rename = "no-duplicate-heading")]
+    #[serde(default)]
     pub multiple_headings: MD024MultipleHeadingsTable,
+    #[serde(rename = "required-headings")]
+    #[serde(default)]
     pub required_headings: MD043RequiredHeadingsTable,
+    #[serde(rename = "proper-names")]
+    #[serde(default)]
     pub proper_names: MD044ProperNamesTable,
+    #[serde(rename = "link-fragments")]
+    #[serde(default)]
     pub link_fragments: MD051LinkFragmentsTable,
+    #[serde(rename = "reference-links-images")]
+    #[serde(default)]
     pub reference_links_images: MD052ReferenceLinksImagesTable,
+    #[serde(rename = "link-image-reference-definitions")]
+    #[serde(default)]
     pub link_image_reference_definitions: MD053LinkImageReferenceDefinitionsTable,
+    #[serde(rename = "link-image-style")]
+    #[serde(default)]
     pub link_image_style: MD054LinkImageStyleTable,
+    #[serde(rename = "table-pipe-style")]
+    #[serde(default)]
     pub table_pipe_style: MD055TablePipeStyleTable,
+    #[serde(rename = "descriptive-link-text")]
+    #[serde(default)]
     pub descriptive_link_text: MD059DescriptiveLinkTextTable,
 }
 
-#[derive(Debug, Default, PartialEq, Clone)]
+#[derive(Debug, Default, PartialEq, Clone, Deserialize)]
 pub struct LintersTable {
+    #[serde(default)]
     pub severity: HashMap<String, RuleSeverity>,
+    #[serde(default)]
     pub settings: LintersSettingsTable,
 }
 
-#[derive(Debug, Default, PartialEq, Clone)]
+#[derive(Debug, Default, PartialEq, Clone, Deserialize)]
 pub struct QuickmarkConfig {
+    #[serde(default)]
     pub linters: LintersTable,
 }
 
@@ -610,480 +794,7 @@ impl QuickmarkConfig {
     }
 }
 
-// TOML conversion functions
-fn convert_toml_severity(toml_severity: TomlRuleSeverity) -> RuleSeverity {
-    match toml_severity {
-        TomlRuleSeverity::Error => RuleSeverity::Error,
-        TomlRuleSeverity::Warning => RuleSeverity::Warning,
-        TomlRuleSeverity::Off => RuleSeverity::Off,
-    }
-}
-
-fn convert_toml_heading_style(toml_style: TomlHeadingStyle) -> HeadingStyle {
-    match toml_style {
-        TomlHeadingStyle::Consistent => HeadingStyle::Consistent,
-        TomlHeadingStyle::Atx => HeadingStyle::ATX,
-        TomlHeadingStyle::Setext => HeadingStyle::Setext,
-        TomlHeadingStyle::ATXClosed => HeadingStyle::ATXClosed,
-        TomlHeadingStyle::SetextWithATX => HeadingStyle::SetextWithATX,
-        TomlHeadingStyle::SetextWithATXClosed => HeadingStyle::SetextWithATXClosed,
-    }
-}
-
-fn convert_toml_ul_style(toml_style: TomlUlStyle) -> UlStyle {
-    match toml_style {
-        TomlUlStyle::Asterisk => UlStyle::Asterisk,
-        TomlUlStyle::Consistent => UlStyle::Consistent,
-        TomlUlStyle::Dash => UlStyle::Dash,
-        TomlUlStyle::Plus => UlStyle::Plus,
-        TomlUlStyle::Sublist => UlStyle::Sublist,
-    }
-}
-
-fn convert_toml_ol_prefix_style(toml_style: TomlOlPrefixStyle) -> OlPrefixStyle {
-    match toml_style {
-        TomlOlPrefixStyle::One => OlPrefixStyle::One,
-        TomlOlPrefixStyle::Ordered => OlPrefixStyle::Ordered,
-        TomlOlPrefixStyle::OneOrOrdered => OlPrefixStyle::OneOrOrdered,
-        TomlOlPrefixStyle::Zero => OlPrefixStyle::Zero,
-    }
-}
-
-fn convert_toml_code_block_style(toml_style: TomlCodeBlockStyle) -> CodeBlockStyle {
-    match toml_style {
-        TomlCodeBlockStyle::Consistent => CodeBlockStyle::Consistent,
-        TomlCodeBlockStyle::Fenced => CodeBlockStyle::Fenced,
-        TomlCodeBlockStyle::Indented => CodeBlockStyle::Indented,
-    }
-}
-
-fn convert_toml_code_fence_style(toml_style: TomlCodeFenceStyle) -> CodeFenceStyle {
-    match toml_style {
-        TomlCodeFenceStyle::Consistent => CodeFenceStyle::Consistent,
-        TomlCodeFenceStyle::Backtick => CodeFenceStyle::Backtick,
-        TomlCodeFenceStyle::Tilde => CodeFenceStyle::Tilde,
-    }
-}
-
-fn convert_toml_emphasis_style(toml_style: TomlEmphasisStyle) -> EmphasisStyle {
-    match toml_style {
-        TomlEmphasisStyle::Consistent => EmphasisStyle::Consistent,
-        TomlEmphasisStyle::Asterisk => EmphasisStyle::Asterisk,
-        TomlEmphasisStyle::Underscore => EmphasisStyle::Underscore,
-    }
-}
-
-fn convert_toml_strong_style(toml_style: TomlStrongStyle) -> StrongStyle {
-    match toml_style {
-        TomlStrongStyle::Consistent => StrongStyle::Consistent,
-        TomlStrongStyle::Asterisk => StrongStyle::Asterisk,
-        TomlStrongStyle::Underscore => StrongStyle::Underscore,
-    }
-}
-
-fn convert_toml_table_pipe_style(toml_style: TomlTablePipeStyle) -> TablePipeStyle {
-    match toml_style {
-        TomlTablePipeStyle::Consistent => TablePipeStyle::Consistent,
-        TomlTablePipeStyle::LeadingAndTrailing => TablePipeStyle::LeadingAndTrailing,
-        TomlTablePipeStyle::LeadingOnly => TablePipeStyle::LeadingOnly,
-        TomlTablePipeStyle::TrailingOnly => TablePipeStyle::TrailingOnly,
-        TomlTablePipeStyle::NoLeadingOrTrailing => TablePipeStyle::NoLeadingOrTrailing,
-    }
-}
-
-/// Parse a TOML configuration string into a QuickmarkConfig
-pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
-    let toml_config: TomlQuickmarkConfig = toml::from_str(config_str)?;
-    let mut severity = toml_config
-        .linters
-        .severity
-        .into_iter()
-        .map(|(k, v)| (k, convert_toml_severity(v)))
-        .collect();
-
-    normalize_severities(&mut severity);
-
-    Ok(QuickmarkConfig::new(LintersTable {
-        severity,
-        settings: LintersSettingsTable {
-            heading_style: MD003HeadingStyleTable {
-                style: convert_toml_heading_style(toml_config.linters.settings.heading_style.style),
-            },
-            ul_style: MD004UlStyleTable {
-                style: convert_toml_ul_style(toml_config.linters.settings.ul_style.style),
-            },
-            ol_prefix: MD029OlPrefixTable {
-                style: convert_toml_ol_prefix_style(toml_config.linters.settings.ol_prefix.style),
-            },
-            ul_indent: MD007UlIndentTable {
-                indent: toml_config.linters.settings.ul_indent.indent,
-                start_indent: toml_config.linters.settings.ul_indent.start_indent,
-                start_indented: toml_config.linters.settings.ul_indent.start_indented,
-            },
-            trailing_spaces: MD009TrailingSpacesTable {
-                br_spaces: toml_config.linters.settings.trailing_spaces.br_spaces,
-                list_item_empty_lines: toml_config
-                    .linters
-                    .settings
-                    .trailing_spaces
-                    .list_item_empty_lines,
-                strict: toml_config.linters.settings.trailing_spaces.strict,
-            },
-            hard_tabs: MD010HardTabsTable {
-                code_blocks: toml_config.linters.settings.hard_tabs.code_blocks,
-                ignore_code_languages: toml_config.linters.settings.hard_tabs.ignore_code_languages,
-                spaces_per_tab: toml_config.linters.settings.hard_tabs.spaces_per_tab,
-            },
-            multiple_blank_lines: MD012MultipleBlankLinesTable {
-                maximum: toml_config.linters.settings.multiple_blank_lines.maximum,
-            },
-            line_length: MD013LineLengthTable {
-                line_length: toml_config.linters.settings.line_length.line_length,
-                code_block_line_length: toml_config
-                    .linters
-                    .settings
-                    .line_length
-                    .code_block_line_length,
-                heading_line_length: toml_config.linters.settings.line_length.heading_line_length,
-                code_blocks: toml_config.linters.settings.line_length.code_blocks,
-                headings: toml_config.linters.settings.line_length.headings,
-                tables: toml_config.linters.settings.line_length.tables,
-                strict: toml_config.linters.settings.line_length.strict,
-                stern: toml_config.linters.settings.line_length.stern,
-            },
-            headings_blanks: MD022HeadingsBlanksTable {
-                lines_above: toml_config.linters.settings.headings_blanks.lines_above,
-                lines_below: toml_config.linters.settings.headings_blanks.lines_below,
-            },
-            single_h1: MD025SingleH1Table {
-                level: toml_config.linters.settings.single_h1.level,
-                front_matter_title: toml_config.linters.settings.single_h1.front_matter_title,
-            },
-            first_line_heading: MD041FirstLineHeadingTable {
-                allow_preamble: toml_config
-                    .linters
-                    .settings
-                    .first_line_heading
-                    .allow_preamble,
-                front_matter_title: toml_config
-                    .linters
-                    .settings
-                    .first_line_heading
-                    .front_matter_title,
-                level: toml_config.linters.settings.first_line_heading.level,
-            },
-            trailing_punctuation: MD026TrailingPunctuationTable {
-                punctuation: toml_config
-                    .linters
-                    .settings
-                    .trailing_punctuation
-                    .punctuation,
-            },
-            blockquote_spaces: MD027BlockquoteSpacesTable {
-                list_items: toml_config.linters.settings.blockquote_spaces.list_items,
-            },
-            list_marker_space: MD030ListMarkerSpaceTable {
-                ul_single: toml_config.linters.settings.list_marker_space.ul_single,
-                ol_single: toml_config.linters.settings.list_marker_space.ol_single,
-                ul_multi: toml_config.linters.settings.list_marker_space.ul_multi,
-                ol_multi: toml_config.linters.settings.list_marker_space.ol_multi,
-            },
-            fenced_code_blanks: MD031FencedCodeBlanksTable {
-                list_items: toml_config.linters.settings.fenced_code_blanks.list_items,
-            },
-            inline_html: MD033InlineHtmlTable {
-                allowed_elements: toml_config.linters.settings.inline_html.allowed_elements,
-            },
-            hr_style: MD035HrStyleTable {
-                style: toml_config.linters.settings.hr_style.style,
-            },
-            emphasis_as_heading: MD036EmphasisAsHeadingTable {
-                punctuation: toml_config.linters.settings.emphasis_as_heading.punctuation,
-            },
-            fenced_code_language: MD040FencedCodeLanguageTable {
-                allowed_languages: toml_config
-                    .linters
-                    .settings
-                    .fenced_code_language
-                    .allowed_languages,
-                language_only: toml_config
-                    .linters
-                    .settings
-                    .fenced_code_language
-                    .language_only,
-            },
-            code_block_style: MD046CodeBlockStyleTable {
-                style: convert_toml_code_block_style(
-                    toml_config.linters.settings.code_block_style.style,
-                ),
-            },
-            code_fence_style: MD048CodeFenceStyleTable {
-                style: convert_toml_code_fence_style(
-                    toml_config.linters.settings.code_fence_style.style,
-                ),
-            },
-            emphasis_style: MD049EmphasisStyleTable {
-                style: convert_toml_emphasis_style(
-                    toml_config.linters.settings.emphasis_style.style,
-                ),
-            },
-            strong_style: MD050StrongStyleTable {
-                style: convert_toml_strong_style(toml_config.linters.settings.strong_style.style),
-            },
-            multiple_headings: MD024MultipleHeadingsTable {
-                siblings_only: toml_config.linters.settings.multiple_headings.siblings_only,
-                allow_different_nesting: toml_config
-                    .linters
-                    .settings
-                    .multiple_headings
-                    .allow_different_nesting,
-            },
-            link_fragments: MD051LinkFragmentsTable {
-                ignore_case: toml_config.linters.settings.link_fragments.ignore_case,
-                ignored_pattern: toml_config.linters.settings.link_fragments.ignored_pattern,
-            },
-            reference_links_images: MD052ReferenceLinksImagesTable {
-                shortcut_syntax: toml_config
-                    .linters
-                    .settings
-                    .reference_links_images
-                    .shortcut_syntax,
-                ignored_labels: toml_config
-                    .linters
-                    .settings
-                    .reference_links_images
-                    .ignored_labels,
-            },
-            required_headings: MD043RequiredHeadingsTable {
-                headings: toml_config.linters.settings.required_headings.headings,
-                match_case: toml_config.linters.settings.required_headings.match_case,
-            },
-            proper_names: MD044ProperNamesTable {
-                names: toml_config.linters.settings.proper_names.names,
-                code_blocks: toml_config.linters.settings.proper_names.code_blocks,
-                html_elements: toml_config.linters.settings.proper_names.html_elements,
-            },
-            link_image_reference_definitions: MD053LinkImageReferenceDefinitionsTable {
-                ignored_definitions: toml_config
-                    .linters
-                    .settings
-                    .link_image_reference_definitions
-                    .ignored_definitions,
-            },
-            link_image_style: MD054LinkImageStyleTable {
-                autolink: toml_config.linters.settings.link_image_style.autolink,
-                inline: toml_config.linters.settings.link_image_style.inline,
-                full: toml_config.linters.settings.link_image_style.full,
-                collapsed: toml_config.linters.settings.link_image_style.collapsed,
-                shortcut: toml_config.linters.settings.link_image_style.shortcut,
-                url_inline: toml_config.linters.settings.link_image_style.url_inline,
-            },
-            table_pipe_style: MD055TablePipeStyleTable {
-                style: convert_toml_table_pipe_style(
-                    toml_config.linters.settings.table_pipe_style.style,
-                ),
-            },
-            descriptive_link_text: MD059DescriptiveLinkTextTable {
-                prohibited_texts: toml_config
-                    .linters
-                    .settings
-                    .descriptive_link_text
-                    .prohibited_texts,
-            },
-        },
-    }))
-}
-
-/// Load configuration from QUICKMARK_CONFIG environment variable, path, or default
-pub fn config_from_env_path_or_default(path: &Path) -> Result<QuickmarkConfig> {
-    // First check if QUICKMARK_CONFIG environment variable is set
-    if let Ok(env_config_path) = std::env::var("QUICKMARK_CONFIG") {
-        let env_config_file = Path::new(&env_config_path);
-        if env_config_file.is_file() {
-            match fs::read_to_string(env_config_file) {
-                Ok(config) => return parse_toml_config(&config),
-                Err(e) => {
-                    eprintln!(
-                        "Error loading config from QUICKMARK_CONFIG path {env_config_path}: {e}. Default config will be used."
-                    );
-                    return Ok(QuickmarkConfig::default_with_normalized_severities());
-                }
-            }
-        } else {
-            eprintln!(
-                "Config file was not found at QUICKMARK_CONFIG path {env_config_path}. Default config will be used."
-            );
-            return Ok(QuickmarkConfig::default_with_normalized_severities());
-        }
-    }
-
-    // Fallback to existing behavior - check for quickmark.toml in path
-    config_in_path_or_default(path)
-}
-
-/// Load configuration from a path, or return default if not found
-pub fn config_in_path_or_default(path: &Path) -> Result<QuickmarkConfig> {
-    let config_file = path.join("quickmark.toml");
-    if config_file.is_file() {
-        let config = fs::read_to_string(config_file)?;
-        return parse_toml_config(&config);
-    }
-    println!(
-        "Config file was not found at {}. Default config will be used.",
-        config_file.to_string_lossy()
-    );
-    Ok(QuickmarkConfig::default_with_normalized_severities())
-}
-
-// TOML configuration structures for serialization/deserialization
-#[derive(Deserialize)]
-pub enum TomlRuleSeverity {
-    #[serde(rename = "err")]
-    Error,
-    #[serde(rename = "warn")]
-    Warning,
-    #[serde(rename = "off")]
-    Off,
-}
-
-#[derive(Deserialize)]
-pub enum TomlHeadingStyle {
-    #[serde(rename = "consistent")]
-    Consistent,
-    #[serde(rename = "atx")]
-    Atx,
-    #[serde(rename = "setext")]
-    Setext,
-    #[serde(rename = "atx_closed")]
-    ATXClosed,
-    #[serde(rename = "setext_with_atx")]
-    SetextWithATX,
-    #[serde(rename = "setext_with_atx_closed")]
-    SetextWithATXClosed,
-}
-
-#[derive(Deserialize)]
-pub enum TomlUlStyle {
-    #[serde(rename = "asterisk")]
-    Asterisk,
-    #[serde(rename = "consistent")]
-    Consistent,
-    #[serde(rename = "dash")]
-    Dash,
-    #[serde(rename = "plus")]
-    Plus,
-    #[serde(rename = "sublist")]
-    Sublist,
-}
-
-#[derive(Deserialize)]
-pub enum TomlOlPrefixStyle {
-    #[serde(rename = "one")]
-    One,
-    #[serde(rename = "ordered")]
-    Ordered,
-    #[serde(rename = "one_or_ordered")]
-    OneOrOrdered,
-    #[serde(rename = "zero")]
-    Zero,
-}
-
-#[derive(Deserialize)]
-pub enum TomlCodeBlockStyle {
-    #[serde(rename = "consistent")]
-    Consistent,
-    #[serde(rename = "fenced")]
-    Fenced,
-    #[serde(rename = "indented")]
-    Indented,
-}
-
-#[derive(Deserialize)]
-pub enum TomlCodeFenceStyle {
-    #[serde(rename = "consistent")]
-    Consistent,
-    #[serde(rename = "backtick")]
-    Backtick,
-    #[serde(rename = "tilde")]
-    Tilde,
-}
-
-#[derive(Deserialize)]
-pub enum TomlEmphasisStyle {
-    #[serde(rename = "consistent")]
-    Consistent,
-    #[serde(rename = "asterisk")]
-    Asterisk,
-    #[serde(rename = "underscore")]
-    Underscore,
-}
-
-#[derive(Deserialize)]
-pub enum TomlStrongStyle {
-    #[serde(rename = "consistent")]
-    Consistent,
-    #[serde(rename = "asterisk")]
-    Asterisk,
-    #[serde(rename = "underscore")]
-    Underscore,
-}
-
-#[derive(Deserialize)]
-pub enum TomlTablePipeStyle {
-    #[serde(rename = "consistent")]
-    Consistent,
-    #[serde(rename = "leading_and_trailing")]
-    LeadingAndTrailing,
-    #[serde(rename = "leading_only")]
-    LeadingOnly,
-    #[serde(rename = "trailing_only")]
-    TrailingOnly,
-    #[serde(rename = "no_leading_or_trailing")]
-    NoLeadingOrTrailing,
-}
-
-// TOML table structures for specific rules
-#[derive(Deserialize)]
-pub struct TomlMD003HeadingStyleTable {
-    pub style: TomlHeadingStyle,
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD004UlStyleTable {
-    pub style: TomlUlStyle,
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD029OlPrefixTable {
-    pub style: TomlOlPrefixStyle,
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD046CodeBlockStyleTable {
-    pub style: TomlCodeBlockStyle,
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD048CodeFenceStyleTable {
-    pub style: TomlCodeFenceStyle,
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD049EmphasisStyleTable {
-    pub style: TomlEmphasisStyle,
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD050StrongStyleTable {
-    pub style: TomlStrongStyle,
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD055TablePipeStyleTable {
-    pub style: TomlTablePipeStyle,
-}
-
-// Default functions for TOML parsing
+// Default functions for TOML deserialization
 pub fn default_indent() -> usize {
     MD007UlIndentTable::default().indent
 }
@@ -1117,11 +828,11 @@ pub fn default_heading_line_length() -> usize {
 }
 
 pub fn default_true() -> bool {
-    MD013LineLengthTable::default().code_blocks // any boolean field that defaults to true
+    true
 }
 
 pub fn default_false() -> bool {
-    MD013LineLengthTable::default().strict // any boolean field that defaults to false
+    false
 }
 
 pub fn default_empty_string() -> String {
@@ -1205,533 +916,52 @@ pub fn default_ignored_definitions() -> Vec<String> {
     vec!["//".to_string()]
 }
 
-// Complex TOML rule configuration structures
-#[derive(Deserialize)]
-pub struct TomlMD007UlIndentTable {
-    #[serde(default = "default_indent")]
-    pub indent: usize,
-    #[serde(default = "default_indent")]
-    pub start_indent: usize,
-    #[serde(default = "default_false")]
-    pub start_indented: bool,
+/// Parse a TOML configuration string into a QuickmarkConfig
+pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
+    let mut config: QuickmarkConfig = toml::from_str(config_str)?;
+    normalize_severities(&mut config.linters.severity);
+    Ok(config)
 }
 
-impl Default for TomlMD007UlIndentTable {
-    fn default() -> Self {
-        let default_config = MD007UlIndentTable::default();
-        Self {
-            indent: default_config.indent,
-            start_indent: default_config.start_indent,
-            start_indented: default_config.start_indented,
+/// Load configuration from QUICKMARK_CONFIG environment variable, path, or default
+pub fn config_from_env_path_or_default(path: &Path) -> Result<QuickmarkConfig> {
+    // First check if QUICKMARK_CONFIG environment variable is set
+    if let Ok(env_config_path) = std::env::var("QUICKMARK_CONFIG") {
+        let env_config_file = Path::new(&env_config_path);
+        if env_config_file.is_file() {
+            match fs::read_to_string(env_config_file) {
+                Ok(config) => return parse_toml_config(&config),
+                Err(e) => {
+                    eprintln!(
+                        "Error loading config from QUICKMARK_CONFIG path {env_config_path}: {e}. Default config will be used."
+                    );
+                    return Ok(QuickmarkConfig::default_with_normalized_severities());
+                }
+            }
+        } else {
+            eprintln!(
+                "Config file was not found at QUICKMARK_CONFIG path {env_config_path}. Default config will be used."
+            );
+            return Ok(QuickmarkConfig::default_with_normalized_severities());
         }
     }
+
+    // Fallback to existing behavior - check for quickmark.toml in path
+    config_in_path_or_default(path)
 }
 
-#[derive(Deserialize)]
-pub struct TomlMD009TrailingSpacesTable {
-    #[serde(default = "default_br_spaces")]
-    pub br_spaces: usize,
-    #[serde(default = "default_false")]
-    pub list_item_empty_lines: bool,
-    #[serde(default = "default_false")]
-    pub strict: bool,
-}
-
-impl Default for TomlMD009TrailingSpacesTable {
-    fn default() -> Self {
-        let default_config = MD009TrailingSpacesTable::default();
-        Self {
-            br_spaces: default_config.br_spaces,
-            list_item_empty_lines: default_config.list_item_empty_lines,
-            strict: default_config.strict,
-        }
+/// Load configuration from a path, or return default if not found
+pub fn config_in_path_or_default(path: &Path) -> Result<QuickmarkConfig> {
+    let config_file = path.join("quickmark.toml");
+    if config_file.is_file() {
+        let config = fs::read_to_string(config_file)?;
+        return parse_toml_config(&config);
     }
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD010HardTabsTable {
-    #[serde(default = "default_true")]
-    pub code_blocks: bool,
-    #[serde(default = "default_empty_code_languages")]
-    pub ignore_code_languages: Vec<String>,
-    #[serde(default = "default_spaces_per_tab")]
-    pub spaces_per_tab: usize,
-}
-
-impl Default for TomlMD010HardTabsTable {
-    fn default() -> Self {
-        let default_config = MD010HardTabsTable::default();
-        Self {
-            code_blocks: default_config.code_blocks,
-            ignore_code_languages: default_config.ignore_code_languages,
-            spaces_per_tab: default_config.spaces_per_tab,
-        }
-    }
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD012MultipleBlankLinesTable {
-    #[serde(default = "default_one")]
-    pub maximum: usize,
-}
-
-impl Default for TomlMD012MultipleBlankLinesTable {
-    fn default() -> Self {
-        let default_config = MD012MultipleBlankLinesTable::default();
-        Self { 
-            maximum: default_config.maximum 
-        }
-    }
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD013LineLengthTable {
-    #[serde(default = "default_line_length")]
-    pub line_length: usize,
-    #[serde(default = "default_code_block_line_length")]
-    pub code_block_line_length: usize,
-    #[serde(default = "default_heading_line_length")]
-    pub heading_line_length: usize,
-    #[serde(default = "default_true")]
-    pub code_blocks: bool,
-    #[serde(default = "default_true")]
-    pub headings: bool,
-    #[serde(default = "default_true")]
-    pub tables: bool,
-    #[serde(default = "default_false")]
-    pub strict: bool,
-    #[serde(default = "default_false")]
-    pub stern: bool,
-}
-
-impl Default for TomlMD013LineLengthTable {
-    fn default() -> Self {
-        let default_config = MD013LineLengthTable::default();
-        Self {
-            line_length: default_config.line_length,
-            code_block_line_length: default_config.code_block_line_length,
-            heading_line_length: default_config.heading_line_length,
-            code_blocks: default_config.code_blocks,
-            headings: default_config.headings,
-            tables: default_config.tables,
-            strict: default_config.strict,
-            stern: default_config.stern,
-        }
-    }
-}
-
-#[derive(Deserialize, Default)]
-pub struct TomlMD051LinkFragmentsTable {
-    #[serde(default = "default_false")]
-    pub ignore_case: bool,
-    #[serde(default = "default_empty_string")]
-    pub ignored_pattern: String,
-}
-
-#[derive(Deserialize, Default)]
-pub struct TomlMD052ReferenceLinksImagesTable {
-    #[serde(default = "default_false")]
-    pub shortcut_syntax: bool,
-    #[serde(default = "default_ignored_labels")]
-    pub ignored_labels: Vec<String>,
-}
-
-#[derive(Deserialize, Default)]
-pub struct TomlMD053LinkImageReferenceDefinitionsTable {
-    #[serde(default = "default_ignored_definitions")]
-    pub ignored_definitions: Vec<String>,
-}
-
-#[derive(Deserialize, Default)]
-pub struct TomlMD054LinkImageStyleTable {
-    #[serde(default = "default_true")]
-    pub autolink: bool,
-    #[serde(default = "default_true")]
-    pub inline: bool,
-    #[serde(default = "default_true")]
-    pub full: bool,
-    #[serde(default = "default_true")]
-    pub collapsed: bool,
-    #[serde(default = "default_true")]
-    pub shortcut: bool,
-    #[serde(default = "default_true")]
-    pub url_inline: bool,
-}
-
-#[derive(Deserialize, Default)]
-pub struct TomlMD024MultipleHeadingsTable {
-    #[serde(default = "default_false")]
-    pub siblings_only: bool,
-    #[serde(default = "default_false")]
-    pub allow_different_nesting: bool,
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD025SingleH1Table {
-    #[serde(default = "default_level_1")]
-    pub level: u8,
-    #[serde(default = "default_front_matter_title")]
-    pub front_matter_title: String,
-}
-
-impl Default for TomlMD025SingleH1Table {
-    fn default() -> Self {
-        let default_config = MD025SingleH1Table::default();
-        Self {
-            level: default_config.level,
-            front_matter_title: default_config.front_matter_title,
-        }
-    }
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD041FirstLineHeadingTable {
-    #[serde(default = "default_allow_preamble")]
-    pub allow_preamble: bool,
-    #[serde(default = "default_front_matter_title")]
-    pub front_matter_title: String,
-    #[serde(default = "default_level_1")]
-    pub level: u8,
-}
-
-impl Default for TomlMD041FirstLineHeadingTable {
-    fn default() -> Self {
-        let default_config = MD041FirstLineHeadingTable::default();
-        Self {
-            allow_preamble: default_config.allow_preamble,
-            front_matter_title: default_config.front_matter_title,
-            level: default_config.level,
-        }
-    }
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD026TrailingPunctuationTable {
-    #[serde(default = "default_trailing_punctuation")]
-    pub punctuation: String,
-}
-
-impl Default for TomlMD026TrailingPunctuationTable {
-    fn default() -> Self {
-        Self {
-            punctuation: ".,;:!。，；：！".to_string(),
-        }
-    }
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD027BlockquoteSpacesTable {
-    #[serde(default = "default_blockquote_list_items")]
-    pub list_items: bool,
-}
-
-impl Default for TomlMD027BlockquoteSpacesTable {
-    fn default() -> Self {
-        let default_config = MD027BlockquoteSpacesTable::default();
-        Self { 
-            list_items: default_config.list_items 
-        }
-    }
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD030ListMarkerSpaceTable {
-    #[serde(default = "default_ul_single")]
-    pub ul_single: usize,
-    #[serde(default = "default_ol_single")]
-    pub ol_single: usize,
-    #[serde(default = "default_ul_multi")]
-    pub ul_multi: usize,
-    #[serde(default = "default_ol_multi")]
-    pub ol_multi: usize,
-}
-
-impl Default for TomlMD030ListMarkerSpaceTable {
-    fn default() -> Self {
-        let default_config = MD030ListMarkerSpaceTable::default();
-        Self {
-            ul_single: default_config.ul_single,
-            ol_single: default_config.ol_single,
-            ul_multi: default_config.ul_multi,
-            ol_multi: default_config.ol_multi,
-        }
-    }
-}
-
-#[derive(Deserialize, Default)]
-pub struct TomlMD043RequiredHeadingsTable {
-    #[serde(default = "default_empty_headings")]
-    pub headings: Vec<String>,
-    #[serde(default = "default_false")]
-    pub match_case: bool,
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD044ProperNamesTable {
-    #[serde(default = "default_empty_vec")]
-    pub names: Vec<String>,
-    #[serde(default = "default_true")]
-    pub code_blocks: bool,
-    #[serde(default = "default_true")]
-    pub html_elements: bool,
-}
-
-impl Default for TomlMD044ProperNamesTable {
-    fn default() -> Self {
-        Self {
-            names: default_empty_vec(),
-            code_blocks: default_true(),
-            html_elements: default_true(),
-        }
-    }
-}
-
-#[derive(Deserialize, Default)]
-pub struct TomlMD022HeadingsBlanksTable {
-    #[serde(default = "default_lines_config")]
-    pub lines_above: Vec<i32>,
-    #[serde(default = "default_lines_config")]
-    pub lines_below: Vec<i32>,
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD031FencedCodeBlanksTable {
-    #[serde(default = "default_list_items_true")]
-    pub list_items: bool,
-}
-
-impl Default for TomlMD031FencedCodeBlanksTable {
-    fn default() -> Self {
-        Self { list_items: true }
-    }
-}
-
-#[derive(Deserialize, Default)]
-pub struct TomlMD033InlineHtmlTable {
-    #[serde(default = "default_empty_vec")]
-    pub allowed_elements: Vec<String>,
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD035HrStyleTable {
-    #[serde(default = "default_hr_style")]
-    pub style: String,
-}
-
-impl Default for TomlMD035HrStyleTable {
-    fn default() -> Self {
-        Self {
-            style: "consistent".to_string(),
-        }
-    }
-}
-
-#[derive(Deserialize, Default)]
-pub struct TomlMD040FencedCodeLanguageTable {
-    #[serde(default = "default_empty_vec")]
-    pub allowed_languages: Vec<String>,
-    #[serde(default = "default_false")]
-    pub language_only: bool,
-}
-
-#[derive(Deserialize, Default)]
-pub struct TomlMD036EmphasisAsHeadingTable {
-    #[serde(default = "default_md036_punctuation")]
-    pub punctuation: String,
-}
-
-#[derive(Deserialize)]
-pub struct TomlMD059DescriptiveLinkTextTable {
-    #[serde(default = "default_prohibited_texts")]
-    pub prohibited_texts: Vec<String>,
-}
-
-impl Default for TomlMD059DescriptiveLinkTextTable {
-    fn default() -> Self {
-        Self {
-            prohibited_texts: default_prohibited_texts(),
-        }
-    }
-}
-
-// Main TOML configuration structures
-#[derive(Deserialize, Default)]
-pub struct TomlLintersSettingsTable {
-    #[serde(rename = "heading-style")]
-    #[serde(default)]
-    pub heading_style: TomlMD003HeadingStyleTable,
-    #[serde(rename = "ul-style")]
-    #[serde(default)]
-    pub ul_style: TomlMD004UlStyleTable,
-    #[serde(rename = "ol-prefix")]
-    #[serde(default)]
-    pub ol_prefix: TomlMD029OlPrefixTable,
-    #[serde(rename = "ul-indent")]
-    #[serde(default)]
-    pub ul_indent: TomlMD007UlIndentTable,
-    #[serde(rename = "no-trailing-spaces")]
-    #[serde(default)]
-    pub trailing_spaces: TomlMD009TrailingSpacesTable,
-    #[serde(rename = "no-hard-tabs")]
-    #[serde(default)]
-    pub hard_tabs: TomlMD010HardTabsTable,
-    #[serde(rename = "no-multiple-blanks")]
-    #[serde(default)]
-    pub multiple_blank_lines: TomlMD012MultipleBlankLinesTable,
-    #[serde(rename = "line-length")]
-    #[serde(default)]
-    pub line_length: TomlMD013LineLengthTable,
-    #[serde(rename = "blanks-around-headings")]
-    #[serde(default)]
-    pub headings_blanks: TomlMD022HeadingsBlanksTable,
-    #[serde(rename = "single-h1")]
-    #[serde(default)]
-    pub single_h1: TomlMD025SingleH1Table,
-    #[serde(rename = "first-line-heading")]
-    #[serde(default)]
-    pub first_line_heading: TomlMD041FirstLineHeadingTable,
-    #[serde(rename = "no-trailing-punctuation")]
-    #[serde(default)]
-    pub trailing_punctuation: TomlMD026TrailingPunctuationTable,
-    #[serde(rename = "no-multiple-space-blockquote")]
-    #[serde(default)]
-    pub blockquote_spaces: TomlMD027BlockquoteSpacesTable,
-    #[serde(rename = "list-marker-space")]
-    #[serde(default)]
-    pub list_marker_space: TomlMD030ListMarkerSpaceTable,
-    #[serde(rename = "blanks-around-fences")]
-    #[serde(default)]
-    pub fenced_code_blanks: TomlMD031FencedCodeBlanksTable,
-    #[serde(rename = "no-inline-html")]
-    #[serde(default)]
-    pub inline_html: TomlMD033InlineHtmlTable,
-    #[serde(rename = "hr-style")]
-    #[serde(default)]
-    pub hr_style: TomlMD035HrStyleTable,
-    #[serde(rename = "fenced-code-language")]
-    #[serde(default)]
-    pub fenced_code_language: TomlMD040FencedCodeLanguageTable,
-    #[serde(rename = "code-block-style")]
-    #[serde(default)]
-    pub code_block_style: TomlMD046CodeBlockStyleTable,
-    #[serde(rename = "code-fence-style")]
-    #[serde(default)]
-    pub code_fence_style: TomlMD048CodeFenceStyleTable,
-    #[serde(rename = "emphasis-style")]
-    #[serde(default)]
-    pub emphasis_style: TomlMD049EmphasisStyleTable,
-    #[serde(rename = "strong-style")]
-    #[serde(default)]
-    pub strong_style: TomlMD050StrongStyleTable,
-    #[serde(rename = "no-duplicate-heading")]
-    #[serde(default)]
-    pub multiple_headings: TomlMD024MultipleHeadingsTable,
-    #[serde(rename = "required-headings")]
-    #[serde(default)]
-    pub required_headings: TomlMD043RequiredHeadingsTable,
-    #[serde(rename = "proper-names")]
-    #[serde(default)]
-    pub proper_names: TomlMD044ProperNamesTable,
-    #[serde(rename = "link-fragments")]
-    #[serde(default)]
-    pub link_fragments: TomlMD051LinkFragmentsTable,
-    #[serde(rename = "reference-links-images")]
-    #[serde(default)]
-    pub reference_links_images: TomlMD052ReferenceLinksImagesTable,
-    #[serde(rename = "link-image-reference-definitions")]
-    #[serde(default)]
-    pub link_image_reference_definitions: TomlMD053LinkImageReferenceDefinitionsTable,
-    #[serde(rename = "link-image-style")]
-    #[serde(default)]
-    pub link_image_style: TomlMD054LinkImageStyleTable,
-    #[serde(rename = "table-pipe-style")]
-    #[serde(default)]
-    pub table_pipe_style: TomlMD055TablePipeStyleTable,
-    #[serde(rename = "no-emphasis-as-heading")]
-    #[serde(default)]
-    pub emphasis_as_heading: TomlMD036EmphasisAsHeadingTable,
-    #[serde(rename = "descriptive-link-text")]
-    #[serde(default)]
-    pub descriptive_link_text: TomlMD059DescriptiveLinkTextTable,
-}
-
-#[derive(Deserialize, Default)]
-pub struct TomlLintersTable {
-    #[serde(default)]
-    pub severity: HashMap<String, TomlRuleSeverity>,
-    #[serde(default)]
-    pub settings: TomlLintersSettingsTable,
-}
-
-#[derive(Deserialize)]
-pub struct TomlQuickmarkConfig {
-    #[serde(default)]
-    pub linters: TomlLintersTable,
-}
-
-// Default implementations for simple TOML structures
-impl Default for TomlMD003HeadingStyleTable {
-    fn default() -> Self {
-        Self {
-            style: TomlHeadingStyle::Consistent,
-        }
-    }
-}
-
-impl Default for TomlMD004UlStyleTable {
-    fn default() -> Self {
-        Self {
-            style: TomlUlStyle::Consistent,
-        }
-    }
-}
-
-impl Default for TomlMD029OlPrefixTable {
-    fn default() -> Self {
-        Self {
-            style: TomlOlPrefixStyle::OneOrOrdered,
-        }
-    }
-}
-
-impl Default for TomlMD046CodeBlockStyleTable {
-    fn default() -> Self {
-        Self {
-            style: TomlCodeBlockStyle::Consistent,
-        }
-    }
-}
-
-impl Default for TomlMD048CodeFenceStyleTable {
-    fn default() -> Self {
-        Self {
-            style: TomlCodeFenceStyle::Consistent,
-        }
-    }
-}
-
-impl Default for TomlMD049EmphasisStyleTable {
-    fn default() -> Self {
-        Self {
-            style: TomlEmphasisStyle::Consistent,
-        }
-    }
-}
-
-impl Default for TomlMD050StrongStyleTable {
-    fn default() -> Self {
-        Self {
-            style: TomlStrongStyle::Consistent,
-        }
-    }
-}
-
-impl Default for TomlMD055TablePipeStyleTable {
-    fn default() -> Self {
-        Self {
-            style: TomlTablePipeStyle::Consistent,
-        }
-    }
+    println!(
+        "Config file was not found at {}. Default config will be used.",
+        config_file.to_string_lossy()
+    );
+    Ok(QuickmarkConfig::default_with_normalized_severities())
 }
 
 #[cfg(test)]
@@ -1740,20 +970,19 @@ mod test {
     use std::path::Path;
 
     use crate::config::{
-        config_from_env_path_or_default, parse_toml_config,
-        HeadingStyle, LintersSettingsTable, LintersTable, MD003HeadingStyleTable,
-        MD004UlStyleTable, MD007UlIndentTable, MD009TrailingSpacesTable, MD010HardTabsTable,
-        MD012MultipleBlankLinesTable, MD013LineLengthTable, MD022HeadingsBlanksTable,
-        MD024MultipleHeadingsTable, MD025SingleH1Table, MD026TrailingPunctuationTable,
-        MD027BlockquoteSpacesTable, MD029OlPrefixTable, MD030ListMarkerSpaceTable,
-        MD031FencedCodeBlanksTable, MD033InlineHtmlTable, MD035HrStyleTable,
-        MD036EmphasisAsHeadingTable, MD040FencedCodeLanguageTable, MD041FirstLineHeadingTable,
-        MD043RequiredHeadingsTable, MD044ProperNamesTable, MD046CodeBlockStyleTable,
-        MD048CodeFenceStyleTable, MD049EmphasisStyleTable, MD050StrongStyleTable,
-        MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
-        MD053LinkImageReferenceDefinitionsTable, MD054LinkImageStyleTable,
-        MD055TablePipeStyleTable, MD059DescriptiveLinkTextTable, RuleSeverity,
-        UlStyle,
+        config_from_env_path_or_default, parse_toml_config, HeadingStyle, LintersSettingsTable,
+        LintersTable, MD003HeadingStyleTable, MD004UlStyleTable, MD007UlIndentTable,
+        MD009TrailingSpacesTable, MD010HardTabsTable, MD012MultipleBlankLinesTable,
+        MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable,
+        MD025SingleH1Table, MD026TrailingPunctuationTable, MD027BlockquoteSpacesTable,
+        MD029OlPrefixTable, MD030ListMarkerSpaceTable, MD031FencedCodeBlanksTable,
+        MD033InlineHtmlTable, MD035HrStyleTable, MD036EmphasisAsHeadingTable,
+        MD040FencedCodeLanguageTable, MD041FirstLineHeadingTable, MD043RequiredHeadingsTable,
+        MD044ProperNamesTable, MD046CodeBlockStyleTable, MD048CodeFenceStyleTable,
+        MD049EmphasisStyleTable, MD050StrongStyleTable, MD051LinkFragmentsTable,
+        MD052ReferenceLinksImagesTable, MD053LinkImageReferenceDefinitionsTable,
+        MD054LinkImageStyleTable, MD055TablePipeStyleTable, MD059DescriptiveLinkTextTable,
+        RuleSeverity, UlStyle,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -1924,10 +1153,7 @@ mod test {
             RuleSeverity::Error,
             *parsed.linters.severity.get("ul-style").unwrap()
         );
-        assert_eq!(
-            UlStyle::Asterisk,
-            parsed.linters.settings.ul_style.style
-        );
+        assert_eq!(UlStyle::Asterisk, parsed.linters.settings.ul_style.style);
     }
 
     #[test]
@@ -1945,10 +1171,7 @@ mod test {
             RuleSeverity::Warning,
             *parsed.linters.severity.get("ul-style").unwrap()
         );
-        assert_eq!(
-            UlStyle::Sublist,
-            parsed.linters.settings.ul_style.style
-        );
+        assert_eq!(UlStyle::Sublist, parsed.linters.settings.ul_style.style);
     }
 
     #[test]
