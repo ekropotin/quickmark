@@ -73,6 +73,7 @@ This is especially useful for:
 ```toml
 [linters.severity]
 # possible values are: 'warn', 'err' and 'off'
+default = 'err'
 heading-increment = 'err'
 heading-style = 'err'
 ul-style = 'err'
@@ -117,7 +118,7 @@ single-trailing-newline = 'err'
 code-fence-style = 'err'
 emphasis-style = 'err'
 strong-style = 'err'
-link-fragments = 'warn'
+link-fragments = 'err'
 reference-links-images = 'err'
 link-image-reference-definitions = 'err'
 link-image-style = 'err'
@@ -250,6 +251,41 @@ url_inline = true
 [linters.settings.descriptive-link-text]
 prohibited_texts = ["click here", "here", "link", "more"]
 ```
+
+#### Using Default Severity
+
+The `default` severity setting allows you to set a baseline severity for all rules, then override specific rules as needed. This is inspired by markdownlint's configuration approach and makes it easier to manage large rule sets.
+
+**Example: Set all rules to warning level, with specific overrides:**
+
+```toml
+[linters.severity]
+default = "warn"              # All rules default to warning
+heading-style = "err"         # Override: make heading style an error
+ul-style = "off"              # Override: disable unordered list style checks
+line-length = "err"           # Override: make line length an error
+
+[linters.settings.heading-style]
+style = "atx"
+
+[linters.settings.line-length]
+line_length = 120
+```
+
+**Example: Disable all rules by default, enable only specific ones:**
+
+```toml
+[linters.severity]
+default = "off"               # All rules disabled by default
+heading-style = "err"         # Enable: heading style as error
+line-length = "warn"          # Enable: line length as warning
+no-hard-tabs = "err"          # Enable: hard tabs as error
+
+[linters.settings.heading-style]
+style = "atx"
+```
+
+If no `default` is specified, rules without explicit configuration use `"err"` (error) severity.
 
 ## Rules
 

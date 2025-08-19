@@ -164,11 +164,18 @@ pub struct QuickmarkConfig {
 
 pub fn normalize_severities(severities: &mut HashMap<String, RuleSeverity>) {
     let rule_aliases: HashSet<&str> = ALL_RULES.iter().map(|r| r.alias).collect();
+
+    // Extract default severity if present, then remove it from the map
+    let default_severity = severities.remove("default").unwrap_or(RuleSeverity::Error);
+
+    // Remove invalid rules (keep only recognized rule aliases)
     severities.retain(|key, _| rule_aliases.contains(key.as_str()));
+
+    // Apply default severity to all rules that don't have explicit configuration
     for &rule in &rule_aliases {
         severities
             .entry(rule.to_string())
-            .or_insert(RuleSeverity::Error);
+            .or_insert(default_severity.clone());
     }
 }
 
@@ -886,5 +893,189 @@ mod test {
 
         // Verify first-line-heading defaults
         assert!(!parsed.linters.settings.first_line_heading.allow_preamble);
+    }
+
+    #[test]
+    fn test_default_severity_error() {
+        let config_str = r#"
+        [linters.severity]
+        default = "err"
+        heading-style = "warn"
+        ul-style = "off"
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+
+        // Rules with explicit configuration should use that
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("heading-style").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Off,
+            *parsed.linters.severity.get("ul-style").unwrap()
+        );
+
+        // Rules without explicit configuration should use default (Error)
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("line-length").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("ul-indent").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("no-hard-tabs").unwrap()
+        );
+
+        // Default should not appear in final severities map
+        assert_eq!(None, parsed.linters.severity.get("default"));
+    }
+
+    #[test]
+    fn test_default_severity_warning() {
+        let config_str = r#"
+        [linters.severity]
+        default = "warn"
+        heading-style = "err"
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+
+        // Explicit rule should use Error
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("heading-style").unwrap()
+        );
+
+        // All other rules should use default (Warning)
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("ul-style").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("line-length").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("ul-indent").unwrap()
+        );
+
+        // Default should not appear in final severities map
+        assert_eq!(None, parsed.linters.severity.get("default"));
+    }
+
+    #[test]
+    fn test_default_severity_off() {
+        let config_str = r#"
+        [linters.severity]
+        default = "off"
+        heading-style = "err"
+        line-length = "warn"
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+
+        // Explicit rules should use their configured severities
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("heading-style").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("line-length").unwrap()
+        );
+
+        // All other rules should be disabled (Off)
+        assert_eq!(
+            RuleSeverity::Off,
+            *parsed.linters.severity.get("ul-style").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Off,
+            *parsed.linters.severity.get("ul-indent").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Off,
+            *parsed.linters.severity.get("no-hard-tabs").unwrap()
+        );
+
+        // Default should not appear in final severities map
+        assert_eq!(None, parsed.linters.severity.get("default"));
+    }
+
+    #[test]
+    fn test_default_severity_with_invalid_rules() {
+        let config_str = r#"
+        [linters.severity]
+        default = "warn"
+        heading-style = "err"
+        invalid-rule = "off"
+        another-invalid = "warn"
+        ul-style = "off"
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+
+        // Valid explicit rules should be preserved
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("heading-style").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Off,
+            *parsed.linters.severity.get("ul-style").unwrap()
+        );
+
+        // Invalid rules should be removed
+        assert_eq!(None, parsed.linters.severity.get("invalid-rule"));
+        assert_eq!(None, parsed.linters.severity.get("another-invalid"));
+
+        // Valid rules without explicit config should use default
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("line-length").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("ul-indent").unwrap()
+        );
+
+        // Default should not appear in final severities map
+        assert_eq!(None, parsed.linters.severity.get("default"));
+    }
+
+    #[test]
+    fn test_no_default_uses_error() {
+        let config_str = r#"
+        [linters.severity]
+        heading-style = "warn"
+        ul-style = "off"
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+
+        // Explicit rules should use their configured severities
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("heading-style").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Off,
+            *parsed.linters.severity.get("ul-style").unwrap()
+        );
+
+        // Rules without explicit config should default to Error
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("line-length").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("ul-indent").unwrap()
+        );
     }
 }
