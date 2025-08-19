@@ -1,13 +1,48 @@
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::rc::Rc;
 
 use tree_sitter::Node;
 
 use crate::{
-    config::UlStyle,
     linter::{range_from_tree_sitter, RuleViolation},
     rules::{Context, Rule, RuleLinter, RuleType},
 };
+
+// MD004-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub enum UlStyle {
+    #[serde(rename = "asterisk")]
+    Asterisk,
+    #[serde(rename = "consistent")]
+    Consistent,
+    #[serde(rename = "dash")]
+    Dash,
+    #[serde(rename = "plus")]
+    Plus,
+    #[serde(rename = "sublist")]
+    Sublist,
+}
+
+impl Default for UlStyle {
+    fn default() -> Self {
+        Self::Consistent
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD004UlStyleTable {
+    #[serde(default)]
+    pub style: UlStyle,
+}
+
+impl Default for MD004UlStyleTable {
+    fn default() -> Self {
+        Self {
+            style: UlStyle::Consistent,
+        }
+    }
+}
 
 pub(crate) struct MD004Linter {
     context: Rc<Context>,
@@ -250,10 +285,8 @@ mod test {
     }
 
     fn test_config_sublist() -> crate::config::QuickmarkConfig {
-        use crate::config::{
-            LintersSettingsTable, LintersTable, MD004UlStyleTable, QuickmarkConfig, RuleSeverity,
-            UlStyle,
-        };
+        use super::{MD004UlStyleTable, UlStyle}; // Local import
+        use crate::config::{LintersSettingsTable, LintersTable, QuickmarkConfig, RuleSeverity};
         use std::collections::HashMap;
 
         let severity: HashMap<String, RuleSeverity> =
@@ -273,10 +306,8 @@ mod test {
     }
 
     fn test_config_asterisk() -> crate::config::QuickmarkConfig {
-        use crate::config::{
-            LintersSettingsTable, LintersTable, MD004UlStyleTable, QuickmarkConfig, RuleSeverity,
-            UlStyle,
-        };
+        use super::{MD004UlStyleTable, UlStyle}; // Local import
+        use crate::config::{LintersSettingsTable, LintersTable, QuickmarkConfig, RuleSeverity};
         use std::collections::HashMap;
 
         let severity: HashMap<String, RuleSeverity> =
@@ -296,10 +327,8 @@ mod test {
     }
 
     fn test_config_dash() -> crate::config::QuickmarkConfig {
-        use crate::config::{
-            LintersSettingsTable, LintersTable, MD004UlStyleTable, QuickmarkConfig, RuleSeverity,
-            UlStyle,
-        };
+        use super::{MD004UlStyleTable, UlStyle}; // Local import
+        use crate::config::{LintersSettingsTable, LintersTable, QuickmarkConfig, RuleSeverity};
         use std::collections::HashMap;
 
         let severity: HashMap<String, RuleSeverity> =
@@ -319,10 +348,8 @@ mod test {
     }
 
     fn test_config_plus() -> crate::config::QuickmarkConfig {
-        use crate::config::{
-            LintersSettingsTable, LintersTable, MD004UlStyleTable, QuickmarkConfig, RuleSeverity,
-            UlStyle,
-        };
+        use super::{MD004UlStyleTable, UlStyle}; // Local import
+        use crate::config::{LintersSettingsTable, LintersTable, QuickmarkConfig, RuleSeverity};
         use std::collections::HashMap;
 
         let severity: HashMap<String, RuleSeverity> =

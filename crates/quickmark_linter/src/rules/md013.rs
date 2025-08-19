@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use std::rc::Rc;
 
 use tree_sitter::Node;
@@ -6,6 +7,62 @@ use crate::{
     linter::{range_from_tree_sitter, RuleViolation},
     rules::{Context, Rule, RuleLinter, RuleType},
 };
+
+// MD013-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD013LineLengthTable {
+    #[serde(default = "default_line_length")]
+    pub line_length: usize,
+    #[serde(default = "default_code_block_line_length")]
+    pub code_block_line_length: usize,
+    #[serde(default = "default_heading_line_length")]
+    pub heading_line_length: usize,
+    #[serde(default = "default_true")]
+    pub code_blocks: bool,
+    #[serde(default = "default_true")]
+    pub headings: bool,
+    #[serde(default = "default_true")]
+    pub tables: bool,
+    #[serde(default = "default_false")]
+    pub strict: bool,
+    #[serde(default = "default_false")]
+    pub stern: bool,
+}
+
+impl Default for MD013LineLengthTable {
+    fn default() -> Self {
+        Self {
+            line_length: 80,
+            code_block_line_length: 80,
+            heading_line_length: 80,
+            code_blocks: true,
+            headings: true,
+            tables: true,
+            strict: false,
+            stern: false,
+        }
+    }
+}
+
+fn default_line_length() -> usize {
+    80
+}
+
+fn default_code_block_line_length() -> usize {
+    80
+}
+
+fn default_heading_line_length() -> usize {
+    80
+}
+
+fn default_true() -> bool {
+    true
+}
+
+fn default_false() -> bool {
+    false
+}
 
 /// MD013 Line Length Rule Linter
 ///

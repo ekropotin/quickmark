@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use std::rc::Rc;
 
 use tree_sitter::Node;
@@ -6,6 +7,35 @@ use crate::{
     linter::{range_from_tree_sitter, RuleViolation},
     rules::{Context, Rule, RuleLinter, RuleType},
 };
+
+// MD007-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD007UlIndentTable {
+    #[serde(default = "default_indent")]
+    pub indent: usize,
+    #[serde(default = "default_indent")]
+    pub start_indent: usize,
+    #[serde(default = "default_false")]
+    pub start_indented: bool,
+}
+
+impl Default for MD007UlIndentTable {
+    fn default() -> Self {
+        Self {
+            indent: 2,
+            start_indent: 2,
+            start_indented: false,
+        }
+    }
+}
+
+fn default_indent() -> usize {
+    2
+}
+
+fn default_false() -> bool {
+    false
+}
 
 pub(crate) struct MD007Linter {
     context: Rc<Context>,
@@ -113,7 +143,7 @@ impl MD007Linter {
     fn calculate_expected_indent(
         &self,
         nesting_level: usize,
-        config: &crate::config::MD007UlIndentTable,
+        config: &MD007UlIndentTable,
     ) -> usize {
         if nesting_level == 0 {
             // Top level
@@ -194,9 +224,8 @@ pub const MD007: Rule = Rule {
 mod test {
     use std::path::PathBuf;
 
-    use crate::config::{
-        LintersSettingsTable, LintersTable, MD007UlIndentTable, QuickmarkConfig, RuleSeverity,
-    };
+    use super::MD007UlIndentTable; // Local import
+    use crate::config::{LintersSettingsTable, LintersTable, QuickmarkConfig, RuleSeverity};
     use crate::linter::MultiRuleLinter;
     use crate::test_utils::test_helpers::test_config_with_rules;
     use std::collections::HashMap;
