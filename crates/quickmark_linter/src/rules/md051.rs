@@ -1,5 +1,6 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
+use serde::Deserialize;
 use std::collections::HashSet;
 use std::rc::Rc;
 
@@ -9,6 +10,15 @@ use crate::{
     linter::{range_from_tree_sitter, RuleViolation},
     rules::{Context, Rule, RuleLinter, RuleType},
 };
+
+// MD051-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize, Default)]
+pub struct MD051LinkFragmentsTable {
+    #[serde(default)]
+    pub ignore_case: bool,
+    #[serde(default)]
+    pub ignored_pattern: String,
+}
 
 #[derive(Debug, Clone)]
 struct LinkFragment {

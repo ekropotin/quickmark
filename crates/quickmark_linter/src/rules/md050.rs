@@ -1,12 +1,43 @@
+use serde::Deserialize;
 use std::rc::Rc;
 
 use tree_sitter::Node;
 
 use crate::{
-    config::StrongStyle,
     linter::{range_from_tree_sitter, Context, RuleLinter, RuleViolation},
     rules::{Rule, RuleType},
 };
+
+// MD050-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub enum StrongStyle {
+    #[serde(rename = "consistent")]
+    Consistent,
+    #[serde(rename = "asterisk")]
+    Asterisk,
+    #[serde(rename = "underscore")]
+    Underscore,
+}
+
+impl Default for StrongStyle {
+    fn default() -> Self {
+        Self::Consistent
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD050StrongStyleTable {
+    #[serde(default)]
+    pub style: StrongStyle,
+}
+
+impl Default for MD050StrongStyleTable {
+    fn default() -> Self {
+        Self {
+            style: StrongStyle::Consistent,
+        }
+    }
+}
 
 #[derive(Debug, PartialEq, Clone)]
 enum StrongMarkerType {

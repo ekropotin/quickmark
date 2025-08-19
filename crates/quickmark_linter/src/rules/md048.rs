@@ -1,10 +1,41 @@
+use serde::Deserialize;
 use std::rc::Rc;
 use tree_sitter::Node;
 
-use crate::config::CodeFenceStyle;
 use crate::linter::{CharPosition, Context, Range, RuleLinter, RuleViolation};
 
 use super::{Rule, RuleType};
+
+// MD048-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub enum CodeFenceStyle {
+    #[serde(rename = "consistent")]
+    Consistent,
+    #[serde(rename = "backtick")]
+    Backtick,
+    #[serde(rename = "tilde")]
+    Tilde,
+}
+
+impl Default for CodeFenceStyle {
+    fn default() -> Self {
+        Self::Consistent
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD048CodeFenceStyleTable {
+    #[serde(default)]
+    pub style: CodeFenceStyle,
+}
+
+impl Default for MD048CodeFenceStyleTable {
+    fn default() -> Self {
+        Self {
+            style: CodeFenceStyle::Consistent,
+        }
+    }
+}
 
 const VIOLATION_MESSAGE: &str = "Code fence style";
 

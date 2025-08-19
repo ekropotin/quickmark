@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use std::rc::Rc;
 
 use tree_sitter::Node;
@@ -6,6 +7,19 @@ use crate::{
     linter::{range_from_tree_sitter, RuleViolation},
     rules::{Context, Rule, RuleLinter, RuleType},
 };
+
+// MD027-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD027BlockquoteSpacesTable {
+    #[serde(default)]
+    pub list_items: bool,
+}
+
+impl Default for MD027BlockquoteSpacesTable {
+    fn default() -> Self {
+        Self { list_items: true }
+    }
+}
 
 /// MD027 Multiple Spaces After Blockquote Symbol Rule Linter
 ///

@@ -1,9 +1,23 @@
+use serde::Deserialize;
 use std::rc::Rc;
 use tree_sitter::Node;
 
 use crate::linter::{range_from_tree_sitter, Context, RuleLinter, RuleViolation};
 
 use super::{Rule, RuleType};
+
+// MD031-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD031FencedCodeBlanksTable {
+    #[serde(default)]
+    pub list_items: bool,
+}
+
+impl Default for MD031FencedCodeBlanksTable {
+    fn default() -> Self {
+        Self { list_items: true }
+    }
+}
 
 // Pre-computed violation messages to avoid format! allocations
 const MISSING_BLANK_BEFORE: &str =

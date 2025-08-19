@@ -1,5 +1,6 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
+use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use tree_sitter::Node;
@@ -8,6 +9,21 @@ use crate::{
     linter::{range_from_tree_sitter, RuleViolation},
     rules::{Context, Rule, RuleLinter, RuleType},
 };
+
+// MD053-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD053LinkImageReferenceDefinitionsTable {
+    #[serde(default)]
+    pub ignored_definitions: Vec<String>,
+}
+
+impl Default for MD053LinkImageReferenceDefinitionsTable {
+    fn default() -> Self {
+        Self {
+            ignored_definitions: vec!["//".to_string()],
+        }
+    }
+}
 
 // Pre-compiled regex patterns for performance
 static FULL_REFERENCE_PATTERN: Lazy<Regex> =

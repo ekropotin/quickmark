@@ -1,9 +1,28 @@
+use serde::Deserialize;
 use std::rc::Rc;
 use tree_sitter::Node;
 
 use crate::linter::{range_from_tree_sitter, Context, RuleLinter, RuleViolation};
 
 use super::{Rule, RuleType};
+
+// MD022-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD022HeadingsBlanksTable {
+    #[serde(default)]
+    pub lines_above: Vec<i32>,
+    #[serde(default)]
+    pub lines_below: Vec<i32>,
+}
+
+impl Default for MD022HeadingsBlanksTable {
+    fn default() -> Self {
+        Self {
+            lines_above: vec![1],
+            lines_below: vec![1],
+        }
+    }
+}
 
 pub(crate) struct MD022Linter {
     context: Rc<Context>,

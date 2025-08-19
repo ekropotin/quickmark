@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use std::rc::Rc;
 
 use tree_sitter::Node;
@@ -6,6 +7,15 @@ use crate::{
     linter::{range_from_tree_sitter, Context, RuleLinter, RuleViolation},
     rules::{Rule, RuleType},
 };
+
+// MD024-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize, Default)]
+pub struct MD024MultipleHeadingsTable {
+    #[serde(default)]
+    pub siblings_only: bool,
+    #[serde(default)]
+    pub allow_different_nesting: bool,
+}
 
 pub(crate) struct MD024Linter {
     context: Rc<Context>,

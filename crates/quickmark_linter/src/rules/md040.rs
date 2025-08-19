@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use std::collections::HashSet;
 use std::rc::Rc;
 use tree_sitter::Node;
@@ -6,6 +7,15 @@ use crate::{
     linter::{CharPosition, Context, Range, RuleLinter, RuleViolation},
     rules::{Rule, RuleType},
 };
+
+// MD040-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize, Default)]
+pub struct MD040FencedCodeLanguageTable {
+    #[serde(default)]
+    pub allowed_languages: Vec<String>,
+    #[serde(default)]
+    pub language_only: bool,
+}
 
 pub(crate) struct MD040Linter {
     context: Rc<Context>,

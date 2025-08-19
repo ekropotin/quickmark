@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use std::rc::Rc;
 
 use once_cell::sync::Lazy;
@@ -7,6 +8,29 @@ use tree_sitter::Node;
 use crate::linter::{range_from_tree_sitter, Context, RuleLinter, RuleViolation};
 
 use super::{Rule, RuleType};
+
+// MD026-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD026TrailingPunctuationTable {
+    #[serde(default)]
+    pub punctuation: String,
+}
+
+impl Default for MD026TrailingPunctuationTable {
+    fn default() -> Self {
+        Self {
+            punctuation: ".,;:!。，；：！".to_string(),
+        }
+    }
+}
+
+impl MD026TrailingPunctuationTable {
+    pub fn with_default_punctuation() -> Self {
+        Self {
+            punctuation: ".,;:!。，；：！".to_string(), // Default without '?' chars
+        }
+    }
+}
 
 pub(crate) struct MD026Linter {
     context: Rc<Context>,

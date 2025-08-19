@@ -1,10 +1,41 @@
+use serde::Deserialize;
 use std::rc::Rc;
 use tree_sitter::Node;
 
-use crate::config::CodeBlockStyle;
 use crate::linter::{CharPosition, Context, Range, RuleLinter, RuleViolation};
 
 use super::{Rule, RuleType};
+
+// MD046-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub enum CodeBlockStyle {
+    #[serde(rename = "consistent")]
+    Consistent,
+    #[serde(rename = "fenced")]
+    Fenced,
+    #[serde(rename = "indented")]
+    Indented,
+}
+
+impl Default for CodeBlockStyle {
+    fn default() -> Self {
+        Self::Consistent
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD046CodeBlockStyleTable {
+    #[serde(default)]
+    pub style: CodeBlockStyle,
+}
+
+impl Default for MD046CodeBlockStyleTable {
+    fn default() -> Self {
+        Self {
+            style: CodeBlockStyle::Consistent,
+        }
+    }
+}
 
 const VIOLATION_MESSAGE: &str = "Code block style";
 

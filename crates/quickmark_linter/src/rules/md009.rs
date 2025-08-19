@@ -12,11 +12,11 @@ use crate::{
 // MD009-specific configuration types
 #[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD009TrailingSpacesTable {
-    #[serde(default = "default_br_spaces")]
+    #[serde(default)]
     pub br_spaces: usize,
-    #[serde(default = "default_false")]
+    #[serde(default)]
     pub list_item_empty_lines: bool,
-    #[serde(default = "default_false")]
+    #[serde(default)]
     pub strict: bool,
 }
 
@@ -28,14 +28,6 @@ impl Default for MD009TrailingSpacesTable {
             strict: false,
         }
     }
-}
-
-fn default_br_spaces() -> usize {
-    2
-}
-
-fn default_false() -> bool {
-    false
 }
 
 /// MD009 Trailing Spaces Rule Linter

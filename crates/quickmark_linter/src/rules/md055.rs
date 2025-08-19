@@ -1,12 +1,47 @@
+use serde::Deserialize;
 use std::rc::Rc;
 
 use tree_sitter::Node;
 
 use crate::{
-    config::TablePipeStyle,
     linter::{range_from_tree_sitter, RuleViolation},
     rules::{Context, Rule, RuleLinter, RuleType},
 };
+
+// MD055-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub enum TablePipeStyle {
+    #[serde(rename = "consistent")]
+    Consistent,
+    #[serde(rename = "leading_and_trailing")]
+    LeadingAndTrailing,
+    #[serde(rename = "leading_only")]
+    LeadingOnly,
+    #[serde(rename = "trailing_only")]
+    TrailingOnly,
+    #[serde(rename = "no_leading_or_trailing")]
+    NoLeadingOrTrailing,
+}
+
+impl Default for TablePipeStyle {
+    fn default() -> Self {
+        Self::Consistent
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD055TablePipeStyleTable {
+    #[serde(default)]
+    pub style: TablePipeStyle,
+}
+
+impl Default for MD055TablePipeStyleTable {
+    fn default() -> Self {
+        Self {
+            style: TablePipeStyle::Consistent,
+        }
+    }
+}
 
 /// MD055 - Table pipe style
 ///
