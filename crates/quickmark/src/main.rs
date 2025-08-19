@@ -1,6 +1,8 @@
 use anyhow::Context;
 use clap::Parser;
-use quickmark_linter::config::{config_from_env_path_or_default, QuickmarkConfig, RuleSeverity};
+use quickmark_linter::config::{
+    config_from_env_path_or_default, discover_config_or_default, QuickmarkConfig, RuleSeverity,
+};
 use quickmark_linter::linter::{MultiRuleLinter, RuleViolation};
 use std::cmp::min;
 use std::env;
@@ -58,8 +60,13 @@ fn main() -> anyhow::Result<()> {
     let file_content = fs::read_to_string(&file_path)
         .context(format!("Can't read file {}", &file_path.to_string_lossy()))?;
 
-    let pwd = env::current_dir()?;
-    let config = config_from_env_path_or_default(&pwd)?;
+    // First check QUICKMARK_CONFIG env var, then use new hierarchical discovery
+    let config = if std::env::var("QUICKMARK_CONFIG").is_ok() {
+        let pwd = env::current_dir()?;
+        config_from_env_path_or_default(&pwd)?
+    } else {
+        discover_config_or_default(&file_path)?
+    };
 
     let mut linter = MultiRuleLinter::new_for_document(file_path, config.clone(), &file_content);
 

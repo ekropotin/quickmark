@@ -1,0 +1,11 @@
+# Project root config - should apply to all files in project
+[linters.severity]
+heading-increment = 'off'  # MD001 disabled at project level
+heading-style = 'err'       # MD003 enabled
+line-length = 'warn'        # MD013 as warning
+
+[linters.settings.heading-style]
+style = 'atx'
+
+[linters.settings.line-length]
+line_length = 100

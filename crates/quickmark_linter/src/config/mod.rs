@@ -1,7 +1,10 @@
 use anyhow::Result;
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
-use std::{fs, path::Path};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use crate::rules::ALL_RULES;
 
@@ -191,6 +194,136 @@ impl QuickmarkConfig {
     }
 }
 
+/// Result of searching for a configuration file
+#[derive(Debug, PartialEq, Clone)]
+pub enum ConfigSearchResult {
+    /// Configuration file found and successfully parsed
+    Found {
+        path: PathBuf,
+        config: Box<QuickmarkConfig>,
+    },
+    /// No configuration file found during search
+    NotFound { searched_paths: Vec<PathBuf> },
+    /// Configuration file found but failed to parse
+    Error { path: PathBuf, error: String },
+}
+
+/// Hierarchical config discovery with workspace root stopping point
+pub struct ConfigDiscovery {
+    workspace_roots: Vec<PathBuf>,
+}
+
+impl Default for ConfigDiscovery {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl ConfigDiscovery {
+    /// Create a new ConfigDiscovery for CLI usage (no workspace roots)
+    pub fn new() -> Self {
+        Self {
+            workspace_roots: Vec::new(),
+        }
+    }
+
+    /// Create a new ConfigDiscovery for LSP usage with workspace roots
+    pub fn with_workspace_roots(roots: Vec<PathBuf>) -> Self {
+        Self {
+            workspace_roots: roots,
+        }
+    }
+
+    /// Find configuration file starting from the given file path
+    pub fn find_config(&self, file_path: &Path) -> ConfigSearchResult {
+        let start_dir = if file_path.is_file() {
+            file_path.parent().unwrap_or(file_path)
+        } else {
+            file_path
+        };
+
+        let mut searched_paths = Vec::new();
+        let mut current_dir = start_dir;
+
+        loop {
+            let config_path = current_dir.join("quickmark.toml");
+            searched_paths.push(config_path.clone());
+
+            if config_path.is_file() {
+                match fs::read_to_string(&config_path) {
+                    Ok(config_str) => match parse_toml_config(&config_str) {
+                        Ok(config) => {
+                            return ConfigSearchResult::Found {
+                                path: config_path,
+                                config: Box::new(config),
+                            }
+                        }
+                        Err(e) => {
+                            return ConfigSearchResult::Error {
+                                path: config_path,
+                                error: e.to_string(),
+                            }
+                        }
+                    },
+                    Err(e) => {
+                        return ConfigSearchResult::Error {
+                            path: config_path,
+                            error: e.to_string(),
+                        }
+                    }
+                }
+            }
+
+            // Check if we should stop searching at this directory
+            if self.should_stop_search(current_dir) {
+                break;
+            }
+
+            // Move to parent directory
+            match current_dir.parent() {
+                Some(parent) => current_dir = parent,
+                None => break, // Reached filesystem root
+            }
+        }
+
+        ConfigSearchResult::NotFound { searched_paths }
+    }
+
+    /// Determine if search should stop at the current directory
+    fn should_stop_search(&self, dir: &Path) -> bool {
+        // 1. IDE Workspace Root (highest priority)
+        for workspace_root in &self.workspace_roots {
+            if dir == workspace_root.as_path() {
+                return true;
+            }
+        }
+
+        // 2. Git Repository Root
+        if dir.join(".git").exists() {
+            return true;
+        }
+
+        // 3. Common Project Root Markers
+        let project_markers = [
+            "package.json",
+            "Cargo.toml",
+            "pyproject.toml",
+            "go.mod",
+            ".vscode",
+            ".idea",
+            ".sublime-project",
+        ];
+
+        for marker in &project_markers {
+            if dir.join(marker).exists() {
+                return true;
+            }
+        }
+
+        false
+    }
+}
+
 /// Parse a TOML configuration string into a QuickmarkConfig
 pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
     let mut config: QuickmarkConfig = toml::from_str(config_str)?;
@@ -239,25 +372,68 @@ pub fn config_in_path_or_default(path: &Path) -> Result<QuickmarkConfig> {
     Ok(QuickmarkConfig::default_with_normalized_severities())
 }
 
+/// Convenience function that uses ConfigDiscovery to find config or return default
+pub fn discover_config_or_default(file_path: &Path) -> Result<QuickmarkConfig> {
+    let discovery = ConfigDiscovery::new();
+    match discovery.find_config(file_path) {
+        ConfigSearchResult::Found { config, .. } => Ok(*config),
+        ConfigSearchResult::NotFound { .. } => {
+            Ok(QuickmarkConfig::default_with_normalized_severities())
+        }
+        ConfigSearchResult::Error { path, error } => {
+            eprintln!(
+                "Error loading config from {}: {}. Default config will be used.",
+                path.to_string_lossy(),
+                error
+            );
+            Ok(QuickmarkConfig::default_with_normalized_severities())
+        }
+    }
+}
+
+/// Convenience function for LSP usage with workspace roots
+pub fn discover_config_with_workspace_or_default(
+    file_path: &Path,
+    workspace_roots: Vec<PathBuf>,
+) -> Result<QuickmarkConfig> {
+    let discovery = ConfigDiscovery::with_workspace_roots(workspace_roots);
+    match discovery.find_config(file_path) {
+        ConfigSearchResult::Found { config, .. } => Ok(*config),
+        ConfigSearchResult::NotFound { .. } => {
+            Ok(QuickmarkConfig::default_with_normalized_severities())
+        }
+        ConfigSearchResult::Error { path, error } => {
+            eprintln!(
+                "Error loading config from {}: {}. Default config will be used.",
+                path.to_string_lossy(),
+                error
+            );
+            Ok(QuickmarkConfig::default_with_normalized_severities())
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use std::collections::HashMap;
     use std::path::Path;
+    use tempfile::TempDir;
 
     use crate::config::{
-        config_from_env_path_or_default, parse_toml_config, HeadingStyle, LintersSettingsTable,
-        LintersTable, MD003HeadingStyleTable, MD004UlStyleTable, MD007UlIndentTable,
-        MD009TrailingSpacesTable, MD010HardTabsTable, MD012MultipleBlankLinesTable,
-        MD013LineLengthTable, MD022HeadingsBlanksTable, MD024MultipleHeadingsTable,
-        MD025SingleH1Table, MD026TrailingPunctuationTable, MD027BlockquoteSpacesTable,
-        MD029OlPrefixTable, MD030ListMarkerSpaceTable, MD031FencedCodeBlanksTable,
-        MD033InlineHtmlTable, MD035HrStyleTable, MD036EmphasisAsHeadingTable,
-        MD040FencedCodeLanguageTable, MD041FirstLineHeadingTable, MD043RequiredHeadingsTable,
-        MD044ProperNamesTable, MD046CodeBlockStyleTable, MD048CodeFenceStyleTable,
-        MD049EmphasisStyleTable, MD050StrongStyleTable, MD051LinkFragmentsTable,
-        MD052ReferenceLinksImagesTable, MD053LinkImageReferenceDefinitionsTable,
-        MD054LinkImageStyleTable, MD055TablePipeStyleTable, MD059DescriptiveLinkTextTable,
-        RuleSeverity,
+        config_from_env_path_or_default, discover_config_or_default,
+        discover_config_with_workspace_or_default, parse_toml_config, ConfigDiscovery,
+        ConfigSearchResult, HeadingStyle, LintersSettingsTable, LintersTable,
+        MD003HeadingStyleTable, MD004UlStyleTable, MD007UlIndentTable, MD009TrailingSpacesTable,
+        MD010HardTabsTable, MD012MultipleBlankLinesTable, MD013LineLengthTable,
+        MD022HeadingsBlanksTable, MD024MultipleHeadingsTable, MD025SingleH1Table,
+        MD026TrailingPunctuationTable, MD027BlockquoteSpacesTable, MD029OlPrefixTable,
+        MD030ListMarkerSpaceTable, MD031FencedCodeBlanksTable, MD033InlineHtmlTable,
+        MD035HrStyleTable, MD036EmphasisAsHeadingTable, MD040FencedCodeLanguageTable,
+        MD041FirstLineHeadingTable, MD043RequiredHeadingsTable, MD044ProperNamesTable,
+        MD046CodeBlockStyleTable, MD048CodeFenceStyleTable, MD049EmphasisStyleTable,
+        MD050StrongStyleTable, MD051LinkFragmentsTable, MD052ReferenceLinksImagesTable,
+        MD053LinkImageReferenceDefinitionsTable, MD054LinkImageStyleTable,
+        MD055TablePipeStyleTable, MD059DescriptiveLinkTextTable, RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -1077,5 +1253,311 @@ mod test {
             RuleSeverity::Error,
             *parsed.linters.severity.get("ul-indent").unwrap()
         );
+    }
+
+    #[test]
+    fn test_config_discovery_not_found() {
+        let temp_dir = TempDir::new().unwrap();
+        let file_path = temp_dir.path().join("test.md");
+
+        let discovery = ConfigDiscovery::new();
+        let result = discovery.find_config(&file_path);
+
+        match result {
+            ConfigSearchResult::NotFound { searched_paths } => {
+                assert!(!searched_paths.is_empty());
+                // Should have searched in temp_dir
+                assert!(searched_paths
+                    .iter()
+                    .any(|p| p.parent() == Some(temp_dir.path())));
+            }
+            _ => panic!("Expected NotFound result"),
+        }
+    }
+
+    #[test]
+    fn test_config_discovery_found() {
+        let temp_dir = TempDir::new().unwrap();
+
+        // Create a config file
+        let config_path = temp_dir.path().join("quickmark.toml");
+        let config_content = r#"
+        [linters.severity]
+        heading-style = 'warn'
+        "#;
+        std::fs::write(&config_path, config_content).unwrap();
+
+        // Create a file in the same directory
+        let file_path = temp_dir.path().join("test.md");
+        std::fs::write(&file_path, "# Test").unwrap();
+
+        let discovery = ConfigDiscovery::new();
+        let result = discovery.find_config(&file_path);
+
+        match result {
+            ConfigSearchResult::Found { path, config } => {
+                assert_eq!(path, config_path);
+                assert_eq!(
+                    *config.linters.severity.get("heading-style").unwrap(),
+                    RuleSeverity::Warning
+                );
+            }
+            _ => panic!("Expected Found result, got: {:?}", result),
+        }
+    }
+
+    #[test]
+    fn test_config_discovery_hierarchical_search() {
+        let temp_dir = TempDir::new().unwrap();
+
+        // Create nested directories: temp_dir/project/src/
+        let project_dir = temp_dir.path().join("project");
+        let src_dir = project_dir.join("src");
+        std::fs::create_dir_all(&src_dir).unwrap();
+
+        // Create config in project root
+        let config_path = project_dir.join("quickmark.toml");
+        let config_content = r#"
+        [linters.severity]
+        heading-style = 'off'
+        "#;
+        std::fs::write(&config_path, config_content).unwrap();
+
+        // Create a file in src/
+        let file_path = src_dir.join("test.md");
+        std::fs::write(&file_path, "# Test").unwrap();
+
+        let discovery = ConfigDiscovery::new();
+        let result = discovery.find_config(&file_path);
+
+        match result {
+            ConfigSearchResult::Found { path, config } => {
+                assert_eq!(path, config_path);
+                assert_eq!(
+                    *config.linters.severity.get("heading-style").unwrap(),
+                    RuleSeverity::Off
+                );
+            }
+            _ => panic!("Expected Found result, got: {:?}", result),
+        }
+    }
+
+    #[test]
+    fn test_config_discovery_stops_at_git_root() {
+        let temp_dir = TempDir::new().unwrap();
+
+        // Create nested directories: temp_dir/repo/src/
+        let repo_dir = temp_dir.path().join("repo");
+        let src_dir = repo_dir.join("src");
+        std::fs::create_dir_all(&src_dir).unwrap();
+
+        // Create .git directory to mark as repo root
+        std::fs::create_dir(repo_dir.join(".git")).unwrap();
+
+        // Create config outside repo (should not be found)
+        let outer_config = temp_dir.path().join("quickmark.toml");
+        std::fs::write(&outer_config, "[linters.severity]\nheading-style = 'warn'").unwrap();
+
+        // Create file in src/
+        let file_path = src_dir.join("test.md");
+        std::fs::write(&file_path, "# Test").unwrap();
+
+        let discovery = ConfigDiscovery::new();
+        let result = discovery.find_config(&file_path);
+
+        match result {
+            ConfigSearchResult::NotFound { searched_paths } => {
+                // Should have searched in src/ and repo/ but not in temp_dir (stopped at .git)
+                let searched_dirs: Vec<_> =
+                    searched_paths.iter().filter_map(|p| p.parent()).collect();
+                assert!(searched_dirs.contains(&src_dir.as_path()));
+                assert!(searched_dirs.contains(&repo_dir.as_path()));
+                assert!(!searched_dirs.contains(&temp_dir.path()));
+            }
+            _ => panic!("Expected NotFound result, got: {:?}", result),
+        }
+    }
+
+    #[test]
+    fn test_config_discovery_stops_at_workspace_root() {
+        let temp_dir = TempDir::new().unwrap();
+
+        // Create nested directories: temp_dir/workspace/project/src/
+        let workspace_dir = temp_dir.path().join("workspace");
+        let project_dir = workspace_dir.join("project");
+        let src_dir = project_dir.join("src");
+        std::fs::create_dir_all(&src_dir).unwrap();
+
+        // Create config outside workspace (should not be found)
+        let outer_config = temp_dir.path().join("quickmark.toml");
+        std::fs::write(&outer_config, "[linters.severity]\nheading-style = 'warn'").unwrap();
+
+        // Create file in src/
+        let file_path = src_dir.join("test.md");
+        std::fs::write(&file_path, "# Test").unwrap();
+
+        let discovery = ConfigDiscovery::with_workspace_roots(vec![workspace_dir.clone()]);
+        let result = discovery.find_config(&file_path);
+
+        match result {
+            ConfigSearchResult::NotFound { searched_paths } => {
+                // Should have searched in src/, project/, and workspace/ but not temp_dir
+                let searched_dirs: Vec<_> =
+                    searched_paths.iter().filter_map(|p| p.parent()).collect();
+                assert!(searched_dirs.contains(&src_dir.as_path()));
+                assert!(searched_dirs.contains(&project_dir.as_path()));
+                assert!(searched_dirs.contains(&workspace_dir.as_path()));
+                assert!(!searched_dirs.contains(&temp_dir.path()));
+            }
+            _ => panic!("Expected NotFound result, got: {:?}", result),
+        }
+    }
+
+    #[test]
+    fn test_config_discovery_stops_at_cargo_toml() {
+        let temp_dir = TempDir::new().unwrap();
+
+        // Create nested directories: temp_dir/project/src/
+        let project_dir = temp_dir.path().join("project");
+        let src_dir = project_dir.join("src");
+        std::fs::create_dir_all(&src_dir).unwrap();
+
+        // Create Cargo.toml to mark as project root
+        std::fs::write(project_dir.join("Cargo.toml"), "[package]\nname = \"test\"").unwrap();
+
+        // Create config outside project (should not be found)
+        let outer_config = temp_dir.path().join("quickmark.toml");
+        std::fs::write(&outer_config, "[linters.severity]\nheading-style = 'warn'").unwrap();
+
+        // Create file in src/
+        let file_path = src_dir.join("test.md");
+        std::fs::write(&file_path, "# Test").unwrap();
+
+        let discovery = ConfigDiscovery::new();
+        let result = discovery.find_config(&file_path);
+
+        match result {
+            ConfigSearchResult::NotFound { searched_paths } => {
+                // Should have searched in src/ and project/ but not in temp_dir (stopped at Cargo.toml)
+                let searched_dirs: Vec<_> =
+                    searched_paths.iter().filter_map(|p| p.parent()).collect();
+                assert!(searched_dirs.contains(&src_dir.as_path()));
+                assert!(searched_dirs.contains(&project_dir.as_path()));
+                assert!(!searched_dirs.contains(&temp_dir.path()));
+            }
+            _ => panic!("Expected NotFound result, got: {:?}", result),
+        }
+    }
+
+    #[test]
+    fn test_config_discovery_error() {
+        let temp_dir = TempDir::new().unwrap();
+
+        // Create invalid config file
+        let config_path = temp_dir.path().join("quickmark.toml");
+        let invalid_config = "invalid toml content [[[";
+        std::fs::write(&config_path, invalid_config).unwrap();
+
+        // Create a file in the same directory
+        let file_path = temp_dir.path().join("test.md");
+        std::fs::write(&file_path, "# Test").unwrap();
+
+        let discovery = ConfigDiscovery::new();
+        let result = discovery.find_config(&file_path);
+
+        match result {
+            ConfigSearchResult::Error { path, error } => {
+                assert_eq!(path, config_path);
+                assert!(error.contains("expected")); // TOML parse error
+            }
+            _ => panic!("Expected Error result, got: {:?}", result),
+        }
+    }
+
+    #[test]
+    fn test_discover_config_or_default_found() {
+        let temp_dir = TempDir::new().unwrap();
+
+        // Create a config file
+        let config_path = temp_dir.path().join("quickmark.toml");
+        let config_content = r#"
+        [linters.severity]
+        heading-style = 'warn'
+        "#;
+        std::fs::write(&config_path, config_content).unwrap();
+
+        // Create a file in the same directory
+        let file_path = temp_dir.path().join("test.md");
+        std::fs::write(&file_path, "# Test").unwrap();
+
+        let result = discover_config_or_default(&file_path).unwrap();
+        assert_eq!(
+            *result.linters.severity.get("heading-style").unwrap(),
+            RuleSeverity::Warning
+        );
+    }
+
+    #[test]
+    fn test_discover_config_or_default_not_found() {
+        let temp_dir = TempDir::new().unwrap();
+        let file_path = temp_dir.path().join("test.md");
+        std::fs::write(&file_path, "# Test").unwrap();
+
+        let result = discover_config_or_default(&file_path).unwrap();
+        // Should return default config with normalized severities
+        assert_eq!(
+            *result.linters.severity.get("heading-style").unwrap(),
+            RuleSeverity::Error
+        );
+    }
+
+    #[test]
+    fn test_discover_config_with_workspace_or_default() {
+        let temp_dir = TempDir::new().unwrap();
+
+        // Create workspace directory
+        let workspace_dir = temp_dir.path().join("workspace");
+        let project_dir = workspace_dir.join("project");
+        std::fs::create_dir_all(&project_dir).unwrap();
+
+        // Create config in workspace
+        let config_path = workspace_dir.join("quickmark.toml");
+        let config_content = r#"
+        [linters.severity]
+        heading-style = 'off'
+        "#;
+        std::fs::write(&config_path, config_content).unwrap();
+
+        // Create file in project
+        let file_path = project_dir.join("test.md");
+        std::fs::write(&file_path, "# Test").unwrap();
+
+        let result =
+            discover_config_with_workspace_or_default(&file_path, vec![workspace_dir.clone()])
+                .unwrap();
+
+        assert_eq!(
+            *result.linters.severity.get("heading-style").unwrap(),
+            RuleSeverity::Off
+        );
+    }
+
+    #[test]
+    fn test_should_stop_search_workspace_priority() {
+        let temp_dir = TempDir::new().unwrap();
+
+        // Create structure: temp_dir/workspace/.git/project/
+        let workspace_dir = temp_dir.path().join("workspace");
+        let git_dir = workspace_dir.join(".git");
+        let project_dir = git_dir.join("project");
+        std::fs::create_dir_all(&project_dir).unwrap();
+
+        // ConfigDiscovery with workspace root should stop at workspace, not .git
+        let discovery = ConfigDiscovery::with_workspace_roots(vec![workspace_dir.clone()]);
+
+        // Should stop at workspace (highest priority)
+        assert!(discovery.should_stop_search(&workspace_dir));
+        // Should not stop at .git when workspace root is set
+        assert!(!discovery.should_stop_search(&git_dir));
     }
 }

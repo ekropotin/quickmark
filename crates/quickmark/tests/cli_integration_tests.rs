@@ -138,9 +138,20 @@ style = 'atx'
     let config_file = temp_dir.child("quickmark.toml");
     config_file.write_str(config_content).unwrap();
 
+    // Create a test markdown file in the same directory as the config
+    let md_content = r#"
+# Heading 1
+
+Heading 2
+=========
+
+## Heading 3
+"#;
+    let md_file = temp_dir.child("test.md");
+    md_file.write_str(md_content).unwrap();
+
     let mut cmd = Command::cargo_bin("qmark").unwrap();
-    cmd.current_dir(temp_dir.path())
-        .arg(test_sample_path("test_md003_mixed_styles.md"));
+    cmd.arg(md_file.path());
 
     let output = cmd.assert().failure().get_output().clone();
     let stderr = String::from_utf8_lossy(&output.stderr);
@@ -203,9 +214,20 @@ style = 'consistent'
     let config_file = temp_dir.child("quickmark.toml");
     config_file.write_str(config_content).unwrap();
 
+    // Create a test markdown file that will trigger both rules in the same directory as the config
+    let md_content = r#"# Heading 1
+
+### Heading 3 (violates MD001 - skipped level 2)
+
+Heading 2 (setext style - violates MD003 mixed styles)
+=========
+
+## Another heading (ATX style)"#;
+    let md_file = temp_dir.child("test_violations.md");
+    md_file.write_str(md_content).unwrap();
+
     let mut cmd = Command::cargo_bin("qmark").unwrap();
-    cmd.current_dir(temp_dir.path())
-        .arg(test_sample_path("test_all_rules_violations.md"));
+    cmd.arg(md_file.path());
 
     let output = cmd.assert().failure().get_output().clone();
     let stderr = String::from_utf8_lossy(&output.stderr);
@@ -296,6 +318,141 @@ style = 'setext_with_atx'
         .failure() // Should fail due to style violations
         .stderr(predicates::str::contains("MD003"))
         .stderr(predicates::str::contains("heading-style"));
+}
+
+/// Test hierarchical config discovery with nested directories
+#[test]
+fn test_cli_hierarchical_config_discovery() {
+    // Test 1: Project root level - MD001 should be OFF, line length 100 chars
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
+    cmd.arg(test_sample_path("hierarchical-test/project-root/README.md"));
+
+    let output = cmd.assert().failure().get_output().clone();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Should NOT contain MD001 violations (disabled at project root)
+    assert!(
+        !stderr.contains("MD001"),
+        "MD001 should be disabled at project root"
+    );
+    // Should contain MD003 violations (ATX style enforced)
+    assert!(
+        stderr.contains("MD003"),
+        "MD003 should be enabled for setext heading"
+    );
+    // Should contain MD013 as WARNING (line length 100 chars at project root)
+    assert!(
+        stderr.contains("WARN:") && stderr.contains("MD013"),
+        "MD013 should be warning at project root"
+    );
+
+    // Test 2: Source directory level - MD001 should be WARN, line length 80 chars
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
+    cmd.arg(test_sample_path(
+        "hierarchical-test/project-root/src/api.md",
+    ));
+
+    let output = cmd.assert().failure().get_output().clone();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Should contain MD001 warnings (enabled in src/)
+    assert!(
+        stderr.contains("WARN:") && stderr.contains("MD001"),
+        "MD001 should be warning in src/"
+    );
+    // Should contain MD003 errors
+    assert!(
+        stderr.contains("ERR:") && stderr.contains("MD003"),
+        "MD003 should be error in src/"
+    );
+    // Should contain MD013 as ERROR (stricter 80 char limit in src/)
+    assert!(
+        stderr.contains("ERR:") && stderr.contains("MD013"),
+        "MD013 should be error in src/ with 80 char limit"
+    );
+
+    // Test 3: Nested docs directory - should inherit src/ config
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
+    cmd.arg(test_sample_path(
+        "hierarchical-test/project-root/src/docs/guide.md",
+    ));
+
+    let output = cmd.assert().failure().get_output().clone();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Should inherit src/ configuration (MD001 warning, strict line length)
+    assert!(
+        stderr.contains("WARN:") && stderr.contains("MD001"),
+        "MD001 should be warning in src/docs/ (inherited from src/)"
+    );
+    assert!(
+        stderr.contains("ERR:") && stderr.contains("MD013"),
+        "MD013 should be error in src/docs/ with 80 char limit (inherited from src/)"
+    );
+
+    // Test 4: Tests directory - should inherit project root config
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
+    cmd.arg(test_sample_path(
+        "hierarchical-test/project-root/tests/integration.md",
+    ));
+
+    let output = cmd.assert().failure().get_output().clone();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Should inherit project root configuration (MD001 off, line length 100)
+    assert!(
+        !stderr.contains("MD001"),
+        "MD001 should be disabled in tests/ (inherited from project root)"
+    );
+    assert!(
+        stderr.contains("WARN:") && stderr.contains("MD013"),
+        "MD013 should be warning in tests/ with 100 char limit (inherited from project root)"
+    );
+}
+
+/// Test that config discovery stops at git repository boundaries
+#[test]
+fn test_cli_config_discovery_git_boundary() {
+    // Create a temporary git repository structure
+    let temp_dir = TempDir::new().unwrap();
+
+    // Create outer directory with config (should NOT be found due to git boundary)
+    let outer_config = temp_dir.child("quickmark.toml");
+    outer_config
+        .write_str(
+            r#"
+[linters.severity]
+heading-increment = 'off'
+"#,
+        )
+        .unwrap();
+
+    // Create git repository subdirectory
+    let git_repo = temp_dir.child("repo");
+    git_repo.create_dir_all().unwrap();
+
+    let git_dir = git_repo.child(".git");
+    git_dir.create_dir_all().unwrap();
+
+    // Create markdown file in git repo (should use default config, not outer config)
+    let md_content = r#"# Title
+
+### Skipped Level 2 (should trigger MD001 with default config)
+"#;
+    let md_file = git_repo.child("README.md");
+    md_file.write_str(md_content).unwrap();
+
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
+    cmd.arg(md_file.path());
+
+    let output = cmd.assert().failure().get_output().clone();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Should trigger MD001 error because default config is used, not outer config
+    assert!(
+        stderr.contains("MD001"),
+        "Should use default config and detect MD001 violation, not outer config"
+    );
 }
 
 /// Test CLI with QUICKMARK_CONFIG environment variable pointing to valid config

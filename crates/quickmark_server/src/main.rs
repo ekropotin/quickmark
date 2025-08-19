@@ -1,7 +1,10 @@
 use anyhow::Result;
-use quickmark_linter::config::{config_in_path_or_default, RuleSeverity};
+use quickmark_linter::config::{
+    config_in_path_or_default, discover_config_with_workspace_or_default, RuleSeverity,
+};
 use quickmark_linter::linter::{MultiRuleLinter, RuleViolation};
 use std::env;
+use std::path::PathBuf;
 use tokio::io::{stdin, stdout};
 use tower_lsp::jsonrpc;
 use tower_lsp::lsp_types::*;
@@ -10,20 +13,33 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 #[derive(Debug)]
 struct Backend {
     client: Client,
+    workspace_roots: std::sync::Mutex<Vec<PathBuf>>,
 }
 
 impl Backend {
     fn new(client: Client) -> Self {
-        Self { client }
+        Self {
+            client,
+            workspace_roots: std::sync::Mutex::new(Vec::new()),
+        }
     }
 
     fn lint_document(&self, uri: &Url, content: &str) -> Result<Vec<Diagnostic>> {
-        let pwd = env::current_dir()?;
-        let config = config_in_path_or_default(&pwd)?;
-
         let file_path = uri
             .to_file_path()
             .map_err(|_| anyhow::anyhow!("Invalid file path"))?;
+
+        // Use hierarchical config discovery with workspace roots or fallback to old behavior
+        let config = {
+            let workspace_roots = self.workspace_roots.lock().unwrap();
+            if workspace_roots.is_empty() {
+                // Fallback to old behavior if no workspace roots
+                let pwd = env::current_dir()?;
+                config_in_path_or_default(&pwd)?
+            } else {
+                discover_config_with_workspace_or_default(&file_path, workspace_roots.clone())?
+            }
+        };
 
         let mut linter = MultiRuleLinter::new_for_document(file_path, config.clone(), content);
         let violations = linter.analyze();
@@ -93,6 +109,35 @@ impl Backend {
 impl LanguageServer for Backend {
     async fn initialize(&self, params: InitializeParams) -> jsonrpc::Result<InitializeResult> {
         eprintln!("LSP server initializing with params: {:?}", params.root_uri);
+
+        // Extract workspace roots from initialization parameters
+        let mut workspace_roots = Vec::new();
+
+        // Priority 1: workspace_folders from params
+        if let Some(folders) = params.workspace_folders {
+            for folder in folders {
+                if let Ok(path) = folder.uri.to_file_path() {
+                    workspace_roots.push(path);
+                }
+            }
+        }
+
+        // Priority 2: root_uri as fallback
+        if workspace_roots.is_empty() {
+            if let Some(root_uri) = params.root_uri {
+                if let Ok(path) = root_uri.to_file_path() {
+                    workspace_roots.push(path);
+                }
+            }
+        }
+
+        // Store workspace roots
+        {
+            let mut stored_roots = self.workspace_roots.lock().unwrap();
+            *stored_roots = workspace_roots.clone();
+        }
+
+        eprintln!("Workspace roots configured: {:?}", workspace_roots);
 
         Ok(InitializeResult {
             capabilities: ServerCapabilities {
