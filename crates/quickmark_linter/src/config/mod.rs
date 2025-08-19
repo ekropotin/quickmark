@@ -638,39 +638,6 @@ impl QuickmarkConfig {
     }
 }
 
-// Default functions for TOML deserialization
-pub fn default_indent() -> usize {
-    2 // MD007UlIndentTable default
-}
-
-pub fn default_br_spaces() -> usize {
-    2 // MD009TrailingSpacesTable default
-}
-
-pub fn default_spaces_per_tab() -> usize {
-    1 // MD010HardTabsTable default
-}
-
-pub fn default_one() -> usize {
-    1 // MD012MultipleBlankLinesTable default
-}
-
-pub fn default_empty_code_languages() -> Vec<String> {
-    Vec::new() // MD010HardTabsTable default
-}
-
-pub fn default_line_length() -> usize {
-    80 // MD013LineLengthTable default
-}
-
-pub fn default_code_block_line_length() -> usize {
-    80 // MD013LineLengthTable default
-}
-
-pub fn default_heading_line_length() -> usize {
-    80 // MD013LineLengthTable default
-}
-
 pub fn default_true() -> bool {
     true
 }
