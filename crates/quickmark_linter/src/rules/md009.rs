@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use std::collections::HashSet;
 use std::rc::Rc;
 
@@ -7,6 +8,35 @@ use crate::{
     linter::{range_from_tree_sitter, RuleViolation},
     rules::{Context, Rule, RuleLinter, RuleType},
 };
+
+// MD009-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD009TrailingSpacesTable {
+    #[serde(default = "default_br_spaces")]
+    pub br_spaces: usize,
+    #[serde(default = "default_false")]
+    pub list_item_empty_lines: bool,
+    #[serde(default = "default_false")]
+    pub strict: bool,
+}
+
+impl Default for MD009TrailingSpacesTable {
+    fn default() -> Self {
+        Self {
+            br_spaces: 2,
+            list_item_empty_lines: false,
+            strict: false,
+        }
+    }
+}
+
+fn default_br_spaces() -> usize {
+    2
+}
+
+fn default_false() -> bool {
+    false
+}
 
 /// MD009 Trailing Spaces Rule Linter
 ///

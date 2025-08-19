@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use std::collections::HashSet;
 use std::rc::Rc;
 use tree_sitter::Node;
@@ -6,6 +7,39 @@ use crate::{
     linter::{range_from_tree_sitter, RuleViolation},
     rules::{Context, Rule, RuleLinter, RuleType},
 };
+
+// MD010-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD010HardTabsTable {
+    #[serde(default = "default_true")]
+    pub code_blocks: bool,
+    #[serde(default = "default_empty_code_languages")]
+    pub ignore_code_languages: Vec<String>,
+    #[serde(default = "default_spaces_per_tab")]
+    pub spaces_per_tab: usize,
+}
+
+impl Default for MD010HardTabsTable {
+    fn default() -> Self {
+        Self {
+            code_blocks: true,
+            ignore_code_languages: Vec::new(),
+            spaces_per_tab: 1,
+        }
+    }
+}
+
+fn default_true() -> bool {
+    true
+}
+
+fn default_empty_code_languages() -> Vec<String> {
+    Vec::new()
+}
+
+fn default_spaces_per_tab() -> usize {
+    1
+}
 
 /// MD010 Hard Tabs Rule Linter
 ///

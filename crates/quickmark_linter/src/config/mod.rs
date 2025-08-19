@@ -18,25 +18,23 @@ pub enum RuleSeverity {
 // Re-export MD003 configuration types for backward compatibility
 pub use crate::rules::md003::{HeadingStyle, MD003HeadingStyleTable};
 
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub enum UlStyle {
-    #[serde(rename = "asterisk")]
-    Asterisk,
-    #[serde(rename = "consistent")]
-    Consistent,
-    #[serde(rename = "dash")]
-    Dash,
-    #[serde(rename = "plus")]
-    Plus,
-    #[serde(rename = "sublist")]
-    Sublist,
-}
+// Re-export MD004 configuration types for backward compatibility
+pub use crate::rules::md004::{MD004UlStyleTable, UlStyle};
 
-impl Default for UlStyle {
-    fn default() -> Self {
-        Self::Consistent
-    }
-}
+// Re-export MD007 configuration types for backward compatibility
+pub use crate::rules::md007::MD007UlIndentTable;
+
+// Re-export MD009 configuration types for backward compatibility
+pub use crate::rules::md009::MD009TrailingSpacesTable;
+
+// Re-export MD010 configuration types for backward compatibility
+pub use crate::rules::md010::MD010HardTabsTable;
+
+// Re-export MD012 configuration types for backward compatibility
+pub use crate::rules::md012::MD012MultipleBlankLinesTable;
+
+// Re-export MD013 configuration types for backward compatibility
+pub use crate::rules::md013::MD013LineLengthTable;
 
 #[derive(Debug, PartialEq, Clone, Copy, Deserialize)]
 pub enum OlPrefixStyle {
@@ -57,20 +55,6 @@ impl Default for OlPrefixStyle {
 }
 
 #[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD004UlStyleTable {
-    #[serde(default)]
-    pub style: UlStyle,
-}
-
-impl Default for MD004UlStyleTable {
-    fn default() -> Self {
-        Self {
-            style: UlStyle::Consistent,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD029OlPrefixTable {
     #[serde(default)]
     pub style: OlPrefixStyle,
@@ -80,41 +64,6 @@ impl Default for MD029OlPrefixTable {
     fn default() -> Self {
         Self {
             style: OlPrefixStyle::OneOrOrdered,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD013LineLengthTable {
-    #[serde(default = "default_line_length")]
-    pub line_length: usize,
-    #[serde(default = "default_code_block_line_length")]
-    pub code_block_line_length: usize,
-    #[serde(default = "default_heading_line_length")]
-    pub heading_line_length: usize,
-    #[serde(default = "default_true")]
-    pub code_blocks: bool,
-    #[serde(default = "default_true")]
-    pub headings: bool,
-    #[serde(default = "default_true")]
-    pub tables: bool,
-    #[serde(default = "default_false")]
-    pub strict: bool,
-    #[serde(default = "default_false")]
-    pub stern: bool,
-}
-
-impl Default for MD013LineLengthTable {
-    fn default() -> Self {
-        Self {
-            line_length: 80,
-            code_block_line_length: 80,
-            heading_line_length: 80,
-            code_blocks: true,
-            headings: true,
-            tables: true,
-            strict: false,
-            stern: false,
         }
     }
 }
@@ -319,78 +268,6 @@ impl Default for MD022HeadingsBlanksTable {
             lines_above: vec![1],
             lines_below: vec![1],
         }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD007UlIndentTable {
-    #[serde(default = "default_indent")]
-    pub indent: usize,
-    #[serde(default = "default_indent")]
-    pub start_indent: usize,
-    #[serde(default = "default_false")]
-    pub start_indented: bool,
-}
-
-impl Default for MD007UlIndentTable {
-    fn default() -> Self {
-        Self {
-            indent: 2,
-            start_indent: 2,
-            start_indented: false,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD009TrailingSpacesTable {
-    #[serde(default = "default_br_spaces")]
-    pub br_spaces: usize,
-    #[serde(default = "default_false")]
-    pub list_item_empty_lines: bool,
-    #[serde(default = "default_false")]
-    pub strict: bool,
-}
-
-impl Default for MD009TrailingSpacesTable {
-    fn default() -> Self {
-        Self {
-            br_spaces: 2,
-            list_item_empty_lines: false,
-            strict: false,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD010HardTabsTable {
-    #[serde(default = "default_true")]
-    pub code_blocks: bool,
-    #[serde(default = "default_empty_code_languages")]
-    pub ignore_code_languages: Vec<String>,
-    #[serde(default = "default_spaces_per_tab")]
-    pub spaces_per_tab: usize,
-}
-
-impl Default for MD010HardTabsTable {
-    fn default() -> Self {
-        Self {
-            code_blocks: true,
-            ignore_code_languages: Vec::new(),
-            spaces_per_tab: 1,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD012MultipleBlankLinesTable {
-    #[serde(default = "default_one")]
-    pub maximum: usize,
-}
-
-impl Default for MD012MultipleBlankLinesTable {
-    fn default() -> Self {
-        Self { maximum: 1 }
     }
 }
 
@@ -759,39 +636,6 @@ impl QuickmarkConfig {
         normalize_severities(&mut config.linters.severity);
         config
     }
-}
-
-// Default functions for TOML deserialization
-pub fn default_indent() -> usize {
-    MD007UlIndentTable::default().indent
-}
-
-pub fn default_br_spaces() -> usize {
-    MD009TrailingSpacesTable::default().br_spaces
-}
-
-pub fn default_spaces_per_tab() -> usize {
-    MD010HardTabsTable::default().spaces_per_tab
-}
-
-pub fn default_one() -> usize {
-    MD012MultipleBlankLinesTable::default().maximum
-}
-
-pub fn default_empty_code_languages() -> Vec<String> {
-    MD010HardTabsTable::default().ignore_code_languages
-}
-
-pub fn default_line_length() -> usize {
-    MD013LineLengthTable::default().line_length
-}
-
-pub fn default_code_block_line_length() -> usize {
-    MD013LineLengthTable::default().code_block_line_length
-}
-
-pub fn default_heading_line_length() -> usize {
-    MD013LineLengthTable::default().heading_line_length
 }
 
 pub fn default_true() -> bool {
