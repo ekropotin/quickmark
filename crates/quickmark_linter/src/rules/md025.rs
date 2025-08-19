@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use std::rc::Rc;
 
 use tree_sitter::Node;
@@ -6,6 +7,24 @@ use crate::{
     linter::{range_from_tree_sitter, Context, RuleLinter, RuleViolation},
     rules::{Rule, RuleType},
 };
+
+// MD025-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD025SingleH1Table {
+    #[serde(default)]
+    pub level: u8,
+    #[serde(default)]
+    pub front_matter_title: String,
+}
+
+impl Default for MD025SingleH1Table {
+    fn default() -> Self {
+        Self {
+            level: 1,
+            front_matter_title: r"^\s*title\s*[:=]".to_string(),
+        }
+    }
+}
 
 #[derive(Debug)]
 struct HeadingInfo {

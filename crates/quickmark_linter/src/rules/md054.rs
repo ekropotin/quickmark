@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use std::collections::HashSet;
 use std::rc::Rc;
 
@@ -9,6 +10,36 @@ use crate::{
     linter::{range_from_tree_sitter, RuleViolation},
     rules::{Context, Rule, RuleLinter, RuleType},
 };
+
+// MD054-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD054LinkImageStyleTable {
+    #[serde(default)]
+    pub autolink: bool,
+    #[serde(default)]
+    pub inline: bool,
+    #[serde(default)]
+    pub full: bool,
+    #[serde(default)]
+    pub collapsed: bool,
+    #[serde(default)]
+    pub shortcut: bool,
+    #[serde(default)]
+    pub url_inline: bool,
+}
+
+impl Default for MD054LinkImageStyleTable {
+    fn default() -> Self {
+        Self {
+            autolink: true,
+            inline: true,
+            full: true,
+            collapsed: true,
+            shortcut: true,
+            url_inline: true,
+        }
+    }
+}
 
 // Combined regular expressions for detecting different link and image styles.
 // This improves performance by reducing the number of passes over the text.

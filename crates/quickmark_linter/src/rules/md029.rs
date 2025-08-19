@@ -1,12 +1,45 @@
+use serde::Deserialize;
 use std::rc::Rc;
 
 use tree_sitter::Node;
 
 use crate::{
-    config::OlPrefixStyle,
     linter::{range_from_tree_sitter, RuleViolation},
     rules::{Context, Rule, RuleLinter, RuleType},
 };
+
+// MD029-specific configuration types
+#[derive(Debug, PartialEq, Clone, Copy, Deserialize)]
+pub enum OlPrefixStyle {
+    #[serde(rename = "one")]
+    One,
+    #[serde(rename = "ordered")]
+    Ordered,
+    #[serde(rename = "one_or_ordered")]
+    OneOrOrdered,
+    #[serde(rename = "zero")]
+    Zero,
+}
+
+impl Default for OlPrefixStyle {
+    fn default() -> Self {
+        Self::OneOrOrdered
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD029OlPrefixTable {
+    #[serde(default)]
+    pub style: OlPrefixStyle,
+}
+
+impl Default for MD029OlPrefixTable {
+    fn default() -> Self {
+        Self {
+            style: OlPrefixStyle::OneOrOrdered,
+        }
+    }
+}
 
 pub(crate) struct MD029Linter {
     context: Rc<Context>,

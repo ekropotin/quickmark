@@ -15,492 +15,38 @@ pub enum RuleSeverity {
     Off,
 }
 
-// Re-export MD003 configuration types for backward compatibility
 pub use crate::rules::md003::{HeadingStyle, MD003HeadingStyleTable};
-
-// Re-export MD004 configuration types for backward compatibility
 pub use crate::rules::md004::{MD004UlStyleTable, UlStyle};
-
-// Re-export MD007 configuration types for backward compatibility
 pub use crate::rules::md007::MD007UlIndentTable;
-
-// Re-export MD009 configuration types for backward compatibility
 pub use crate::rules::md009::MD009TrailingSpacesTable;
-
-// Re-export MD010 configuration types for backward compatibility
 pub use crate::rules::md010::MD010HardTabsTable;
-
-// Re-export MD012 configuration types for backward compatibility
 pub use crate::rules::md012::MD012MultipleBlankLinesTable;
-
-// Re-export MD013 configuration types for backward compatibility
 pub use crate::rules::md013::MD013LineLengthTable;
-
-#[derive(Debug, PartialEq, Clone, Copy, Deserialize)]
-pub enum OlPrefixStyle {
-    #[serde(rename = "one")]
-    One,
-    #[serde(rename = "ordered")]
-    Ordered,
-    #[serde(rename = "one_or_ordered")]
-    OneOrOrdered,
-    #[serde(rename = "zero")]
-    Zero,
-}
-
-impl Default for OlPrefixStyle {
-    fn default() -> Self {
-        Self::OneOrOrdered
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD029OlPrefixTable {
-    #[serde(default)]
-    pub style: OlPrefixStyle,
-}
-
-impl Default for MD029OlPrefixTable {
-    fn default() -> Self {
-        Self {
-            style: OlPrefixStyle::OneOrOrdered,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Default, Deserialize)]
-pub struct MD051LinkFragmentsTable {
-    #[serde(default = "default_false")]
-    pub ignore_case: bool,
-    #[serde(default = "default_empty_string")]
-    pub ignored_pattern: String,
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD052ReferenceLinksImagesTable {
-    #[serde(default = "default_false")]
-    pub shortcut_syntax: bool,
-    #[serde(default = "default_ignored_labels")]
-    pub ignored_labels: Vec<String>,
-}
-
-impl Default for MD052ReferenceLinksImagesTable {
-    fn default() -> Self {
-        Self {
-            shortcut_syntax: false,
-            ignored_labels: vec!["x".to_string()],
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD053LinkImageReferenceDefinitionsTable {
-    #[serde(default = "default_ignored_definitions")]
-    pub ignored_definitions: Vec<String>,
-}
-
-impl Default for MD053LinkImageReferenceDefinitionsTable {
-    fn default() -> Self {
-        Self {
-            ignored_definitions: vec!["//".to_string()],
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD054LinkImageStyleTable {
-    #[serde(default = "default_true")]
-    pub autolink: bool,
-    #[serde(default = "default_true")]
-    pub inline: bool,
-    #[serde(default = "default_true")]
-    pub full: bool,
-    #[serde(default = "default_true")]
-    pub collapsed: bool,
-    #[serde(default = "default_true")]
-    pub shortcut: bool,
-    #[serde(default = "default_true")]
-    pub url_inline: bool,
-}
-
-impl Default for MD054LinkImageStyleTable {
-    fn default() -> Self {
-        Self {
-            autolink: true,
-            inline: true,
-            full: true,
-            collapsed: true,
-            shortcut: true,
-            url_inline: true,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub enum TablePipeStyle {
-    #[serde(rename = "consistent")]
-    Consistent,
-    #[serde(rename = "leading_and_trailing")]
-    LeadingAndTrailing,
-    #[serde(rename = "leading_only")]
-    LeadingOnly,
-    #[serde(rename = "trailing_only")]
-    TrailingOnly,
-    #[serde(rename = "no_leading_or_trailing")]
-    NoLeadingOrTrailing,
-}
-
-impl Default for TablePipeStyle {
-    fn default() -> Self {
-        Self::Consistent
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD055TablePipeStyleTable {
-    #[serde(default)]
-    pub style: TablePipeStyle,
-}
-
-impl Default for MD055TablePipeStyleTable {
-    fn default() -> Self {
-        Self {
-            style: TablePipeStyle::Consistent,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD059DescriptiveLinkTextTable {
-    #[serde(default = "default_prohibited_texts")]
-    pub prohibited_texts: Vec<String>,
-}
-
-impl Default for MD059DescriptiveLinkTextTable {
-    fn default() -> Self {
-        Self {
-            prohibited_texts: vec![
-                "click here".to_string(),
-                "here".to_string(),
-                "link".to_string(),
-                "more".to_string(),
-            ],
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD044ProperNamesTable {
-    #[serde(default = "default_empty_vec")]
-    pub names: Vec<String>,
-    #[serde(default = "default_true")]
-    pub code_blocks: bool,
-    #[serde(default = "default_true")]
-    pub html_elements: bool,
-}
-
-impl Default for MD044ProperNamesTable {
-    fn default() -> Self {
-        Self {
-            names: Vec::new(),
-            code_blocks: true,
-            html_elements: true,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Default, Deserialize)]
-pub struct MD024MultipleHeadingsTable {
-    #[serde(default = "default_false")]
-    pub siblings_only: bool,
-    #[serde(default = "default_false")]
-    pub allow_different_nesting: bool,
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD025SingleH1Table {
-    #[serde(default = "default_level_1")]
-    pub level: u8,
-    #[serde(default = "default_front_matter_title")]
-    pub front_matter_title: String,
-}
-
-impl Default for MD025SingleH1Table {
-    fn default() -> Self {
-        Self {
-            level: 1,
-            front_matter_title: r"^\s*title\s*[:=]".to_string(),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD041FirstLineHeadingTable {
-    #[serde(default = "default_allow_preamble")]
-    pub allow_preamble: bool,
-    #[serde(default = "default_front_matter_title")]
-    pub front_matter_title: String,
-    #[serde(default = "default_level_1")]
-    pub level: u8,
-}
-
-impl Default for MD041FirstLineHeadingTable {
-    fn default() -> Self {
-        Self {
-            allow_preamble: false,
-            front_matter_title: r"^\s*title\s*[:=]".to_string(),
-            level: 1,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD022HeadingsBlanksTable {
-    #[serde(default = "default_lines_config")]
-    pub lines_above: Vec<i32>,
-    #[serde(default = "default_lines_config")]
-    pub lines_below: Vec<i32>,
-}
-
-impl Default for MD022HeadingsBlanksTable {
-    fn default() -> Self {
-        Self {
-            lines_above: vec![1],
-            lines_below: vec![1],
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD031FencedCodeBlanksTable {
-    #[serde(default = "default_list_items_true")]
-    pub list_items: bool,
-}
-
-impl Default for MD031FencedCodeBlanksTable {
-    fn default() -> Self {
-        Self { list_items: true }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Default, Deserialize)]
-pub struct MD043RequiredHeadingsTable {
-    #[serde(default = "default_empty_headings")]
-    pub headings: Vec<String>,
-    #[serde(default = "default_false")]
-    pub match_case: bool,
-}
-
-#[derive(Debug, PartialEq, Clone, Default, Deserialize)]
-pub struct MD026TrailingPunctuationTable {
-    #[serde(default = "default_trailing_punctuation")]
-    pub punctuation: String,
-}
-
-impl MD026TrailingPunctuationTable {
-    pub fn with_default_punctuation() -> Self {
-        Self {
-            punctuation: ".,;:!。，；：！".to_string(), // Default without '?' chars
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD036EmphasisAsHeadingTable {
-    #[serde(default = "default_md036_punctuation")]
-    pub punctuation: String,
-}
-
-impl Default for MD036EmphasisAsHeadingTable {
-    fn default() -> Self {
-        Self {
-            punctuation: ".,;:!?。，；：！？".to_string(),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD027BlockquoteSpacesTable {
-    #[serde(default = "default_blockquote_list_items")]
-    pub list_items: bool,
-}
-
-impl Default for MD027BlockquoteSpacesTable {
-    fn default() -> Self {
-        Self { list_items: true }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Default, Deserialize)]
-pub struct MD033InlineHtmlTable {
-    #[serde(default = "default_empty_vec")]
-    pub allowed_elements: Vec<String>,
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD030ListMarkerSpaceTable {
-    #[serde(default = "default_ul_single")]
-    pub ul_single: usize,
-    #[serde(default = "default_ol_single")]
-    pub ol_single: usize,
-    #[serde(default = "default_ul_multi")]
-    pub ul_multi: usize,
-    #[serde(default = "default_ol_multi")]
-    pub ol_multi: usize,
-}
-
-impl Default for MD030ListMarkerSpaceTable {
-    fn default() -> Self {
-        Self {
-            ul_single: 1,
-            ol_single: 1,
-            ul_multi: 1,
-            ol_multi: 1,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Default, Deserialize)]
-pub struct MD040FencedCodeLanguageTable {
-    #[serde(default = "default_empty_vec")]
-    pub allowed_languages: Vec<String>,
-    #[serde(default = "default_false")]
-    pub language_only: bool,
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub enum CodeBlockStyle {
-    #[serde(rename = "consistent")]
-    Consistent,
-    #[serde(rename = "fenced")]
-    Fenced,
-    #[serde(rename = "indented")]
-    Indented,
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub enum CodeFenceStyle {
-    #[serde(rename = "consistent")]
-    Consistent,
-    #[serde(rename = "backtick")]
-    Backtick,
-    #[serde(rename = "tilde")]
-    Tilde,
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub enum EmphasisStyle {
-    #[serde(rename = "consistent")]
-    Consistent,
-    #[serde(rename = "asterisk")]
-    Asterisk,
-    #[serde(rename = "underscore")]
-    Underscore,
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub enum StrongStyle {
-    #[serde(rename = "consistent")]
-    Consistent,
-    #[serde(rename = "asterisk")]
-    Asterisk,
-    #[serde(rename = "underscore")]
-    Underscore,
-}
-
-impl Default for CodeBlockStyle {
-    fn default() -> Self {
-        Self::Consistent
-    }
-}
-
-impl Default for CodeFenceStyle {
-    fn default() -> Self {
-        Self::Consistent
-    }
-}
-
-impl Default for EmphasisStyle {
-    fn default() -> Self {
-        Self::Consistent
-    }
-}
-
-impl Default for StrongStyle {
-    fn default() -> Self {
-        Self::Consistent
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD046CodeBlockStyleTable {
-    #[serde(default)]
-    pub style: CodeBlockStyle,
-}
-
-impl Default for MD046CodeBlockStyleTable {
-    fn default() -> Self {
-        Self {
-            style: CodeBlockStyle::Consistent,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD048CodeFenceStyleTable {
-    #[serde(default)]
-    pub style: CodeFenceStyle,
-}
-
-impl Default for MD048CodeFenceStyleTable {
-    fn default() -> Self {
-        Self {
-            style: CodeFenceStyle::Consistent,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD049EmphasisStyleTable {
-    #[serde(default)]
-    pub style: EmphasisStyle,
-}
-
-impl Default for MD049EmphasisStyleTable {
-    fn default() -> Self {
-        Self {
-            style: EmphasisStyle::Consistent,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD050StrongStyleTable {
-    #[serde(default)]
-    pub style: StrongStyle,
-}
-
-impl Default for MD050StrongStyleTable {
-    fn default() -> Self {
-        Self {
-            style: StrongStyle::Consistent,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Deserialize)]
-pub struct MD035HrStyleTable {
-    #[serde(default = "default_hr_style")]
-    pub style: String,
-}
-
-impl Default for MD035HrStyleTable {
-    fn default() -> Self {
-        Self {
-            style: "consistent".to_string(),
-        }
-    }
-}
+pub use crate::rules::md022::MD022HeadingsBlanksTable;
+pub use crate::rules::md024::MD024MultipleHeadingsTable;
+pub use crate::rules::md025::MD025SingleH1Table;
+pub use crate::rules::md026::MD026TrailingPunctuationTable;
+pub use crate::rules::md027::MD027BlockquoteSpacesTable;
+pub use crate::rules::md029::{MD029OlPrefixTable, OlPrefixStyle};
+pub use crate::rules::md030::MD030ListMarkerSpaceTable;
+pub use crate::rules::md031::MD031FencedCodeBlanksTable;
+pub use crate::rules::md033::MD033InlineHtmlTable;
+pub use crate::rules::md035::MD035HrStyleTable;
+pub use crate::rules::md036::MD036EmphasisAsHeadingTable;
+pub use crate::rules::md040::MD040FencedCodeLanguageTable;
+pub use crate::rules::md041::MD041FirstLineHeadingTable;
+pub use crate::rules::md043::MD043RequiredHeadingsTable;
+pub use crate::rules::md044::MD044ProperNamesTable;
+pub use crate::rules::md046::{CodeBlockStyle, MD046CodeBlockStyleTable};
+pub use crate::rules::md048::{CodeFenceStyle, MD048CodeFenceStyleTable};
+pub use crate::rules::md049::{EmphasisStyle, MD049EmphasisStyleTable};
+pub use crate::rules::md050::{MD050StrongStyleTable, StrongStyle};
+pub use crate::rules::md051::MD051LinkFragmentsTable;
+pub use crate::rules::md052::MD052ReferenceLinksImagesTable;
+pub use crate::rules::md053::MD053LinkImageReferenceDefinitionsTable;
+pub use crate::rules::md054::MD054LinkImageStyleTable;
+pub use crate::rules::md055::{MD055TablePipeStyleTable, TablePipeStyle};
+pub use crate::rules::md059::MD059DescriptiveLinkTextTable;
 
 #[derive(Debug, Default, PartialEq, Clone, Deserialize)]
 pub struct LintersSettingsTable {
@@ -638,95 +184,6 @@ impl QuickmarkConfig {
     }
 }
 
-pub fn default_true() -> bool {
-    true
-}
-
-pub fn default_false() -> bool {
-    false
-}
-
-pub fn default_empty_string() -> String {
-    String::new()
-}
-
-pub fn default_level_1() -> u8 {
-    MD025SingleH1Table::default().level
-}
-
-pub fn default_front_matter_title() -> String {
-    MD025SingleH1Table::default().front_matter_title
-}
-
-pub fn default_allow_preamble() -> bool {
-    MD041FirstLineHeadingTable::default().allow_preamble
-}
-
-pub fn default_trailing_punctuation() -> String {
-    ".,;:!。，；：！".to_string()
-}
-
-pub fn default_blockquote_list_items() -> bool {
-    MD027BlockquoteSpacesTable::default().list_items
-}
-
-pub fn default_ul_single() -> usize {
-    MD030ListMarkerSpaceTable::default().ul_single
-}
-
-pub fn default_ol_single() -> usize {
-    MD030ListMarkerSpaceTable::default().ol_single
-}
-
-pub fn default_ul_multi() -> usize {
-    MD030ListMarkerSpaceTable::default().ul_multi
-}
-
-pub fn default_ol_multi() -> usize {
-    MD030ListMarkerSpaceTable::default().ol_multi
-}
-
-pub fn default_lines_config() -> Vec<i32> {
-    vec![1]
-}
-
-pub fn default_list_items_true() -> bool {
-    true
-}
-
-pub fn default_empty_headings() -> Vec<String> {
-    Vec::new()
-}
-
-pub fn default_empty_vec() -> Vec<String> {
-    Vec::new()
-}
-
-pub fn default_hr_style() -> String {
-    "consistent".to_string()
-}
-
-pub fn default_md036_punctuation() -> String {
-    ".,;:!?。，；：！？".to_string()
-}
-
-pub fn default_prohibited_texts() -> Vec<String> {
-    vec![
-        "click here".to_string(),
-        "here".to_string(),
-        "link".to_string(),
-        "more".to_string(),
-    ]
-}
-
-pub fn default_ignored_labels() -> Vec<String> {
-    vec!["x".to_string()]
-}
-
-pub fn default_ignored_definitions() -> Vec<String> {
-    vec!["//".to_string()]
-}
-
 /// Parse a TOML configuration string into a QuickmarkConfig
 pub fn parse_toml_config(config_str: &str) -> Result<QuickmarkConfig> {
     let mut config: QuickmarkConfig = toml::from_str(config_str)?;
@@ -793,7 +250,7 @@ mod test {
         MD049EmphasisStyleTable, MD050StrongStyleTable, MD051LinkFragmentsTable,
         MD052ReferenceLinksImagesTable, MD053LinkImageReferenceDefinitionsTable,
         MD054LinkImageStyleTable, MD055TablePipeStyleTable, MD059DescriptiveLinkTextTable,
-        RuleSeverity, UlStyle,
+        RuleSeverity,
     };
 
     use super::{normalize_severities, QuickmarkConfig};
@@ -911,21 +368,6 @@ mod test {
         );
     }
 
-    // TOML parsing tests
-    #[test]
-    fn test_parse_md028_config() {
-        let config_str = r#"
-        [linters.severity]
-        no-blanks-blockquote = 'warn'
-        "#;
-
-        let parsed = parse_toml_config(config_str).unwrap();
-        assert_eq!(
-            RuleSeverity::Warning,
-            *parsed.linters.severity.get("no-blanks-blockquote").unwrap()
-        );
-    }
-
     #[test]
     fn test_parse_toml_config_with_invalid_rules() {
         let config_str = r#"
@@ -947,82 +389,6 @@ mod test {
             *parsed.linters.severity.get("heading-style").unwrap()
         );
         assert_eq!(None, parsed.linters.severity.get("some-invalid-rule"));
-    }
-
-    #[test]
-    fn test_parse_md004_ul_style_config() {
-        let config_str = r#"
-        [linters.severity]
-        ul-style = 'err'
-
-        [linters.settings.ul-style]
-        style = 'asterisk'
-        "#;
-
-        let parsed = parse_toml_config(config_str).unwrap();
-        assert_eq!(
-            RuleSeverity::Error,
-            *parsed.linters.severity.get("ul-style").unwrap()
-        );
-        assert_eq!(UlStyle::Asterisk, parsed.linters.settings.ul_style.style);
-    }
-
-    #[test]
-    fn test_parse_md004_sublist_style_config() {
-        let config_str = r#"
-        [linters.severity]
-        ul-style = 'warn'
-
-        [linters.settings.ul-style]
-        style = 'sublist'
-        "#;
-
-        let parsed = parse_toml_config(config_str).unwrap();
-        assert_eq!(
-            RuleSeverity::Warning,
-            *parsed.linters.severity.get("ul-style").unwrap()
-        );
-        assert_eq!(UlStyle::Sublist, parsed.linters.settings.ul_style.style);
-    }
-
-    #[test]
-    fn test_parse_md007_ul_indent_config() {
-        let config_str = r#"
-        [linters.severity]
-        ul-indent = 'err'
-
-        [linters.settings.ul-indent]
-        indent = 4
-        start_indent = 3
-        start_indented = true
-        "#;
-
-        let parsed = parse_toml_config(config_str).unwrap();
-        assert_eq!(
-            RuleSeverity::Error,
-            *parsed.linters.severity.get("ul-indent").unwrap()
-        );
-        assert_eq!(4, parsed.linters.settings.ul_indent.indent);
-        assert_eq!(3, parsed.linters.settings.ul_indent.start_indent);
-        assert!(parsed.linters.settings.ul_indent.start_indented);
-    }
-
-    #[test]
-    fn test_parse_md007_default_values() {
-        let config_str = r#"
-        [linters.severity]
-        ul-indent = 'warn'
-        "#;
-
-        let parsed = parse_toml_config(config_str).unwrap();
-        assert_eq!(
-            RuleSeverity::Warning,
-            *parsed.linters.severity.get("ul-indent").unwrap()
-        );
-        // Test default values
-        assert_eq!(2, parsed.linters.settings.ul_indent.indent);
-        assert_eq!(2, parsed.linters.settings.ul_indent.start_indent);
-        assert!(!parsed.linters.settings.ul_indent.start_indented);
     }
 
     #[test]
@@ -1065,5 +431,460 @@ mod test {
             RuleSeverity::Error,
             *config.linters.severity.get("heading-style").unwrap()
         );
+    }
+
+    #[test]
+    fn test_parse_full_config_with_custom_parameters() {
+        let config_str = r#"
+        [linters.severity]
+        heading-style = 'warn'
+        ul-style = 'off'
+        line-length = 'err'
+        
+        [linters.settings.heading-style]
+        style = 'atx'
+        
+        [linters.settings.ul-style]
+        style = 'asterisk'
+        
+        [linters.settings.ol-prefix]
+        style = 'one'
+        
+        [linters.settings.ul-indent]
+        indent = 4
+        start_indent = 3
+        start_indented = true
+        
+        [linters.settings.no-trailing-spaces]
+        br_spaces = 3
+        list_item_empty_lines = true
+        strict = true
+        
+        [linters.settings.no-hard-tabs]
+        code_blocks = false
+        ignore_code_languages = ["python", "go"]
+        spaces_per_tab = 8
+        
+        [linters.settings.no-multiple-blanks]
+        maximum = 3
+        
+        [linters.settings.line-length]
+        line_length = 120
+        code_block_line_length = 100
+        heading_line_length = 90
+        code_blocks = false
+        headings = false
+        tables = false
+        strict = true
+        stern = true
+        
+        [linters.settings.blanks-around-headings]
+        lines_above = [2, 1, 1, 1, 1, 1]
+        lines_below = [2, 1, 1, 1, 1, 1]
+        
+        [linters.settings.single-h1]
+        level = 2
+        front_matter_title = "^title:"
+        
+        [linters.settings.first-line-heading]
+        allow_preamble = true
+        
+        [linters.settings.no-trailing-punctuation]
+        punctuation = ".,;:!?"
+        
+        [linters.settings.no-multiple-space-blockquote]
+        list_items = false
+        
+        [linters.settings.list-marker-space]
+        ul_single = 2
+        ol_single = 3
+        ul_multi = 3
+        ol_multi = 4
+        
+        [linters.settings.blanks-around-fences]
+        list_items = false
+        
+        [linters.settings.no-inline-html]
+        allowed_elements = ["br", "img"]
+        
+        [linters.settings.hr-style]
+        style = "asterisk"
+        
+        [linters.settings.no-emphasis-as-heading]
+        punctuation = ".,;:!?"
+        
+        [linters.settings.fenced-code-language]
+        allowed_languages = ["rust", "python"]
+        language_only = true
+        
+        [linters.settings.code-block-style]
+        style = 'fenced'
+        
+        [linters.settings.code-fence-style]
+        style = 'backtick'
+        
+        [linters.settings.emphasis-style]
+        style = 'asterisk'
+        
+        [linters.settings.strong-style]
+        style = 'underscore'
+        
+        [linters.settings.no-duplicate-heading]
+        siblings_only = false
+        allow_different_nesting = false
+        
+        [linters.settings.required-headings]
+        headings = ["Introduction", "Usage", "Examples"]
+        match_case = true
+        
+        [linters.settings.proper-names]
+        names = ["JavaScript", "GitHub", "API"]
+        code_blocks = false
+        html_elements = false
+        
+        [linters.settings.link-fragments]
+        
+        [linters.settings.reference-links-images]
+        ignored_labels = ["x", "skip"]
+        
+        [linters.settings.link-image-reference-definitions]
+        ignored_definitions = ["//", "skip"]
+        
+        [linters.settings.link-image-style]
+        autolink = false
+        inline = true
+        full = true
+        collapsed = false
+        shortcut = false
+        url_inline = false
+        
+        [linters.settings.table-pipe-style]
+        style = 'leading_and_trailing'
+        
+        [linters.settings.descriptive-link-text]
+        prohibited_texts = ["click here", "read more", "see here"]
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+
+        // Verify severities
+        assert_eq!(
+            RuleSeverity::Warning,
+            *parsed.linters.severity.get("heading-style").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Off,
+            *parsed.linters.severity.get("ul-style").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("line-length").unwrap()
+        );
+
+        // Verify heading-style settings
+        assert_eq!(
+            HeadingStyle::ATX,
+            parsed.linters.settings.heading_style.style
+        );
+
+        // Verify ul-style settings
+        use crate::rules::md004::UlStyle;
+        assert_eq!(UlStyle::Asterisk, parsed.linters.settings.ul_style.style);
+
+        // Verify ul-indent settings
+        assert_eq!(4, parsed.linters.settings.ul_indent.indent);
+        assert_eq!(3, parsed.linters.settings.ul_indent.start_indent);
+        assert!(parsed.linters.settings.ul_indent.start_indented);
+
+        // Verify trailing-spaces settings
+        assert_eq!(3, parsed.linters.settings.trailing_spaces.br_spaces);
+        assert!(
+            parsed
+                .linters
+                .settings
+                .trailing_spaces
+                .list_item_empty_lines
+        );
+        assert!(parsed.linters.settings.trailing_spaces.strict);
+
+        // Verify line-length settings
+        assert_eq!(120, parsed.linters.settings.line_length.line_length);
+        assert_eq!(
+            100,
+            parsed.linters.settings.line_length.code_block_line_length
+        );
+        assert_eq!(90, parsed.linters.settings.line_length.heading_line_length);
+        assert!(!parsed.linters.settings.line_length.code_blocks);
+        assert!(!parsed.linters.settings.line_length.headings);
+        assert!(!parsed.linters.settings.line_length.tables);
+        assert!(parsed.linters.settings.line_length.strict);
+        assert!(parsed.linters.settings.line_length.stern);
+
+        // Verify single-h1 settings
+        assert_eq!(2, parsed.linters.settings.single_h1.level);
+        assert_eq!(
+            "^title:",
+            parsed.linters.settings.single_h1.front_matter_title
+        );
+
+        // Verify ol-prefix settings
+        use crate::rules::md029::OlPrefixStyle;
+        assert_eq!(OlPrefixStyle::One, parsed.linters.settings.ol_prefix.style);
+
+        // Verify hard-tabs settings
+        assert!(!parsed.linters.settings.hard_tabs.code_blocks);
+        assert_eq!(
+            vec!["python", "go"],
+            parsed.linters.settings.hard_tabs.ignore_code_languages
+        );
+        assert_eq!(8, parsed.linters.settings.hard_tabs.spaces_per_tab);
+
+        // Verify multiple-blank-lines settings
+        assert_eq!(3, parsed.linters.settings.multiple_blank_lines.maximum);
+
+        // Verify headings-blanks settings
+        assert_eq!(
+            vec![2, 1, 1, 1, 1, 1],
+            parsed.linters.settings.headings_blanks.lines_above
+        );
+        assert_eq!(
+            vec![2, 1, 1, 1, 1, 1],
+            parsed.linters.settings.headings_blanks.lines_below
+        );
+
+        // Verify first-line-heading settings
+        assert!(parsed.linters.settings.first_line_heading.allow_preamble);
+
+        // Verify trailing-punctuation settings
+        assert_eq!(
+            ".,;:!?",
+            parsed.linters.settings.trailing_punctuation.punctuation
+        );
+
+        // Verify blockquote-spaces settings
+        assert!(!parsed.linters.settings.blockquote_spaces.list_items);
+
+        // Verify list-marker-space settings
+        assert_eq!(2, parsed.linters.settings.list_marker_space.ul_single);
+        assert_eq!(3, parsed.linters.settings.list_marker_space.ol_single);
+        assert_eq!(3, parsed.linters.settings.list_marker_space.ul_multi);
+        assert_eq!(4, parsed.linters.settings.list_marker_space.ol_multi);
+
+        // Verify fenced-code-blanks settings
+        assert!(!parsed.linters.settings.fenced_code_blanks.list_items);
+
+        // Verify inline-html settings
+        assert_eq!(
+            vec!["br", "img"],
+            parsed.linters.settings.inline_html.allowed_elements
+        );
+
+        // Verify hr-style settings
+        assert_eq!("asterisk", parsed.linters.settings.hr_style.style);
+
+        // Verify emphasis-as-heading settings
+        assert_eq!(
+            ".,;:!?",
+            parsed.linters.settings.emphasis_as_heading.punctuation
+        );
+
+        // Verify fenced-code-language settings
+        assert_eq!(
+            vec!["rust", "python"],
+            parsed
+                .linters
+                .settings
+                .fenced_code_language
+                .allowed_languages
+        );
+        assert!(parsed.linters.settings.fenced_code_language.language_only);
+
+        // Verify code-block-style settings
+        use crate::rules::md046::CodeBlockStyle;
+        assert_eq!(
+            CodeBlockStyle::Fenced,
+            parsed.linters.settings.code_block_style.style
+        );
+
+        // Verify code-fence-style settings
+        use crate::rules::md048::CodeFenceStyle;
+        assert_eq!(
+            CodeFenceStyle::Backtick,
+            parsed.linters.settings.code_fence_style.style
+        );
+
+        // Verify emphasis-style settings
+        use crate::rules::md049::EmphasisStyle;
+        assert_eq!(
+            EmphasisStyle::Asterisk,
+            parsed.linters.settings.emphasis_style.style
+        );
+
+        // Verify strong-style settings
+        use crate::rules::md050::StrongStyle;
+        assert_eq!(
+            StrongStyle::Underscore,
+            parsed.linters.settings.strong_style.style
+        );
+
+        // Verify multiple-headings settings
+        assert!(!parsed.linters.settings.multiple_headings.siblings_only);
+        assert!(
+            !parsed
+                .linters
+                .settings
+                .multiple_headings
+                .allow_different_nesting
+        );
+
+        // Verify required-headings settings
+        assert_eq!(
+            vec!["Introduction", "Usage", "Examples"],
+            parsed.linters.settings.required_headings.headings
+        );
+        assert!(parsed.linters.settings.required_headings.match_case);
+
+        // Verify proper-names settings
+        assert_eq!(
+            vec!["JavaScript", "GitHub", "API"],
+            parsed.linters.settings.proper_names.names
+        );
+        assert!(!parsed.linters.settings.proper_names.code_blocks);
+        assert!(!parsed.linters.settings.proper_names.html_elements);
+
+        // Verify reference-links-images settings
+        assert_eq!(
+            vec!["x", "skip"],
+            parsed
+                .linters
+                .settings
+                .reference_links_images
+                .ignored_labels
+        );
+
+        // Verify link-image-reference-definitions settings
+        assert_eq!(
+            vec!["//", "skip"],
+            parsed
+                .linters
+                .settings
+                .link_image_reference_definitions
+                .ignored_definitions
+        );
+
+        // Verify link-image-style settings
+        assert!(!parsed.linters.settings.link_image_style.autolink);
+        assert!(parsed.linters.settings.link_image_style.inline);
+        assert!(parsed.linters.settings.link_image_style.full);
+        assert!(!parsed.linters.settings.link_image_style.collapsed);
+        assert!(!parsed.linters.settings.link_image_style.shortcut);
+        assert!(!parsed.linters.settings.link_image_style.url_inline);
+
+        // Verify table-pipe-style settings
+        use crate::rules::md055::TablePipeStyle;
+        assert_eq!(
+            TablePipeStyle::LeadingAndTrailing,
+            parsed.linters.settings.table_pipe_style.style
+        );
+
+        // Verify descriptive-link-text settings
+        assert_eq!(
+            vec!["click here", "read more", "see here"],
+            parsed
+                .linters
+                .settings
+                .descriptive_link_text
+                .prohibited_texts
+        );
+    }
+
+    #[test]
+    fn test_parse_empty_config_uses_defaults() {
+        let config_str = r#"
+        # Empty config - should use all defaults
+        "#;
+
+        let parsed = parse_toml_config(config_str).unwrap();
+
+        // Verify all rules have Error severity (normalized default)
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("heading-style").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("ul-style").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("line-length").unwrap()
+        );
+        assert_eq!(
+            RuleSeverity::Error,
+            *parsed.linters.severity.get("ul-indent").unwrap()
+        );
+
+        // Verify heading-style defaults
+        assert_eq!(
+            HeadingStyle::Consistent,
+            parsed.linters.settings.heading_style.style
+        );
+
+        // Verify ul-style defaults
+        use crate::rules::md004::UlStyle;
+        assert_eq!(UlStyle::Consistent, parsed.linters.settings.ul_style.style);
+
+        // Verify ul-indent defaults
+        assert_eq!(2, parsed.linters.settings.ul_indent.indent);
+        assert_eq!(2, parsed.linters.settings.ul_indent.start_indent);
+        assert!(!parsed.linters.settings.ul_indent.start_indented);
+
+        // Verify trailing-spaces defaults
+        assert_eq!(2, parsed.linters.settings.trailing_spaces.br_spaces);
+        assert!(
+            !parsed
+                .linters
+                .settings
+                .trailing_spaces
+                .list_item_empty_lines
+        );
+        assert!(!parsed.linters.settings.trailing_spaces.strict);
+
+        // Verify line-length defaults
+        assert_eq!(80, parsed.linters.settings.line_length.line_length);
+        assert_eq!(
+            80,
+            parsed.linters.settings.line_length.code_block_line_length
+        );
+        assert_eq!(80, parsed.linters.settings.line_length.heading_line_length);
+        assert!(parsed.linters.settings.line_length.code_blocks);
+        assert!(parsed.linters.settings.line_length.headings);
+        assert!(parsed.linters.settings.line_length.tables);
+        assert!(!parsed.linters.settings.line_length.strict);
+        assert!(!parsed.linters.settings.line_length.stern);
+
+        // Verify single-h1 defaults
+        assert_eq!(1, parsed.linters.settings.single_h1.level);
+        assert_eq!(
+            r"^\s*title\s*[:=]",
+            parsed.linters.settings.single_h1.front_matter_title
+        );
+
+        // Verify ol-prefix defaults
+        use crate::rules::md029::OlPrefixStyle;
+        assert_eq!(
+            OlPrefixStyle::OneOrOrdered,
+            parsed.linters.settings.ol_prefix.style
+        );
+
+        // Verify multiple-blank-lines defaults
+        assert_eq!(1, parsed.linters.settings.multiple_blank_lines.maximum);
+
+        // Verify hard-tabs defaults
+        assert_eq!(1, parsed.linters.settings.hard_tabs.spaces_per_tab);
+        assert!(parsed.linters.settings.hard_tabs.code_blocks);
+
+        // Verify first-line-heading defaults
+        assert!(!parsed.linters.settings.first_line_heading.allow_preamble);
     }
 }

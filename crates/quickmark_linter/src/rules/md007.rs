@@ -11,11 +11,11 @@ use crate::{
 // MD007-specific configuration types
 #[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD007UlIndentTable {
-    #[serde(default = "default_indent")]
+    #[serde(default)]
     pub indent: usize,
-    #[serde(default = "default_indent")]
+    #[serde(default)]
     pub start_indent: usize,
-    #[serde(default = "default_false")]
+    #[serde(default)]
     pub start_indented: bool,
 }
 
@@ -27,14 +27,6 @@ impl Default for MD007UlIndentTable {
             start_indented: false,
         }
     }
-}
-
-fn default_indent() -> usize {
-    2
-}
-
-fn default_false() -> bool {
-    false
 }
 
 pub(crate) struct MD007Linter {

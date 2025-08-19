@@ -11,7 +11,7 @@ use crate::{
 // MD012-specific configuration types
 #[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD012MultipleBlankLinesTable {
-    #[serde(default = "default_one")]
+    #[serde(default)]
     pub maximum: usize,
 }
 
@@ -19,10 +19,6 @@ impl Default for MD012MultipleBlankLinesTable {
     fn default() -> Self {
         Self { maximum: 1 }
     }
-}
-
-fn default_one() -> usize {
-    1
 }
 
 /// MD012 Multiple Consecutive Blank Lines Rule Linter

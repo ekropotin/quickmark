@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use std::rc::Rc;
 
 use tree_sitter::Node;
@@ -5,6 +6,21 @@ use tree_sitter::Node;
 use crate::linter::{range_from_tree_sitter, Context, RuleLinter, RuleViolation};
 
 use super::{Rule, RuleType};
+
+// MD036-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD036EmphasisAsHeadingTable {
+    #[serde(default)]
+    pub punctuation: String,
+}
+
+impl Default for MD036EmphasisAsHeadingTable {
+    fn default() -> Self {
+        Self {
+            punctuation: ".,;:!?。，；：！？".to_string(),
+        }
+    }
+}
 
 pub(crate) struct MD036Linter {
     context: Rc<Context>,

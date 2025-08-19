@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use std::rc::Rc;
 
 use tree_sitter::Node;
@@ -6,6 +7,30 @@ use crate::{
     linter::{range_from_tree_sitter, RuleViolation},
     rules::{Context, Rule, RuleLinter, RuleType},
 };
+
+// MD030-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD030ListMarkerSpaceTable {
+    #[serde(default)]
+    pub ul_single: usize,
+    #[serde(default)]
+    pub ol_single: usize,
+    #[serde(default)]
+    pub ul_multi: usize,
+    #[serde(default)]
+    pub ol_multi: usize,
+}
+
+impl Default for MD030ListMarkerSpaceTable {
+    fn default() -> Self {
+        Self {
+            ul_single: 1,
+            ol_single: 1,
+            ul_multi: 1,
+            ol_multi: 1,
+        }
+    }
+}
 
 pub(crate) struct MD030Linter {
     context: Rc<Context>,

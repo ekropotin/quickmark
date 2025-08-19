@@ -1,5 +1,6 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
+use serde::Deserialize;
 use std::{collections::HashSet, rc::Rc};
 use tree_sitter::Node;
 
@@ -7,6 +8,13 @@ use crate::{
     linter::{range_from_tree_sitter, Context, RuleLinter, RuleViolation},
     rules::{Rule, RuleType},
 };
+
+// MD033-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize, Default)]
+pub struct MD033InlineHtmlTable {
+    #[serde(default)]
+    pub allowed_elements: Vec<String>,
+}
 
 // Memoized regex patterns for HTML tag detection
 static HTML_TAG_REGEX: Lazy<Regex> = Lazy::new(|| {

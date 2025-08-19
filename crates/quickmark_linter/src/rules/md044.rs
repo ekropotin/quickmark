@@ -1,4 +1,5 @@
 use regex::Regex;
+use serde::Deserialize;
 use std::collections::HashSet;
 use std::rc::Rc;
 
@@ -6,6 +7,27 @@ use crate::{
     linter::{range_from_tree_sitter, Context, RuleLinter, RuleViolation},
     rules::{Rule, RuleType},
 };
+
+// MD044-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD044ProperNamesTable {
+    #[serde(default)]
+    pub names: Vec<String>,
+    #[serde(default)]
+    pub code_blocks: bool,
+    #[serde(default)]
+    pub html_elements: bool,
+}
+
+impl Default for MD044ProperNamesTable {
+    fn default() -> Self {
+        Self {
+            names: Vec::new(),
+            code_blocks: true,
+            html_elements: true,
+        }
+    }
+}
 
 pub(crate) struct MD044Linter {
     context: Rc<Context>,

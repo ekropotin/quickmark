@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use std::rc::Rc;
 
 use regex::Regex;
@@ -7,6 +8,27 @@ use crate::{
     linter::{range_from_tree_sitter, Context, RuleLinter, RuleViolation},
     rules::{Rule, RuleType},
 };
+
+// MD041-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD041FirstLineHeadingTable {
+    #[serde(default)]
+    pub allow_preamble: bool,
+    #[serde(default)]
+    pub front_matter_title: String,
+    #[serde(default)]
+    pub level: u8,
+}
+
+impl Default for MD041FirstLineHeadingTable {
+    fn default() -> Self {
+        Self {
+            allow_preamble: false,
+            front_matter_title: r"^\s*title\s*[:=]".to_string(),
+            level: 1,
+        }
+    }
+}
 
 #[derive(Debug)]
 enum FirstElement {

@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use std::rc::Rc;
 
 use once_cell::sync::Lazy;
@@ -5,10 +6,40 @@ use regex::Regex;
 use tree_sitter::Node;
 
 use crate::{
-    config::EmphasisStyle,
     linter::{range_from_tree_sitter, Context, RuleViolation},
     rules::{Rule, RuleLinter, RuleType},
 };
+
+// MD049-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub enum EmphasisStyle {
+    #[serde(rename = "consistent")]
+    Consistent,
+    #[serde(rename = "asterisk")]
+    Asterisk,
+    #[serde(rename = "underscore")]
+    Underscore,
+}
+
+impl Default for EmphasisStyle {
+    fn default() -> Self {
+        Self::Consistent
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD049EmphasisStyleTable {
+    #[serde(default)]
+    pub style: EmphasisStyle,
+}
+
+impl Default for MD049EmphasisStyleTable {
+    fn default() -> Self {
+        Self {
+            style: EmphasisStyle::Consistent,
+        }
+    }
+}
 
 // Regex patterns to find emphasis
 static ASTERISK_EMPHASIS_REGEX: Lazy<Regex> =

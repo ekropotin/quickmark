@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use std::rc::Rc;
 
 use tree_sitter::Node;
@@ -6,6 +7,15 @@ use crate::{
     linter::{range_from_tree_sitter, Context, RuleLinter, RuleViolation},
     rules::{Rule, RuleType},
 };
+
+// MD043-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize, Default)]
+pub struct MD043RequiredHeadingsTable {
+    #[serde(default)]
+    pub headings: Vec<String>,
+    #[serde(default)]
+    pub match_case: bool,
+}
 
 #[derive(Debug, Clone)]
 struct HeadingInfo {

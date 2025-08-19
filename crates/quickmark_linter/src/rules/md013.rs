@@ -11,21 +11,21 @@ use crate::{
 // MD013-specific configuration types
 #[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD013LineLengthTable {
-    #[serde(default = "default_line_length")]
+    #[serde(default)]
     pub line_length: usize,
-    #[serde(default = "default_code_block_line_length")]
+    #[serde(default)]
     pub code_block_line_length: usize,
-    #[serde(default = "default_heading_line_length")]
+    #[serde(default)]
     pub heading_line_length: usize,
-    #[serde(default = "default_true")]
+    #[serde(default)]
     pub code_blocks: bool,
-    #[serde(default = "default_true")]
+    #[serde(default)]
     pub headings: bool,
-    #[serde(default = "default_true")]
+    #[serde(default)]
     pub tables: bool,
-    #[serde(default = "default_false")]
+    #[serde(default)]
     pub strict: bool,
-    #[serde(default = "default_false")]
+    #[serde(default)]
     pub stern: bool,
 }
 
@@ -42,26 +42,6 @@ impl Default for MD013LineLengthTable {
             stern: false,
         }
     }
-}
-
-fn default_line_length() -> usize {
-    80
-}
-
-fn default_code_block_line_length() -> usize {
-    80
-}
-
-fn default_heading_line_length() -> usize {
-    80
-}
-
-fn default_true() -> bool {
-    true
-}
-
-fn default_false() -> bool {
-    false
 }
 
 /// MD013 Line Length Rule Linter

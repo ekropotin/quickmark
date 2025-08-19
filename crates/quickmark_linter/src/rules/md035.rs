@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use std::rc::Rc;
 
 use tree_sitter::Node;
@@ -6,6 +7,21 @@ use crate::{
     linter::{range_from_tree_sitter, RuleViolation},
     rules::{Context, Rule, RuleLinter, RuleType},
 };
+
+// MD035-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD035HrStyleTable {
+    #[serde(default)]
+    pub style: String,
+}
+
+impl Default for MD035HrStyleTable {
+    fn default() -> Self {
+        Self {
+            style: "consistent".to_string(),
+        }
+    }
+}
 
 pub(crate) struct MD035Linter {
     context: Rc<Context>,

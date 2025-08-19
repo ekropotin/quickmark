@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use std::collections::HashSet;
 use std::rc::Rc;
 
@@ -9,6 +10,26 @@ use crate::{
     linter::{range_from_tree_sitter, RuleViolation},
     rules::{Context, Rule, RuleLinter, RuleType},
 };
+
+// MD059-specific configuration types
+#[derive(Debug, PartialEq, Clone, Deserialize)]
+pub struct MD059DescriptiveLinkTextTable {
+    #[serde(default)]
+    pub prohibited_texts: Vec<String>,
+}
+
+impl Default for MD059DescriptiveLinkTextTable {
+    fn default() -> Self {
+        Self {
+            prohibited_texts: vec![
+                "click here".to_string(),
+                "here".to_string(),
+                "link".to_string(),
+                "more".to_string(),
+            ],
+        }
+    }
+}
 
 // Regular inline links: [text](url) - but NOT images ![text](url)
 static RE_INLINE_LINK: Lazy<Regex> = Lazy::new(|| {

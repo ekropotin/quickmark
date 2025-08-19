@@ -11,11 +11,11 @@ use crate::{
 // MD010-specific configuration types
 #[derive(Debug, PartialEq, Clone, Deserialize)]
 pub struct MD010HardTabsTable {
-    #[serde(default = "default_true")]
+    #[serde(default)]
     pub code_blocks: bool,
-    #[serde(default = "default_empty_code_languages")]
+    #[serde(default)]
     pub ignore_code_languages: Vec<String>,
-    #[serde(default = "default_spaces_per_tab")]
+    #[serde(default)]
     pub spaces_per_tab: usize,
 }
 
@@ -27,18 +27,6 @@ impl Default for MD010HardTabsTable {
             spaces_per_tab: 1,
         }
     }
-}
-
-fn default_true() -> bool {
-    true
-}
-
-fn default_empty_code_languages() -> Vec<String> {
-    Vec::new()
-}
-
-fn default_spaces_per_tab() -> usize {
-    1
 }
 
 /// MD010 Hard Tabs Rule Linter
