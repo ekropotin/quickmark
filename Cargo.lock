@@ -904,19 +904,7 @@ dependencies = [
  "assert_fs",
  "clap",
  "predicates",
- "quickmark_config",
  "quickmark_linter",
-]
-
-[[package]]
-name = "quickmark_config"
-version = "0.0.1"
-dependencies = [
- "anyhow",
- "quickmark_linter",
- "serde",
- "tempfile",
- "toml",
 ]
 
 [[package]]
@@ -927,6 +915,9 @@ dependencies = [
  "linkify",
  "once_cell",
  "regex",
+ "serde",
+ "tempfile",
+ "toml",
  "tree-sitter",
  "tree-sitter-md",
 ]
@@ -938,7 +929,6 @@ dependencies = [
  "anyhow",
  "assert_cmd",
  "predicates",
- "quickmark_config",
  "quickmark_linter",
  "serde_json",
  "tokio",

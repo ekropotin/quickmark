@@ -1,6 +1,5 @@
 use anyhow::Result;
-use quickmark_config::config_in_path_or_default;
-use quickmark_linter::config::RuleSeverity;
+use quickmark_linter::config::{config_in_path_or_default, RuleSeverity};
 use quickmark_linter::linter::{MultiRuleLinter, RuleViolation};
 use std::env;
 use tokio::io::{stdin, stdout};
@@ -426,7 +425,7 @@ mod tests {
     #[test]
     fn test_lint_document_integration() {
         // Test the actual linting logic by using the lint functions directly
-        use quickmark_config::config_in_path_or_default;
+        use quickmark_linter::config::config_in_path_or_default;
         use quickmark_linter::linter::MultiRuleLinter;
         use std::env;
 
