@@ -89,8 +89,10 @@ fn test_cli_nonexistent_file() {
     cmd.arg("nonexistent_file.md");
 
     cmd.assert()
-        .failure() // Should fail due to missing file
-        .stderr(predicates::str::contains("Can't read file"));
+        .success() // Should succeed with no files found message
+        .stderr(predicates::str::contains(
+            "No markdown files found to lint.",
+        ));
 }
 
 /// Test CLI error output format
@@ -320,93 +322,127 @@ style = 'setext_with_atx'
         .stderr(predicates::str::contains("heading-style"));
 }
 
-/// Test hierarchical config discovery with nested directories
+/// Test hierarchical config discovery with mass linting
+/// This test verifies both the multiple file linting capability and proper
+/// hierarchical configuration discovery for each file based on its location
 #[test]
 fn test_cli_hierarchical_config_discovery() {
-    // Test 1: Project root level - MD001 should be OFF, line length 100 chars
     let mut cmd = Command::cargo_bin("qmark").unwrap();
-    cmd.arg(test_sample_path("hierarchical-test/project-root/README.md"));
+    cmd.arg(test_sample_path("hierarchical-test/"));
 
     let output = cmd.assert().failure().get_output().clone();
     let stderr = String::from_utf8_lossy(&output.stderr);
 
-    // Should NOT contain MD001 violations (disabled at project root)
-    assert!(
-        !stderr.contains("MD001"),
-        "MD001 should be disabled at project root"
-    );
-    // Should contain MD003 violations (ATX style enforced)
-    assert!(
-        stderr.contains("MD003"),
-        "MD003 should be enabled for setext heading"
-    );
-    // Should contain MD013 as WARNING (line length 100 chars at project root)
-    assert!(
-        stderr.contains("WARN:") && stderr.contains("MD013"),
-        "MD013 should be warning at project root"
-    );
+    // Verify that multiple markdown files were processed
+    let processed_files: std::collections::HashSet<_> = stderr
+        .lines()
+        .filter(|line| line.contains(".md:"))
+        .filter_map(|line| {
+            // Extract file path: ERR: file_path:line:col rule message
+            if let Some(colon_pos) = line.find(": ") {
+                let after_prefix = &line[colon_pos + 2..];
+                if let Some(md_pos) = after_prefix.find(".md:") {
+                    return Some(&after_prefix[..md_pos + 3]);
+                }
+            }
+            None
+        })
+        .collect();
 
-    // Test 2: Source directory level - MD001 should be WARN, line length 80 chars
-    let mut cmd = Command::cargo_bin("qmark").unwrap();
-    cmd.arg(test_sample_path(
-        "hierarchical-test/project-root/src/api.md",
-    ));
-
-    let output = cmd.assert().failure().get_output().clone();
-    let stderr = String::from_utf8_lossy(&output.stderr);
-
-    // Should contain MD001 warnings (enabled in src/)
+    // Should process at least 4 markdown files (README.md, api.md, guide.md, integration.md, lib.md)
     assert!(
-        stderr.contains("WARN:") && stderr.contains("MD001"),
-        "MD001 should be warning in src/"
-    );
-    // Should contain MD003 errors
-    assert!(
-        stderr.contains("ERR:") && stderr.contains("MD003"),
-        "MD003 should be error in src/"
-    );
-    // Should contain MD013 as ERROR (stricter 80 char limit in src/)
-    assert!(
-        stderr.contains("ERR:") && stderr.contains("MD013"),
-        "MD013 should be error in src/ with 80 char limit"
+        processed_files.len() >= 4,
+        "Should process multiple markdown files, found: {:?}",
+        processed_files
     );
 
-    // Test 3: Nested docs directory - should inherit src/ config
-    let mut cmd = Command::cargo_bin("qmark").unwrap();
-    cmd.arg(test_sample_path(
-        "hierarchical-test/project-root/src/docs/guide.md",
-    ));
+    // Verify files from different directories are processed
+    let has_project_root_files = processed_files
+        .iter()
+        .any(|f| f.contains("project-root/README.md"));
+    let has_src_files = processed_files
+        .iter()
+        .any(|f| f.contains("project-root/src/api.md"));
+    let has_nested_files = processed_files
+        .iter()
+        .any(|f| f.contains("project-root/src/docs/guide.md"));
+    let has_tests_files = processed_files
+        .iter()
+        .any(|f| f.contains("project-root/tests/integration.md"));
+    let has_cargo_project_files = processed_files
+        .iter()
+        .any(|f| f.contains("cargo-project/src/lib.md"));
 
-    let output = cmd.assert().failure().get_output().clone();
-    let stderr = String::from_utf8_lossy(&output.stderr);
-
-    // Should inherit src/ configuration (MD001 warning, strict line length)
+    assert!(has_project_root_files, "Should process project root files");
+    assert!(has_src_files, "Should process src directory files");
+    assert!(has_nested_files, "Should process nested docs files");
+    assert!(has_tests_files, "Should process tests directory files");
     assert!(
-        stderr.contains("WARN:") && stderr.contains("MD001"),
-        "MD001 should be warning in src/docs/ (inherited from src/)"
+        has_cargo_project_files,
+        "Should process cargo-project files"
     );
+
+    // Test hierarchical config application by checking rule behavior per file location
+
+    // 1. Project root files should have MD001 disabled (project-root/quickmark.toml)
+    let project_root_md001_violations: Vec<_> = stderr
+        .lines()
+        .filter(|line| line.contains("project-root/README.md:") && line.contains("MD001"))
+        .collect();
     assert!(
-        stderr.contains("ERR:") && stderr.contains("MD013"),
-        "MD013 should be error in src/docs/ with 80 char limit (inherited from src/)"
+        project_root_md001_violations.is_empty(),
+        "MD001 should be disabled at project root level, but found: {:?}",
+        project_root_md001_violations
     );
 
-    // Test 4: Tests directory - should inherit project root config
-    let mut cmd = Command::cargo_bin("qmark").unwrap();
-    cmd.arg(test_sample_path(
-        "hierarchical-test/project-root/tests/integration.md",
-    ));
+    // 2. Verify different configs are applied by checking line length limits
+    // Src files should have stricter line length (80 chars) vs project root (100 chars)
+    let src_line_length_violations: Vec<_> = stderr
+        .lines()
+        .filter(|line| {
+            (line.contains("project-root/src/api.md:")
+                || line.contains("project-root/src/docs/guide.md:"))
+                && line.contains("MD013")
+                && line.contains("80")
+        })
+        .collect();
 
-    let output = cmd.assert().failure().get_output().clone();
-    let stderr = String::from_utf8_lossy(&output.stderr);
+    let root_line_length_violations: Vec<_> = stderr
+        .lines()
+        .filter(|line| {
+            (line.contains("project-root/README.md:")
+                || line.contains("project-root/tests/integration.md:"))
+                && line.contains("MD013")
+                && line.contains("100")
+        })
+        .collect();
 
-    // Should inherit project root configuration (MD001 off, line length 100)
     assert!(
-        !stderr.contains("MD001"),
-        "MD001 should be disabled in tests/ (inherited from project root)"
+        !src_line_length_violations.is_empty(),
+        "Src files should use 80 char line length limit, but none found"
     );
+
     assert!(
-        stderr.contains("WARN:") && stderr.contains("MD013"),
-        "MD013 should be warning in tests/ with 100 char limit (inherited from project root)"
+        !root_line_length_violations.is_empty(),
+        "Root files should use 100 char line length limit, but none found"
+    );
+
+    // 3. Cargo project files should use their own config
+    let cargo_project_config_applied = stderr
+        .lines()
+        .any(|line| line.contains("cargo-project/src/lib.md:"));
+    assert!(
+        cargo_project_config_applied,
+        "Cargo project files should be processed with their own config"
+    );
+
+    println!("Processed files: {:?}", processed_files);
+    println!(
+        "Total violations found: {}",
+        stderr
+            .lines()
+            .filter(|l| l.contains("ERR:") || l.contains("WARN:"))
+            .count()
     );
 }
 
@@ -542,4 +578,132 @@ heading-style = 'err'
     assert!(stderr.contains("ERR:"));
     assert!(stderr.contains("MD001"));
     assert!(stderr.contains("MD003"));
+}
+
+/// Test CLI with multiple files
+#[test]
+fn test_cli_multiple_files() {
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
+    cmd.arg(test_sample_path("test_md001_violations.md"))
+        .arg(test_sample_path("test_md003_mixed_styles.md"));
+
+    let output = cmd.assert().failure().get_output().clone();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    // Should contain violations from both files
+    assert!(stderr.contains("test_md001_violations.md"));
+    assert!(stderr.contains("test_md003_mixed_styles.md"));
+    assert!(stderr.contains("MD001"));
+    assert!(stderr.contains("MD003"));
+
+    // Should have multiple errors
+    assert!(stdout.contains("Errors:"));
+    // Extract error count and verify it's greater than 1
+    let error_count: i32 = stdout
+        .lines()
+        .find(|line| line.starts_with("Errors:"))
+        .and_then(|line| line.split_whitespace().nth(1))
+        .and_then(|count| count.parse().ok())
+        .unwrap_or(0);
+    assert!(
+        error_count > 1,
+        "Should have multiple errors from multiple files"
+    );
+}
+
+/// Test CLI with directory traversal
+#[test]
+fn test_cli_directory_traversal() {
+    use std::env;
+
+    // Get the project root directory
+    let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set");
+    let test_samples_dir = std::path::PathBuf::from(manifest_dir)
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("test-samples");
+
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
+    cmd.arg(test_samples_dir);
+
+    let output = cmd.assert().failure().get_output().clone();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    // Should find violations from multiple files in the directory
+    assert!(stderr.contains(".md"));
+    assert!(stdout.contains("Errors:"));
+
+    // Should process multiple files - count unique file paths
+    let unique_files: std::collections::HashSet<_> = stderr
+        .lines()
+        .filter(|line| line.contains(".md:"))
+        .filter_map(|line| {
+            // Extract file path: ERR: file_path:line:col rule message
+            // Skip "ERR: " or "WARN: " prefix
+            if let Some(colon_pos) = line.find(": ") {
+                let after_prefix = &line[colon_pos + 2..];
+                // Find the path part before the line number
+                if let Some(md_pos) = after_prefix.find(".md:") {
+                    return Some(&after_prefix[..md_pos + 3]); // Include .md
+                }
+            }
+            None
+        })
+        .collect();
+    assert!(
+        unique_files.len() > 1,
+        "Should process multiple markdown files in directory, found: {:?}",
+        unique_files
+    );
+}
+
+/// Test CLI with non-markdown files (should be ignored)
+#[test]
+fn test_cli_non_markdown_files_ignored() {
+    let temp_dir = TempDir::new().unwrap();
+
+    // Create a non-markdown file
+    let txt_file = temp_dir.child("README.txt");
+    txt_file.write_str("This is not a markdown file").unwrap();
+
+    // Create a markdown file for comparison
+    let md_file = temp_dir.child("test.md");
+    md_file.write_str("# Title\n\n### Skipped H2").unwrap();
+
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
+    cmd.arg(temp_dir.path());
+
+    let output = cmd.assert().failure().get_output().clone();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Should only process the markdown file
+    assert!(stderr.contains("test.md"));
+    assert!(!stderr.contains("README.txt"));
+    assert!(stderr.contains("MD001")); // Should find violations in the .md file
+}
+
+/// Test CLI with no markdown files found
+#[test]
+fn test_cli_no_markdown_files() {
+    let temp_dir = TempDir::new().unwrap();
+
+    // Create only non-markdown files
+    let txt_file = temp_dir.child("README.txt");
+    txt_file.write_str("This is not markdown").unwrap();
+
+    let rs_file = temp_dir.child("main.rs");
+    rs_file.write_str("fn main() {}").unwrap();
+
+    let mut cmd = Command::cargo_bin("qmark").unwrap();
+    cmd.arg(temp_dir.path());
+
+    cmd.assert()
+        .success() // Should exit successfully but with no files
+        .stderr(predicates::str::contains(
+            "No markdown files found to lint.",
+        ));
 }

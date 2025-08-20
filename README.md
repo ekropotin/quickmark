@@ -16,6 +16,8 @@ This project takes a lot of inspiration from David Anson's [markdownlint](https:
 ## Key features
 
 - **Rust-Powered Speed**: Leveraging the power of Rust, QuickMark offers exceptional performance, making linting operations swift and efficient, even for large Markdown files.
+- **Parallel Processing**: Process multiple files simultaneously using Rust's parallel processing capabilities, dramatically reducing lint times for large projects.
+- **Smart File Discovery**: Automatically discover markdown files using glob patterns, directory traversal, and intelligent filtering.
 - **LSP Integration**: QuickMark integrates effortlessly with your favorite code editors through LSP, providing real-time feedback and linting suggestions directly within your editor.
 - **Customizable Rules**: Tailor the linting rules to fit your project's specific needs, ensuring that your Markdown files adhere to your preferred style and standards.
 
@@ -35,19 +37,110 @@ This command will generate the `qmark` binary in the `./target/release` director
 
 ### Usage
 
-Lint a single file:
+QuickMark supports multiple ways to specify files for linting:
+
+**Lint a single file:**
 
 ```shell
 qmark /path/to/file.md
 ```
 
+**Lint multiple files:**
+
+```shell
+qmark file1.md file2.md file3.md
+```
+
+**Lint all markdown files in current directory:**
+
+```shell
+qmark
+# Or explicitly:
+qmark .
+```
+
+**Lint all markdown files in a directory:**
+
+```shell
+qmark /path/to/docs/
+```
+
+**Lint files using glob patterns:**
+
+```shell
+# All .md files in current directory
+qmark *.md
+
+# All .md files recursively in docs/ directory
+qmark "docs/**/*.md"
+
+# Multiple patterns
+qmark "src/**/*.md" "tests/**/*.markdown"
+```
+
+**Supported file extensions:**
+
+- `.md`
+- `.markdown`
+- `.mdown`
+- `.mkd`
+- `.mkdn`
+
+QuickMark automatically:
+
+- Discovers markdown files recursively when given directories
+- Ignores non-markdown files and respects `.gitignore` patterns
+- Processes files in parallel for maximum performance
+- Uses hierarchical configuration discovery for each file
+
 ### Configuration
 
-QuickMark looks for configuration in the following order:
+QuickMark uses a sophisticated hierarchical configuration discovery system that automatically finds the most appropriate configuration for any given file:
+
+#### Configuration Discovery Order
 
 1. **Environment Variable**: If `QUICKMARK_CONFIG` environment variable is set, it uses the config file at the specified path
-2. **Local Config**: If not found, it looks for `quickmark.toml` in the current working directory
-3. **Default**: If neither is found, [default configuration](#default-configuration) is used
+2. **Hierarchical Discovery**: If not found, QuickMark searches upward from the target file's location for `quickmark.toml` files
+3. **Default**: If no configuration is found, [default configuration](#default-configuration) is used
+
+#### Hierarchical Configuration Discovery
+
+QuickMark automatically discovers configuration files by searching upward from the target markdown file's directory, stopping at natural project boundaries. This enables different parts of your project to have their own linting rules while maintaining a sensible inheritance hierarchy.
+
+**Search Process:**
+
+- Starts from the directory containing the target markdown file
+- Searches upward through parent directories for `quickmark.toml` files
+- Uses the first configuration file found
+- Stops searching when it encounters project boundary markers
+
+**Project Boundary Markers** (search stops at these):
+
+- **IDE Workspace Roots**: Configured workspace directories (LSP integration)
+- **Git Repository Root**: Directories containing `.git`
+- **Common Project Markers**: `package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod`, `.vscode`, `.idea`, `.sublime-project`
+
+**Example Hierarchical Structure:**
+
+```
+my-project/
+├── quickmark.toml              # Project-wide config (relaxed rules)
+├── Cargo.toml                  # Project boundary marker
+├── README.md                   # Uses project-wide config
+├── src/
+│   ├── quickmark.toml          # Stricter rules for source code
+│   ├── api.md                  # Uses src/ config
+│   └── docs/
+│       └── guide.md            # Inherits src/ config (stricter)
+└── tests/
+    └── integration.md          # Uses project-wide config (relaxed)
+```
+
+In this example:
+
+- `src/api.md` and `src/docs/guide.md` use the stricter `src/quickmark.toml` configuration
+- `README.md` and `tests/integration.md` use the relaxed project-wide `quickmark.toml` configuration
+- Search stops at `Cargo.toml` level, preventing the search from going beyond the project boundary
 
 #### Using QUICKMARK_CONFIG Environment Variable
 
