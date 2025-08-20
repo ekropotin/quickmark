@@ -104,7 +104,20 @@ impl MD013Linter {
         if line.len() <= limit {
             return false;
         }
-        let beyond_limit = &line[limit..];
+
+        // Use character-aware slicing to avoid UTF-8 boundary panics
+        // Find the character boundary at or after the limit position
+        let mut char_boundary = limit;
+        while char_boundary < line.len() && !line.is_char_boundary(char_boundary) {
+            char_boundary += 1;
+        }
+
+        // If we've gone beyond the string length, there's nothing beyond the limit
+        if char_boundary >= line.len() {
+            return true; // No characters beyond limit, so no spaces
+        }
+
+        let beyond_limit = &line[char_boundary..];
         !beyond_limit.contains(' ')
     }
 
@@ -785,5 +798,32 @@ Another short line.";
                 violation.location().range.start.line
             );
         }
+    }
+
+    #[test]
+    fn test_utf8_character_boundary_fix() {
+        // Test that UTF-8 character boundary issues are properly handled
+        // Create a line that has a multi-byte UTF-8 character at position 79-82 (checkmark ✓)
+        // This previously caused a panic when slicing at position 80
+        let input = "| View allowed and denied licenses **(ULTIMATE)** | ✓ (*1*) | ✓          | ✓           | ✓        | ✓      |";
+
+        // Verify the test setup: checkmark should be at the boundary where slicing fails
+        assert!(input.len() > 80, "Line should exceed 80 characters");
+        let char_at_79 = input.as_bytes()[79];
+        // UTF-8 checkmark starts at byte 79, so slicing at 80 would panic without the fix
+        assert!(
+            char_at_79 >= 0x80,
+            "Should have multi-byte UTF-8 character near position 80"
+        );
+
+        let config = test_config();
+        let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
+        // This should NOT panic with the UTF-8 boundary fix
+        let violations = linter.analyze();
+
+        // Should find exactly 1 violation for the long line
+        assert_eq!(1, violations.len(), "Should find one line length violation");
+        assert_eq!("MD013", violations[0].rule().id);
+        assert!(violations[0].message().contains("Expected: <= 80"));
     }
 }
