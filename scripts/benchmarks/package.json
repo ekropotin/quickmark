@@ -1,5 +1,5 @@
 {
-  "name": "mado-benchmark",
+  "name": "quickmark-benchmark",
   "private": true,
   "dependencies": {
     "markdownlint-cli": "0.45.0",
