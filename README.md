@@ -15,11 +15,39 @@ This project takes a lot of inspiration from David Anson's [markdownlint](https:
 
 ## Key features
 
-- **Rust-Powered Speed**: Leveraging the power of Rust, QuickMark offers exceptional performance, making linting operations swift and efficient, even for large Markdown files.
-- **Parallel Processing**: Process multiple files simultaneously using Rust's parallel processing capabilities, dramatically reducing lint times for large projects.
-- **Smart File Discovery**: Automatically discover markdown files using glob patterns, directory traversal, and intelligent filtering.
-- **LSP Integration**: QuickMark integrates effortlessly with your favorite code editors through LSP, providing real-time feedback and linting suggestions directly within your editor.
-- **Customizable Rules**: Tailor the linting rules to fit your project's specific needs, ensuring that your Markdown files adhere to your preferred style and standards.
+- ⚡️ **Rust-Powered Speed**: Leveraging the power of Rust, QuickMark offers exceptional performance, making linting operations swift and efficient, even for large Markdown files.
+- 🧵 **Parallel Processing**: Process multiple files simultaneously using Rust's parallel processing capabilities, dramatically reducing lint times for large projects.
+- 🔎 **Smart File Discovery**: Automatically discover markdown files using glob patterns, directory traversal, and intelligent filtering.
+- ⚙️ **LSP Integration**: QuickMark integrates effortlessly with your favorite code editors through LSP, providing real-time feedback and linting suggestions directly within your editor.
+- 🧩 **Customizable Rules**: Tailor the linting rules to fit your project's specific needs, ensuring that your Markdown files adhere to your preferred style and standards.
+
+## Benchmarks
+
+```mermaid
+---
+config:
+    xyChart:
+        height: 200
+        titleFontSize: 14
+        chartOrientation: horizontal
+        xAxis:
+            labelFontSize: 12
+            titleFontSize: 14
+        yAxis:
+            labelFontSize: 12
+            titleFontSize: 14
+---
+xychart-beta
+    title "Linting ~1,500 Markdown files (Lower is faster)"
+    x-axis ["quickmark (rust)", "markdownlint-cli (node.js)", "markdownlint (ruby)"]
+    y-axis "Time (seconds)" 0 --> 10
+    bar [0.97, 7.04, 6.92]
+```
+
+This benchmark was conducted on a MacBook Pro (2021, M1 Max)
+using [hyperfine](https://github.com/sharkdp/hyperfine)
+with [GitLab documentation](https://gitlab.com/gitlab-org/gitlab/-/tree/7d6a4025a0346f1f50d2825c85742e5a27b39a8b/doc)
+as the dataset.
 
 ## Getting Started
 
