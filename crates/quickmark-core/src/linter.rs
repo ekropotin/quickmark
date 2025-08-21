@@ -230,8 +230,8 @@ impl Context {
 ///
 /// ## Usage Pattern
 /// ```rust,no_run
-/// # use quickmark_linter::linter::MultiRuleLinter;
-/// # use quickmark_linter::config::QuickmarkConfig;
+/// # use quickmark_core::linter::MultiRuleLinter;
+/// # use quickmark_core::config::QuickmarkConfig;
 /// # use std::path::PathBuf;
 /// # let path = PathBuf::new();
 /// # let config: QuickmarkConfig = unimplemented!();

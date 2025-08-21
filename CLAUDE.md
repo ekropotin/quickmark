@@ -16,7 +16,7 @@ This is a Rust workspace with multiple crates implementing a clean separation of
 quickmark/
 ├── Cargo.toml                 # Workspace configuration
 ├── crates/
-│   ├── quickmark_linter/      # Core linting logic (format-agnostic)
+│   ├── quickmark-core/      # Core linting logic (format-agnostic)
 │   │   ├── Cargo.toml
 │   │   ├── src/
 │   │   │   ├── lib.rs
@@ -60,7 +60,7 @@ quickmark/
 
 ### Crate Responsibilities
 
-**quickmark_linter** (Core Library):
+**quickmark-core** (Core Library):
 
 - Pure linting logic with no configuration format dependencies
 - Accepts `QuickmarkConfig` objects directly
@@ -81,7 +81,7 @@ quickmark/
 - Command-line interface using clap
 - File I/O and user interaction
 - Uses `quickmark_config` for configuration parsing
-- Uses `quickmark_linter` for actual linting
+- Uses `quickmark-core` for actual linting
 
 **quickmark_server** (Server Application):
 
@@ -91,7 +91,7 @@ quickmark/
 
 ### Core Components
 
-**Linting Engine** (`quickmark_linter/src/linter.rs`):
+**Linting Engine** (`quickmark-core/src/linter.rs`):
 
 - `MultiRuleLinter`: Orchestrates multiple rule linters
 - `RuleViolation`: Represents a linting error with location and message
@@ -99,7 +99,7 @@ quickmark/
 - Uses tree-sitter for Markdown parsing with tree-sitter-md grammar
 - Filters rules based on severity configuration (off/warn/err)
 
-**Configuration System** (`quickmark_linter/src/config/mod.rs`):
+**Configuration System** (`quickmark-core/src/config/mod.rs`):
 
 - Format-agnostic configuration data structures
 - `QuickmarkConfig`: Root configuration structure
@@ -114,7 +114,7 @@ quickmark/
 - TOML-specific data structures with serde derives
 - Conversion functions between TOML and core config types
 
-**Rule System** (`quickmark_linter/src/rules/mod.rs`):
+**Rule System** (`quickmark-core/src/rules/mod.rs`):
 
 - `Rule`: Static metadata structure defining rule properties
 - `ALL_RULES`: Registry of all available rules
@@ -174,7 +174,7 @@ This architecture allows rules like MD013 to work efficiently with raw text whil
 
 ## Dependencies
 
-### quickmark_linter
+### quickmark-core
 
 - `anyhow`: Error handling
 - `tree-sitter`: AST parsing
@@ -185,26 +185,26 @@ This architecture allows rules like MD013 to work efficiently with raw text whil
 - `anyhow`: Error handling
 - `serde`: TOML deserialization
 - `toml`: TOML parsing
-- `quickmark_linter`: Core configuration types
+- `quickmark-core`: Core configuration types
 
 ### quickmark
 
 - `anyhow`: Error handling
 - `clap`: CLI parsing
 - `quickmark_config`: Configuration parsing
-- `quickmark_linter`: Linting engine
+- `quickmark-core`: Linting engine
 
 ### quickmark_server
 
 - `anyhow`: Error handling
 - `quickmark_config`: Configuration parsing
-- `quickmark_linter`: Linting engine
+- `quickmark-core`: Linting engine
 
 ## Adding New Rules
 
-1. Create a new rule module in `crates/quickmark_linter/src/rules/`
+1. Create a new rule module in `crates/quickmark-core/src/rules/`
 2. Implement the `RuleLinter` trait with appropriate `RuleType` classification
-3. Add the rule to `ALL_RULES` in `crates/quickmark_linter/src/rules/mod.rs`
+3. Add the rule to `ALL_RULES` in `crates/quickmark-core/src/rules/mod.rs`
 4. Add any rule-specific configuration to the config structs
 5. Update TOML parsing in `quickmark_config` if needed
 

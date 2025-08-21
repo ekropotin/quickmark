@@ -1,6 +1,6 @@
 [package]
-name = "quickmark"
-version = "0.0.1"
+name = "quickmark-cli"
+version = "1.0.0-alpha.1"
 edition = "2021"
 
 [[bin]]
@@ -10,14 +10,14 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1.0.86"
 clap = { version = "4.5.4", features = ["derive"] }
-quickmark_linter = { path = "../quickmark_linter" }
+quickmark-core = { path = "../quickmark-core" }
 glob = "0.3"
 rayon = "1.8"
 ignore = "0.4"
 walkdir = "2.4"
 
-[dev-dependencies.quickmark_linter]
-path = "../quickmark_linter"
+[dev-dependencies.quickmark-core]
+path = "../quickmark-core"
 features = ["testing"]
 
 [dev-dependencies]

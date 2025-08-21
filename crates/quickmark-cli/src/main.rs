@@ -4,10 +4,10 @@ use glob::glob;
 use ignore::{
     types::TypesBuilder, ParallelVisitor, ParallelVisitorBuilder, WalkBuilder, WalkState,
 };
-use quickmark_linter::config::{
+use quickmark_core::config::{
     config_from_env_path_or_default, discover_config_or_default, QuickmarkConfig, RuleSeverity,
 };
-use quickmark_linter::linter::{MultiRuleLinter, RuleViolation};
+use quickmark_core::linter::{MultiRuleLinter, RuleViolation};
 use rayon::prelude::*;
 use std::cmp::min;
 use std::env;
@@ -270,10 +270,10 @@ fn main() -> anyhow::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use quickmark_linter::config::{HeadingStyle, LintersSettingsTable, MD003HeadingStyleTable};
-    use quickmark_linter::linter::{CharPosition, Range};
-    use quickmark_linter::rules::{md001::MD001, md003::MD003};
-    use quickmark_linter::test_utils::test_helpers::test_config_with_settings;
+    use quickmark_core::config::{HeadingStyle, LintersSettingsTable, MD003HeadingStyleTable};
+    use quickmark_core::linter::{CharPosition, Range};
+    use quickmark_core::rules::{md001::MD001, md003::MD003};
+    use quickmark_core::test_utils::test_helpers::test_config_with_settings;
     use std::path::{Path, PathBuf};
 
     #[test]

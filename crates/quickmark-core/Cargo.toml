@@ -1,6 +1,6 @@
 [package]
-name = "quickmark_linter"
-version = "0.0.1"
+name = "quickmark-core"
+version = "1.0.0-alpha.1"
 edition = "2021"
 
 [dependencies]
