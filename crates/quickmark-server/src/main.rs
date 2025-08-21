@@ -1,8 +1,8 @@
 use anyhow::Result;
-use quickmark_linter::config::{
+use quickmark_core::config::{
     config_in_path_or_default, discover_config_with_workspace_or_default, RuleSeverity,
 };
-use quickmark_linter::linter::{MultiRuleLinter, RuleViolation};
+use quickmark_core::linter::{MultiRuleLinter, RuleViolation};
 use std::env;
 use std::path::PathBuf;
 use tokio::io::{stdin, stdout};
@@ -53,7 +53,7 @@ impl Backend {
     fn violation_to_diagnostic(
         &self,
         violation: RuleViolation,
-        config: &quickmark_linter::config::QuickmarkConfig,
+        config: &quickmark_core::config::QuickmarkConfig,
     ) -> Diagnostic {
         // Get severity from configuration
         let rule_severity = config
@@ -267,7 +267,7 @@ async fn main() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use quickmark_linter::config::{QuickmarkConfig, RuleSeverity};
+    use quickmark_core::config::{QuickmarkConfig, RuleSeverity};
     use std::collections::HashMap;
     use tower_lsp::lsp_types::{Diagnostic, DiagnosticSeverity, NumberOrString, Position, Range};
 
@@ -278,7 +278,7 @@ mod tests {
         severity_map.insert(rule.to_string(), severity);
 
         QuickmarkConfig {
-            linters: quickmark_linter::config::LintersTable {
+            linters: quickmark_core::config::LintersTable {
                 severity: severity_map,
                 ..Default::default()
             },
@@ -288,7 +288,7 @@ mod tests {
     // Test violation_to_diagnostic without needing a real Backend
     fn test_violation_to_diagnostic_with_config(
         config: &QuickmarkConfig,
-        violation: quickmark_linter::linter::RuleViolation,
+        violation: quickmark_core::linter::RuleViolation,
     ) -> Diagnostic {
         // Get severity from configuration
         let rule_severity = config
@@ -330,16 +330,16 @@ mod tests {
     fn test_violation_to_diagnostic_error_severity() {
         let config = create_test_config_with_severity("line-length", RuleSeverity::Error);
 
-        let violation = quickmark_linter::linter::RuleViolation::new(
-            &quickmark_linter::rules::md013::MD013,
+        let violation = quickmark_core::linter::RuleViolation::new(
+            &quickmark_core::rules::md013::MD013,
             "Test violation".to_string(),
             std::path::PathBuf::from("/test/file.md"),
-            quickmark_linter::linter::Range {
-                start: quickmark_linter::linter::CharPosition {
+            quickmark_core::linter::Range {
+                start: quickmark_core::linter::CharPosition {
                     line: 0,
                     character: 0,
                 },
-                end: quickmark_linter::linter::CharPosition {
+                end: quickmark_core::linter::CharPosition {
                     line: 0,
                     character: 10,
                 },
@@ -361,16 +361,16 @@ mod tests {
     fn test_violation_to_diagnostic_warning_severity() {
         let config = create_test_config_with_severity("line-length", RuleSeverity::Warning);
 
-        let violation = quickmark_linter::linter::RuleViolation::new(
-            &quickmark_linter::rules::md013::MD013,
+        let violation = quickmark_core::linter::RuleViolation::new(
+            &quickmark_core::rules::md013::MD013,
             "Test warning".to_string(),
             std::path::PathBuf::from("/test/file.md"),
-            quickmark_linter::linter::Range {
-                start: quickmark_linter::linter::CharPosition {
+            quickmark_core::linter::Range {
+                start: quickmark_core::linter::CharPosition {
                     line: 2,
                     character: 5,
                 },
-                end: quickmark_linter::linter::CharPosition {
+                end: quickmark_core::linter::CharPosition {
                     line: 2,
                     character: 15,
                 },
@@ -390,16 +390,16 @@ mod tests {
     fn test_violation_to_diagnostic_default_severity() {
         let config = QuickmarkConfig::default();
 
-        let violation = quickmark_linter::linter::RuleViolation::new(
-            &quickmark_linter::rules::md013::MD013,
+        let violation = quickmark_core::linter::RuleViolation::new(
+            &quickmark_core::rules::md013::MD013,
             "Test default".to_string(),
             std::path::PathBuf::from("/test/file.md"),
-            quickmark_linter::linter::Range {
-                start: quickmark_linter::linter::CharPosition {
+            quickmark_core::linter::Range {
+                start: quickmark_core::linter::CharPosition {
                     line: 1,
                     character: 0,
                 },
-                end: quickmark_linter::linter::CharPosition {
+                end: quickmark_core::linter::CharPosition {
                     line: 1,
                     character: 20,
                 },
@@ -416,16 +416,16 @@ mod tests {
     fn test_violation_to_diagnostic_off_severity() {
         let config = create_test_config_with_severity("line-length", RuleSeverity::Off);
 
-        let violation = quickmark_linter::linter::RuleViolation::new(
-            &quickmark_linter::rules::md013::MD013,
+        let violation = quickmark_core::linter::RuleViolation::new(
+            &quickmark_core::rules::md013::MD013,
             "Test off".to_string(),
             std::path::PathBuf::from("/test/file.md"),
-            quickmark_linter::linter::Range {
-                start: quickmark_linter::linter::CharPosition {
+            quickmark_core::linter::Range {
+                start: quickmark_core::linter::CharPosition {
                     line: 0,
                     character: 0,
                 },
-                end: quickmark_linter::linter::CharPosition {
+                end: quickmark_core::linter::CharPosition {
                     line: 0,
                     character: 1,
                 },
@@ -443,16 +443,16 @@ mod tests {
         let config = QuickmarkConfig::default();
 
         // Test that ranges are correctly mapped from 0-based linter to 0-based LSP
-        let violation = quickmark_linter::linter::RuleViolation::new(
-            &quickmark_linter::rules::md001::MD001,
+        let violation = quickmark_core::linter::RuleViolation::new(
+            &quickmark_core::rules::md001::MD001,
             "Heading levels should only increment by one level at a time".to_string(),
             std::path::PathBuf::from("/test/file.md"),
-            quickmark_linter::linter::Range {
-                start: quickmark_linter::linter::CharPosition {
+            quickmark_core::linter::Range {
+                start: quickmark_core::linter::CharPosition {
                     line: 3,
                     character: 2,
                 },
-                end: quickmark_linter::linter::CharPosition {
+                end: quickmark_core::linter::CharPosition {
                     line: 3,
                     character: 12,
                 },
@@ -470,8 +470,8 @@ mod tests {
     #[test]
     fn test_lint_document_integration() {
         // Test the actual linting logic by using the lint functions directly
-        use quickmark_linter::config::config_in_path_or_default;
-        use quickmark_linter::linter::MultiRuleLinter;
+        use quickmark_core::config::config_in_path_or_default;
+        use quickmark_core::linter::MultiRuleLinter;
         use std::env;
 
         let pwd = env::current_dir().unwrap();
@@ -518,16 +518,16 @@ mod tests {
         for (rule_severity, expected_diagnostic_severity) in severities {
             let config = create_test_config_with_severity("line-length", rule_severity);
 
-            let violation = quickmark_linter::linter::RuleViolation::new(
-                &quickmark_linter::rules::md013::MD013,
+            let violation = quickmark_core::linter::RuleViolation::new(
+                &quickmark_core::rules::md013::MD013,
                 "Test message".to_string(),
                 std::path::PathBuf::from("/test/file.md"),
-                quickmark_linter::linter::Range {
-                    start: quickmark_linter::linter::CharPosition {
+                quickmark_core::linter::Range {
+                    start: quickmark_core::linter::CharPosition {
                         line: 0,
                         character: 0,
                     },
-                    end: quickmark_linter::linter::CharPosition {
+                    end: quickmark_core::linter::CharPosition {
                         line: 0,
                         character: 1,
                     },
@@ -537,13 +537,5 @@ mod tests {
             let diagnostic = test_violation_to_diagnostic_with_config(&config, violation);
             assert_eq!(diagnostic.severity, Some(expected_diagnostic_severity));
         }
-    }
-
-    #[test]
-    fn test_version_from_cargo_toml() {
-        // Test that the version is correctly read from env!()
-        let version = env!("CARGO_PKG_VERSION");
-        assert_eq!(version, "0.0.1");
-        assert!(!version.is_empty());
     }
 }

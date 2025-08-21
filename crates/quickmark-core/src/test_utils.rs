@@ -15,8 +15,8 @@ pub mod test_helpers {
     ///
     /// # Example
     /// ```
-    /// use quickmark_linter::test_utils::test_helpers::test_config_with_rules;
-    /// use quickmark_linter::config::RuleSeverity;
+    /// use quickmark_core::test_utils::test_helpers::test_config_with_rules;
+    /// use quickmark_core::config::RuleSeverity;
     ///
     /// let config = test_config_with_rules(vec![
     ///     ("heading-increment", RuleSeverity::Error),
@@ -45,8 +45,8 @@ pub mod test_helpers {
     ///
     /// # Example
     /// ```
-    /// use quickmark_linter::test_utils::test_helpers::test_config_with_settings;
-    /// use quickmark_linter::config::{RuleSeverity, LintersSettingsTable, MD003HeadingStyleTable, HeadingStyle};
+    /// use quickmark_core::test_utils::test_helpers::test_config_with_settings;
+    /// use quickmark_core::config::{RuleSeverity, LintersSettingsTable, MD003HeadingStyleTable, HeadingStyle};
     ///
     /// let config = test_config_with_settings(
     ///     vec![("heading-style", RuleSeverity::Error)],

@@ -12,8 +12,8 @@
 //!
 //! ### Usage Pattern
 //! ```rust,no_run
-//! use quickmark_linter::linter::MultiRuleLinter;
-//! use quickmark_linter::config::QuickmarkConfig;
+//! use quickmark_core::linter::MultiRuleLinter;
+//! use quickmark_core::config::QuickmarkConfig;
 //! use std::path::PathBuf;
 //!
 //! // Example usage (variables would be provided by your application)

@@ -1,0 +1,132 @@
+{
+  "name": "vscode-quickmark",
+  "displayName": "QuickMark",
+  "description": "Lightning-fast Markdown linter for VSCode using QuickMark LSP server",
+  "version": "0.0.1",
+  "publisher": "quickmark",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/quickmark/quickmark.git",
+    "directory": "vscode-quickmark"
+  },
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Linters",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "markdown",
+    "linter",
+    "commonmark",
+    "rust",
+    "performance"
+  ],
+  "icon": "icon.png",
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "markdown",
+        "extensions": [
+          ".md",
+          ".markdown",
+          ".mdown",
+          ".mkdn",
+          ".mkd",
+          ".mdwn",
+          ".mdtxt",
+          ".mdtext"
+        ]
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "QuickMark",
+      "properties": {
+        "quickmark.serverPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the QuickMark LSP server executable. If empty, uses bundled binary. Can be absolute path or command name in PATH."
+        },
+        "quickmark.configPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to quickmark.toml configuration file. If empty, uses workspace root or default config."
+        },
+        "quickmark.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Traces the communication between VSCode and the QuickMark LSP server."
+        },
+        "quickmark.lintOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to lint Markdown files on save."
+        },
+        "quickmark.lintOnType": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to lint Markdown files as you type (may impact performance)."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "quickmark.restartServer",
+        "title": "Restart QuickMark Server",
+        "category": "QuickMark"
+      },
+      {
+        "command": "quickmark.showOutput",
+        "title": "Show QuickMark Output",
+        "category": "QuickMark"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "quickmark.restartServer",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "quickmark.showOutput",
+          "when": "editorLangId == markdown"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile && npm run copy-local-binary",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package",
+    "build-binaries": "node scripts/build-binaries.js",
+    "copy-local-binary": "node scripts/copy-local-binary.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "eslint": "^8.28.0",
+    "typescript": "^4.9.4",
+    "@vscode/test-electron": "^2.2.0",
+    "@vscode/vsce": "^2.15.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^8.1.0"
+  }
+}

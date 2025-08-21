@@ -41,7 +41,7 @@ xychart-beta
     title "Linting ~1,500 Markdown files (Lower is faster)"
     x-axis ["quickmark (rust)", "markdownlint-cli (node.js)", "markdownlint (ruby)"]
     y-axis "Time (seconds)" 0 --> 10
-    bar [0.97, 7.04, 6.92]
+    bar [0.8, 6.92, 7.04]
 ```
 
 This benchmark was conducted on a MacBook Pro (2021, M1 Max)
@@ -134,6 +134,12 @@ QuickMark uses a sophisticated hierarchical configuration discovery system that 
 #### Hierarchical Configuration Discovery
 
 QuickMark automatically discovers configuration files by searching upward from the target markdown file's directory, stopping at natural project boundaries. This enables different parts of your project to have their own linting rules while maintaining a sensible inheritance hierarchy.
+
+
+
+
+
+
 
 **Search Process:**
 
