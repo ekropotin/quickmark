@@ -265,7 +265,7 @@ pub trait RuleLinter {
 /// After calling `analyze()`, the linter and all its rule instances should be discarded.
 pub struct MultiRuleLinter {
     linters: Vec<Box<dyn RuleLinter>>,
-    tree: tree_sitter::Tree,
+    tree: Option<tree_sitter::Tree>,
 }
 
 impl MultiRuleLinter {
@@ -279,32 +279,47 @@ impl MultiRuleLinter {
     ///
     /// After calling `analyze()`, this linter instance should be discarded.
     pub fn new_for_document(file_path: PathBuf, config: QuickmarkConfig, document: &str) -> Self {
-        // Parse the document immediately
-        let mut parser = Parser::new();
-        parser
-            .set_language(&LANGUAGE.into())
-            .expect("Error loading Markdown grammar");
-        let tree = parser.parse(document, None).expect("Parse failed");
-
-        // Create context with pre-initialized cache
-        let context = Rc::new(Context::new(file_path, config, document, &tree.root_node()));
-
-        // Create rule linters with fully-initialized context
-        let linters = ALL_RULES
+        // Early exit optimization: Check if any rules are enabled before expensive operations
+        let active_rules: Vec<_> = ALL_RULES
             .iter()
             .filter(|r| {
-                context
-                    .config
+                config
                     .linters
                     .severity
                     .get(r.alias)
                     .map(|severity| *severity != RuleSeverity::Off)
                     .unwrap_or(false)
             })
+            .collect();
+
+        // If no rules are active, create minimal linter that does no work
+        if active_rules.is_empty() {
+            return Self {
+                linters: Vec::new(),
+                tree: None,
+            };
+        }
+
+        // Parse the document only when we have active rules
+        let mut parser = Parser::new();
+        parser
+            .set_language(&LANGUAGE.into())
+            .expect("Error loading Markdown grammar");
+        let tree = parser.parse(document, None).expect("Parse failed");
+
+        // Create context with pre-initialized cache only for active rules
+        let context = Rc::new(Context::new(file_path, config, document, &tree.root_node()));
+
+        // Create rule linters for active rules only
+        let linters = active_rules
+            .iter()
             .map(|r| ((r.new_linter)(context.clone())))
             .collect();
 
-        Self { linters, tree }
+        Self {
+            linters,
+            tree: Some(tree),
+        }
     }
 
     /// Analyze the document that was provided during construction.
@@ -312,7 +327,18 @@ impl MultiRuleLinter {
     /// **SINGLE-USE CONTRACT**: This method should be called exactly once.
     /// After calling this method, the linter instance should be discarded.
     pub fn analyze(&mut self) -> Vec<RuleViolation> {
-        let walker = TreeSitterWalker::new(&self.tree);
+        // Early exit optimization: If no linters are active, return immediately
+        if self.linters.is_empty() {
+            return Vec::new();
+        }
+
+        // If we have linters but no tree (shouldn't happen), return empty
+        let tree = match &self.tree {
+            Some(tree) => tree,
+            None => return Vec::new(),
+        };
+
+        let walker = TreeSitterWalker::new(tree);
 
         // Feed all nodes to all linters
         walker.walk(|node| {

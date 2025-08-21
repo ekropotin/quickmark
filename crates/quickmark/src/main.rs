@@ -1,7 +1,9 @@
 use anyhow::Context;
 use clap::Parser;
 use glob::glob;
-use ignore::WalkBuilder;
+use ignore::{
+    types::TypesBuilder, ParallelVisitor, ParallelVisitorBuilder, WalkBuilder, WalkState,
+};
 use quickmark_linter::config::{
     config_from_env_path_or_default, discover_config_or_default, QuickmarkConfig, RuleSeverity,
 };
@@ -10,7 +12,11 @@ use rayon::prelude::*;
 use std::cmp::min;
 use std::env;
 use std::path::{Path, PathBuf};
-use std::{fs, process::exit};
+use std::{
+    fs,
+    process::exit,
+    sync::{Arc, Mutex},
+};
 
 #[derive(Parser, Debug)]
 #[command(version, about = "Quickmark: An extremely fast CommonMark linter")]
@@ -20,9 +26,50 @@ struct Cli {
     files: Vec<PathBuf>,
 }
 
-/// Discover markdown files from the given paths
+struct FileCollector {
+    files: Arc<Mutex<Vec<PathBuf>>>,
+}
+
+impl FileCollector {
+    fn new(files: Arc<Mutex<Vec<PathBuf>>>) -> Self {
+        Self { files }
+    }
+}
+
+impl ParallelVisitor for FileCollector {
+    fn visit(&mut self, entry: Result<ignore::DirEntry, ignore::Error>) -> WalkState {
+        if let Ok(entry) = entry {
+            let path = entry.path();
+            if path.is_file() {
+                // The type filtering in WalkBuilder should ensure we only get markdown files
+                if let Ok(mut files) = self.files.lock() {
+                    files.push(path.to_path_buf());
+                }
+            }
+        }
+        WalkState::Continue
+    }
+}
+
+/// Builder for FileCollector that implements ParallelVisitorBuilder
+struct FileCollectorBuilder {
+    files: Arc<Mutex<Vec<PathBuf>>>,
+}
+
+impl FileCollectorBuilder {
+    fn new(files: Arc<Mutex<Vec<PathBuf>>>) -> Self {
+        Self { files }
+    }
+}
+
+impl<'s> ParallelVisitorBuilder<'s> for FileCollectorBuilder {
+    fn build(&mut self) -> Box<dyn ParallelVisitor + 's> {
+        Box::new(FileCollector::new(Arc::clone(&self.files)))
+    }
+}
+
 fn discover_markdown_files(paths: &[PathBuf]) -> anyhow::Result<Vec<PathBuf>> {
-    let mut files = Vec::new();
+    let files = Arc::new(Mutex::new(Vec::new()));
 
     // If no paths provided, default to current directory
     let search_paths = if paths.is_empty() {
@@ -35,41 +82,37 @@ fn discover_markdown_files(paths: &[PathBuf]) -> anyhow::Result<Vec<PathBuf>> {
         if path.is_file() {
             // Single file
             if is_markdown_file(&path) {
-                files.push(path);
+                files.lock().unwrap().push(path);
             }
         } else if path.is_dir() {
-            // Directory - use ignore crate for efficient directory traversal
+            let mut types_builder = TypesBuilder::new();
+            types_builder.add_defaults();
+            types_builder.select("markdown");
+            let types = types_builder.build()?;
+
             let walker = WalkBuilder::new(&path)
                 .hidden(false)
                 .git_ignore(true)
                 .git_exclude(true)
                 .git_global(true)
-                .build();
+                .types(types)
+                .build_parallel();
 
-            for entry in walker {
-                let entry = entry?;
-                let file_path = entry.path();
-
-                if file_path.is_file() && is_markdown_file(file_path) {
-                    files.push(file_path.to_path_buf());
-                }
-            }
+            let mut builder = FileCollectorBuilder::new(Arc::clone(&files));
+            walker.visit(&mut builder);
         } else {
             // Try as glob pattern
             let pattern = path.to_string_lossy();
             for entry in glob(&pattern)? {
                 let file_path = entry?;
                 if file_path.is_file() && is_markdown_file(&file_path) {
-                    files.push(file_path);
+                    files.lock().unwrap().push(file_path);
                 }
             }
         }
     }
 
-    // Sort files for consistent output
-    files.sort();
-    files.dedup();
-
+    let files = Arc::try_unwrap(files).unwrap().into_inner().unwrap();
     Ok(files)
 }
 
@@ -121,7 +164,33 @@ fn print_cli_errors(results: &[RuleViolation], config: &QuickmarkConfig) -> (i32
     res
 }
 
+/// Lint a single file with a pre-loaded config and return its violations
+fn lint_file_with_config(
+    file_path: &Path,
+    config: &QuickmarkConfig,
+) -> anyhow::Result<Vec<RuleViolation>> {
+    // Early exit optimization: Check if any rules are enabled before file I/O
+    let has_active_rules = config
+        .linters
+        .severity
+        .values()
+        .any(|severity| *severity != RuleSeverity::Off);
+
+    if !has_active_rules {
+        // No rules are active, skip file reading and processing entirely
+        return Ok(Vec::new());
+    }
+
+    let file_content = fs::read_to_string(file_path)
+        .context(format!("Can't read file {}", file_path.to_string_lossy()))?;
+
+    let mut linter =
+        MultiRuleLinter::new_for_document(file_path.to_path_buf(), config.clone(), &file_content);
+    Ok(linter.analyze())
+}
+
 /// Lint a single file with hierarchical config discovery and return its violations
+/// This function is kept for backward compatibility but should be avoided for performance
 fn lint_file_with_config_discovery(
     file_path: &Path,
     use_env_config: bool,
@@ -153,32 +222,47 @@ fn main() -> anyhow::Result<()> {
         exit(0);
     }
 
-    // Check if we should use environment config (same for all files) or hierarchical discovery (per file)
-    let use_env_config = std::env::var("QUICKMARK_CONFIG").is_ok();
-
-    // Process files in parallel using rayon with per-file config discovery
-    let all_violations: Vec<_> = files
-        .par_iter()
-        .map(|file_path| {
-            lint_file_with_config_discovery(file_path, use_env_config).unwrap_or_else(|e| {
-                eprintln!("Error linting {}: {}", file_path.display(), e);
-                Vec::new()
-            })
-        })
-        .flatten()
-        .collect();
-
-    // For error reporting, use a default config (the specific config doesn't matter for display)
-    let display_config = if use_env_config {
+    // Use optimized single config loading only when QUICKMARK_CONFIG is set
+    // Otherwise, preserve hierarchical config discovery for correctness
+    let (all_violations, config) = if std::env::var("QUICKMARK_CONFIG").is_ok() {
+        // Performance optimization: Load config once when using environment config
         let pwd = env::current_dir()?;
-        config_from_env_path_or_default(&pwd)?
+        let config = config_from_env_path_or_default(&pwd)?;
+
+        let violations: Vec<RuleViolation> = files
+            .par_iter()
+            .map(|file_path| {
+                lint_file_with_config(file_path, &config).unwrap_or_else(|e| {
+                    eprintln!("Error linting {}: {}", file_path.display(), e);
+                    Vec::new()
+                })
+            })
+            .flatten()
+            .collect();
+
+        (violations, config)
     } else {
+        // Preserve hierarchical config discovery for correctness
+        let violations: Vec<RuleViolation> = files
+            .par_iter()
+            .map(|file_path| {
+                lint_file_with_config_discovery(file_path, false).unwrap_or_else(|e| {
+                    eprintln!("Error linting {}: {}", file_path.display(), e);
+                    Vec::new()
+                })
+            })
+            .flatten()
+            .collect();
+
+        // For hierarchical discovery, use default config for error display
         let default_path = PathBuf::from(".");
         let config_path = files.first().unwrap_or(&default_path);
-        discover_config_or_default(config_path)?
+        let config = discover_config_or_default(config_path)?;
+
+        (violations, config)
     };
 
-    let (errs, _) = print_cli_errors(&all_violations, &display_config);
+    let (errs, _) = print_cli_errors(&all_violations, &config);
     let exit_code = min(errs, 1);
     exit(exit_code);
 }

@@ -1,0 +1,14 @@
+default: true
+
+### Rules below are not implemented in Mado and MDL
+MD048: false
+MD049: false
+MD050: false
+MD051: false
+MD052: false
+MD053: false
+MD054: false
+MD055: false
+MD056: false
+MD058: false
+MD059: false
