@@ -24,6 +24,7 @@ The extension automatically detects your platform and uses the appropriate bundl
 If you prefer to use your own QuickMark server binary:
 
 1. Build from source:
+
    ```bash
    git clone https://github.com/quickmark/quickmark.git
    cd quickmark
@@ -31,6 +32,7 @@ If you prefer to use your own QuickMark server binary:
    ```
 
 2. Configure the extension to use your binary:
+
    ```json
    {
      "quickmark.serverPath": "/path/to/your/quickmark_server"
@@ -109,16 +111,18 @@ The extension includes pre-built binaries for all major platforms. If you encoun
 1. Check the output channel for detailed error messages: `View > Output > QuickMark`
 
 2. Verify your platform is supported:
-   - Windows (x64, x86)
+   - Windows (x64)
    - macOS (Intel, Apple Silicon)
    - Linux (x64, ARM64)
 
 3. If using a custom server path, ensure it's accessible:
+
    ```bash
    /your/path/to/quickmark_server --help
    ```
 
 4. Try clearing the server path setting to use the bundled binary:
+
    ```json
    {
      "quickmark.serverPath": ""
@@ -150,7 +154,7 @@ cd quickmark/vscode-quickmark
 npm install
 
 # Build server and copy binary
-cd .. && cargo build --release --bin quickmark_server
+cd .. && cargo build --release --bin quickmark-server
 cd vscode-quickmark && npm run copy-local-binary
 
 # Start developing
@@ -161,12 +165,3 @@ npm run compile
 ## License
 
 This extension is part of the QuickMark project. See the main repository for license information.
-
-## Changelog
-
-### 0.0.1
-
-- Initial release
-- Basic LSP integration with quickmark_server
-- Configuration support for rules and severity levels
-- Commands for server management

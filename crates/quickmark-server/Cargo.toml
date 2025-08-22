@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.86"
-quickmark-core = { path = "../quickmark-core" }
+quickmark-core = { path = "../quickmark-core", version = "1.0.0-alpha.1" }
 tower-lsp = "0.20.0"
 tokio = { version = "1.0", features = ["full"] }
 

@@ -266,7 +266,7 @@ async fn main() -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+
     use quickmark_core::config::{QuickmarkConfig, RuleSeverity};
     use std::collections::HashMap;
     use tower_lsp::lsp_types::{Diagnostic, DiagnosticSeverity, NumberOrString, Position, Range};
