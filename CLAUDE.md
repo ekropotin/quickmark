@@ -23,7 +23,8 @@ quickmark/
 │   │   │   ├── config/        # Configuration data structures and TOML parsing
 │   │   │   ├── linter.rs      # Linting engine
 │   │   │   ├── rules/         # Individual linting rules
-│   │   │   └── test_utils.rs
+│   │   │   ├── test_utils.rs  # Testing utilities
+│   │   │   └── tree_sitter_walker.rs  # Tree-sitter AST traversal utilities
 │   │   └── tests/
 │   ├── quickmark-cli/         # CLI application
 │   │   ├── Cargo.toml
@@ -34,7 +35,8 @@ quickmark/
 │       └── src/
 │           └── main.rs        # Server interface
 ├── docs/                      # Documentation
-└── test-samples/              # Test files and configurations
+├── test-samples/              # Test files and configurations
+└── vscode-quickmark/          # VSCode extension
 ```
 
 ## Common Commands
@@ -182,7 +184,7 @@ This architecture allows rules like MD013 to work efficiently with raw text whil
 
 - `anyhow`: Error handling
 - `clap`: CLI parsing with derive features
-- `quickmark-core`: Linting engine and configuration
+- `quickmark-core` (path = "../quickmark-core"): Linting engine and configuration
 - `glob`: File pattern matching
 - `rayon`: Parallel processing
 - `ignore`: Gitignore-style file filtering
@@ -191,7 +193,7 @@ This architecture allows rules like MD013 to work efficiently with raw text whil
 ### quickmark-server
 
 - `anyhow`: Error handling
-- `quickmark-core`: Linting engine and configuration
+- `quickmark-core` (path = "../quickmark-core"): Linting engine and configuration
 - `tower-lsp`: LSP server implementation
 - `tokio`: Async runtime
 

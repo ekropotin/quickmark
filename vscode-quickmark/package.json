@@ -2,7 +2,7 @@
   "name": "vscode-quickmark",
   "displayName": "QuickMark",
   "description": "Lightning-fast Markdown linter for VSCode using QuickMark LSP server",
-  "version": "0.0.1",
+  "version": "1.0.0-alpha.1",
   "publisher": "quickmark",
   "repository": {
     "type": "git",
@@ -10,7 +10,8 @@
     "directory": "vscode-quickmark"
   },
   "engines": {
-    "vscode": "^1.74.0"
+    "vscode": "^1.74.0",
+    "node": ">=18.0.0"
   },
   "categories": [
     "Linters",
@@ -118,15 +119,19 @@
   },
   "devDependencies": {
     "@types/vscode": "^1.74.0",
-    "@types/node": "16.x",
+    "@types/node": "18.x",
     "@typescript-eslint/eslint-plugin": "^5.45.0",
     "@typescript-eslint/parser": "^5.45.0",
     "eslint": "^8.28.0",
     "typescript": "^4.9.4",
     "@vscode/test-electron": "^2.2.0",
-    "@vscode/vsce": "^2.15.0"
+    "vsce": "1.103.1"
   },
   "dependencies": {
     "vscode-languageclient": "^8.1.0"
+  },
+  "overrides": {
+    "cheerio": "1.0.0-rc.12",
+    "undici": "5.28.4"
   }
 }

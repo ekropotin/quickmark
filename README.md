@@ -21,6 +21,10 @@ This project takes a lot of inspiration from David Anson's [markdownlint](https:
 - ⚙️ **LSP Integration**: QuickMark integrates effortlessly with your favorite code editors through LSP, providing real-time feedback and linting suggestions directly within your editor.
 - 🧩 **Customizable Rules**: Tailor the linting rules to fit your project's specific needs, ensuring that your Markdown files adhere to your preferred style and standards.
 
+## Demo
+
+![Demo GIF](assets/demo.gif)
+
 ## Benchmarks
 
 ```mermaid
@@ -134,12 +138,6 @@ QuickMark uses a sophisticated hierarchical configuration discovery system that 
 #### Hierarchical Configuration Discovery
 
 QuickMark automatically discovers configuration files by searching upward from the target markdown file's directory, stopping at natural project boundaries. This enables different parts of your project to have their own linting rules while maintaining a sensible inheritance hierarchy.
-
-
-
-
-
-
 
 **Search Process:**
 
