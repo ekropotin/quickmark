@@ -1,0 +1,45 @@
+name: Crates Version Bump
+
+on:
+  workflow_dispatch:
+    inputs:
+      all:
+        description: 'Bump version for all crates (not just changed ones)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run version bump
+        run: |
+          cargo install cargo-workspaces
+          BRANCH="${GITHUB_REF_NAME}"
+          ALL_FLAG=""
+          
+          if [ "${{ inputs.all }}" = "true" ]; then
+            ALL_FLAG="--all"
+            echo "Will bump version for ALL crates"
+          else
+            echo "Will bump version for CHANGED crates only"
+          fi
+          
+          echo "Running on branch: $BRANCH"
+
+          case "$BRANCH" in
+            main)
+              cargo workspaces version --allow-branch "$BRANCH" --no-global-tag $ALL_FLAG --yes
+              ;;
+            development)
+              cargo workspaces version --allow-branch "$BRANCH" --no-global-tag prerelease $ALL_FLAG --yes
+              ;;
+            *)
+              echo "❌ This workflow can only be run on 'main' or 'development'."
+              exit 1
+              ;;
+          esac

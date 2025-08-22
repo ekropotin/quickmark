@@ -44,7 +44,7 @@ impl LspTestClient {
             .unwrap()
             .join("target")
             .join("debug")
-            .join("quickmark_server");
+            .join("quickmark-server");
 
         let mut process = Command::new(server_path)
             .stdin(Stdio::piped())
