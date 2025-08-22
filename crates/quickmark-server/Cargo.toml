@@ -2,6 +2,13 @@
 name = "quickmark-server"
 version = "1.0.0-alpha.1"
 edition = "2021"
+description = "Lightning-fast Markdown/CommonMark linter LSP server for editor integration"
+license = "MIT"
+authors = ["Evgeny Kropotin"]
+repository = "https://github.com/ekropotin/quickmark"
+homepage = "https://github.com/ekropotin/quickmark"
+keywords = ["markdown", "linter", "lsp", "language-server", "editor"]
+categories = ["text-processing", "development-tools", "text-editors"]
 
 [dependencies]
 anyhow = "1.0.86"

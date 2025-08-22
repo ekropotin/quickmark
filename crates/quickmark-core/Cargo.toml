@@ -2,6 +2,13 @@
 name = "quickmark-core"
 version = "1.0.0-alpha.1"
 edition = "2021"
+description = "Lightning-fast Markdown/CommonMark linter core library with tree-sitter based parsing"
+license = "MIT"
+authors = ["Evgeny Kropotin"]
+repository = "https://github.com/ekropotin/quickmark"
+homepage = "https://github.com/ekropotin/quickmark"
+keywords = ["markdown", "linter", "commonmark", "lint", "tree-sitter"]
+categories = ["text-processing", "development-tools"]
 
 [dependencies]
 anyhow = "1.0.86"
