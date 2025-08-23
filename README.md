@@ -55,9 +55,29 @@ as the dataset.
 
 ## Getting Started
 
-### Installation
+### Quickmark CLI
 
-At this point, the only way to get the binary is building it from the sources:
+#### Installation
+
+##### Option 1 - from Brew (OSX only)
+
+```shell
+brew tap ekropotin/quickmark
+brew install quickmark-cli
+
+```
+
+##### Option 2 - from crates
+
+```shell
+cargo install quickmark-cli --version 1.0.0-alpha.1
+```
+
+##### Option 3 - download from the release page
+
+[release page](https://github.com/ekropotin/quickmark/releases)
+
+##### Option 4 - build from sources
 
 ```shell
 git clone git@github.com:ekropotin/quickmark.git
@@ -124,6 +144,55 @@ QuickMark automatically:
 - Ignores non-markdown files and respects `.gitignore` patterns
 - Processes files in parallel for maximum performance
 - Uses hierarchical configuration discovery for each file
+
+### IDE integrations
+
+#### VSCode-base editors (VsCode, Cursor, Windsurf, etc)
+
+Download `vsix` extension from the [release page](https://github.com/ekropotin/quickmark/releases)
+
+Install:
+
+```shell
+<code/cursor/etc> --install-extension <path_to_vsix_file>
+```
+
+Or just drug and drop the file to the Extensions Pane in the editor.
+
+#### NeoVIM
+
+Install via cargo:
+
+```bash
+cargo install quickmark-server --version 1.0.0-alpha.1
+```
+
+Or download the binary for your platform from the latest [release page](https://github.com/ekropotin/quickmark/releases)
+
+Configure with [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig):
+
+```lua
+local lspconfig = require("lspconfig")
+local configs = require("lspconfig.configs")
+
+if not configs.quickmark then
+    configs.quickmark = {
+        default_config = {
+            -- in case of cargo install the path is $HOME/.cargo/bin
+            cmd = { "<path_to_quickmark_server>" },
+            filetypes = { "markdown" },
+            root_dir = lspconfig.util.root_pattern("quickmark.toml", ".git"),
+            settings = {},
+            single_file_support = true,
+        },
+    }
+end
+lspconfig.quickmark.setup({})
+```
+
+#### IntelliJ IDEA
+
+WIP
 
 ### Configuration
 

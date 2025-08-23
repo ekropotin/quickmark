@@ -2,6 +2,13 @@
 name = "quickmark-cli"
 version = "1.0.0-alpha.1"
 edition = "2021"
+description = "Lightning-fast Markdown/CommonMark linter CLI tool with tree-sitter based parsing"
+license = "MIT"
+authors = ["Evgeny Kropotin"]
+repository = "https://github.com/ekropotin/quickmark"
+homepage = "https://github.com/ekropotin/quickmark"
+keywords = ["markdown", "linter", "commonmark", "lint", "cli"]
+categories = ["command-line-utilities", "text-processing", "development-tools"]
 
 [[bin]]
 name = "qmark"
