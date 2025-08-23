@@ -6,11 +6,11 @@ class QuickmarkCli < Formula
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/ekropotin/quickmark/releases/download/quickmark-cli%401.0.0-alpha.1/qmark-x86_64-apple-darwin"
-      sha256 "sha256:309161921d26ea93f1b8f3f6738346bcf032e42a12b600363b43f76f87158bba"
+      url "https://github.com/ekropotin/quickmark/releases/download/quickmark-cli%40#{version}/qmark-x86_64-apple-darwin"
+      sha256 "309161921d26ea93f1b8f3f6738346bcf032e42a12b600363b43f76f87158bba"
     else
-      url "https://github.com/ekropotin/quickmark/releases/download/quickmark-cli%401.0.0-alpha.1/qmark-aarch64-apple-darwin"
-      sha256 "sha256:c6cc057df011d1df9ee2d0a60d6f2634d78561b57d3afd85cbd89715d737649d"
+      url "https://github.com/ekropotin/quickmark/releases/download/quickmark-cli%40#{version}/qmark-aarch64-apple-darwin"
+      sha256 "c6cc057df011d1df9ee2d0a60d6f2634d78561b57d3afd85cbd89715d737649d"
     end
   end
 
