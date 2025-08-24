@@ -1,17 +1,9 @@
-name: Build QuickMark Server Binaries
+name: Release QuickMark Server 
 
 on:
   push:
     tags:
       - 'quickmark-server@*'
-  release:
-    types: [created]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version tag (e.g., quickmark-server@1.0.0)'
-        required: false
-        default: 'latest'
 
 jobs:
   build:
