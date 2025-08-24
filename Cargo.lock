@@ -925,7 +925,7 @@ dependencies = [
 
 [[package]]
 name = "quickmark-core"
-version = "1.0.0-beta.0"
+version = "1.0.0-beta.1"
 dependencies = [
  "anyhow",
  "linkify",
