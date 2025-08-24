@@ -22,7 +22,7 @@ if (!fs.existsSync(binDir)) {
 console.log('Building QuickMark server binaries...');
 
 targets.forEach(target => {
-    const binaryName = `quickmark_server-${target.rust}${target.suffix}`;
+    const binaryName = `quickmark-server-${target.rust}${target.suffix}`;
     const targetDir = path.join(projectRoot, 'target', target.rust, 'release');
     const sourceBinary = path.join(targetDir, `quickmark-server${target.suffix}`);
     const destBinary = path.join(binDir, binaryName);

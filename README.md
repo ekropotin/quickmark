@@ -62,7 +62,7 @@ as the dataset.
 ##### Option 1 - from Brew (OSX only)
 
 ```shell
-brew tap ekropotin/quickmark
+brew tap ekropotin/quickmark https://github.com/ekropotin/quickmark
 brew install quickmark-cli
 
 ```
