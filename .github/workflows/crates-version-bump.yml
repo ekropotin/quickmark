@@ -25,10 +25,26 @@ jobs:
       contents: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.PAT }}
           fetch-depth: 0
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo-workspaces
+        uses: actions/cache@v3
+        id: cache-cargo-workspaces
+        with:
+          path: ~/.cargo/bin/cargo-workspaces
+          key: cargo-workspaces-${{ runner.os }}-v1
+          restore-keys: |
+            cargo-workspaces-${{ runner.os }}-
+
+      - name: Install cargo-workspaces
+        if: steps.cache-cargo-workspaces.outputs.cache-hit != 'true'
+        run: cargo install cargo-workspaces
 
       - name: Setup Git
         run: |
@@ -37,7 +53,6 @@ jobs:
 
       - name: Run version bump
         run: |
-          cargo install cargo-workspaces
           BRANCH="${GITHUB_REF_NAME}"
           ALL_FLAG=""
           PRE_ID="${{ inputs.pre-id }}"
