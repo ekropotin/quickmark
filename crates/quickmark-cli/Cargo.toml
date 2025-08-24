@@ -7,7 +7,7 @@ license = "MIT"
 authors = ["Evgeny Kropotin"]
 repository = "https://github.com/ekropotin/quickmark"
 homepage = "https://github.com/ekropotin/quickmark"
-keywords = ["markdown", "linter", "commonmark", "lint", "cli"]
+keywords = ["markdown", "linter", "lint", "cli"]
 categories = ["command-line-utilities", "text-processing", "development-tools"]
 
 [[bin]]
@@ -17,7 +17,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1.0.86"
 clap = { version = "4.5.4", features = ["derive"] }
-quickmark-core = { path = "../quickmark-core", version = "1.0.0-alpha.1" }
+quickmark-core = { path = "../quickmark-core", version = "1.0.0-alpha.3" }
 glob = "0.3"
 rayon = "1.8"
 ignore = "0.4"
