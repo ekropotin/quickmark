@@ -7,7 +7,7 @@ license = "MIT"
 authors = ["Evgeny Kropotin"]
 repository = "https://github.com/ekropotin/quickmark"
 homepage = "https://github.com/ekropotin/quickmark"
-keywords = ["markdown", "linter", "commonmark", "lint", "tree-sitter"]
+keywords = ["markdown", "linter", "lint", "tree-sitter"]
 categories = ["text-processing", "development-tools"]
 
 [dependencies]
