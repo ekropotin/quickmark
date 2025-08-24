@@ -3,11 +3,6 @@ name: Crates Version Bump
 on:
   workflow_dispatch:
     inputs:
-      all:
-        description: 'Cascade version bump to downstream crates (crates, depending on the changed one)'
-        required: false
-        default: true
-        type: boolean
       pre-id:
         description: 'Prerelease identifier for prerelease versions'
         required: false
@@ -53,25 +48,18 @@ jobs:
       - name: Run version bump
         run: |
           BRANCH="${GITHUB_REF_NAME}"
-          ALL_FLAG=""
           PRE_ID="${{ inputs.pre-id }}"
-
-          if [ "${{ inputs.all }}" = "true" ]; then
-            ALL_FLAG="--all"
-            echo "Will bump version for ALL crates"
-          else
-            echo "Will bump version for CHANGED crates only"
-          fi
 
           echo "Running on branch: $BRANCH"
           echo "Prerelease identifier: $PRE_ID"
+          echo "Will bump version for ALL crates"
 
           case "$BRANCH" in
             main)
-              cargo workspaces version --allow-branch "$BRANCH" --no-global-tag $ALL_FLAG --yes
+              cargo workspaces version --allow-branch "$BRANCH" --no-global-tag --yes
               ;;
             development)
-              cargo workspaces version --allow-branch "$BRANCH" --no-global-tag prerelease --pre-id "$PRE_ID" $ALL_FLAG --yes
+              cargo workspaces version --allow-branch "$BRANCH" --no-global-tag prerelease --pre-id "$PRE_ID" --yes
               ;;
             *)
               echo "❌ This workflow can only be run on 'main' or 'development'."
