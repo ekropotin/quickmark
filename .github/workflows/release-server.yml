@@ -133,10 +133,16 @@ jobs:
       - name: Organize binaries and changelog
         run: |
           mkdir -p release-binaries
-          find artifacts -name "quickmark-server-*" -type f -exec mv {} release-binaries/ \;
-          find artifacts -name "CHANGELOG.md" -type f -exec cp {} ./ \;
+          # Copy binaries from artifact subdirectories
+          for artifact_dir in artifacts/quickmark-server-*; do
+            if [ -d "$artifact_dir" ]; then
+              cp "$artifact_dir"/* release-binaries/
+            fi
+          done
+          # Copy changelog
+          cp artifacts/changelog/CHANGELOG.md ./ 2>/dev/null || echo "No changelog found"
           ls -la release-binaries/
-          ls -la CHANGELOG.md
+          if [ -f CHANGELOG.md ]; then ls -la CHANGELOG.md; fi
 
       - name: Create release
         uses: softprops/action-gh-release@v2

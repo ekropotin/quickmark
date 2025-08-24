@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       all:
-        description: 'Bump version for all crates (not just changed ones)'
+        description: 'Cascade version bump to downstream crates (crates, depending on the changed one)'
         required: false
-        default: false
+        default: true
         type: boolean
       pre-id:
         description: 'Prerelease identifier for prerelease versions'
@@ -14,7 +14,6 @@ on:
         default: 'alpha'
         type: choice
         options:
-          - alpha
           - beta
           - rc
 
