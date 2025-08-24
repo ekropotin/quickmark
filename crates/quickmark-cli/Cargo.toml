@@ -1,6 +1,6 @@
 [package]
 name = "quickmark-cli"
-version = "1.0.0-beta.0"
+version = "1.0.0-beta.1"
 edition = "2021"
 description = "Lightning-fast Markdown/CommonMark linter CLI tool with tree-sitter based parsing"
 license = "MIT"
