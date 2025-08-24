@@ -58,7 +58,7 @@ jobs:
           PRE_ID="${{ inputs.pre-id }}"
 
           if [ "${{ inputs.all }}" = "true" ]; then
-            ALL_FLAG="--all --force '*'"
+            ALL_FLAG="--all"
             echo "Will bump version for ALL crates"
           else
             echo "Will bump version for CHANGED crates only"
