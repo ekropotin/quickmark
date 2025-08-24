@@ -3,13 +3,13 @@ name: Build QuickMark Server Binaries
 on:
   push:
     tags:
-      - 'v*'
+      - 'quickmark-server@*'
   release:
     types: [created]
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g., v1.0.0)'
+        description: 'Version tag (e.g., quickmark-server@1.0.0)'
         required: false
         default: 'latest'
 
@@ -89,11 +89,51 @@ jobs:
           path: ${{ steps.binary-name.outputs.source_path }}
           if-no-files-found: error
 
+  publish:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/quickmark-server@')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Publish quickmark-server to crates.io
+        run: cargo publish -p quickmark-server --token ${{ secrets.CRATES_IO_TOKEN }}
+
+      - name: Generate changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --include-path "crates/quickmark-server/**" --tag-pattern "quickmark-server@*"
+        env:
+          OUTPUT: CHANGELOG.md
+
+      - name: Upload changelog
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: CHANGELOG.md
+
   release:
     name: Create Release
-    needs: build
+    needs: [build, publish]
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/quickmark-server@')
     permissions:
       contents: write
 
@@ -104,19 +144,21 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: binaries
+          path: artifacts
 
-      - name: Organize binaries
+      - name: Organize binaries and changelog
         run: |
           mkdir -p release-binaries
-          find binaries -name "quickmark-server-*" -type f -exec mv {} release-binaries/ \;
+          find artifacts -name "quickmark-server-*" -type f -exec mv {} release-binaries/ \;
+          find artifacts -name "CHANGELOG.md" -type f -exec cp {} ./ \;
           ls -la release-binaries/
+          ls -la CHANGELOG.md
 
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           files: release-binaries/*
-          generate_release_notes: true
+          body_path: CHANGELOG.md
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
         env:

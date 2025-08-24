@@ -1,4 +1,5 @@
 # Contributing to QuickMark VSCode Extension
+######
 
 Thank you for your interest in contributing to the QuickMark VSCode extension! This guide will help you get started with development, testing, and contributing to the project.
 

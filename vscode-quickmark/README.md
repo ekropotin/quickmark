@@ -28,7 +28,7 @@ If you prefer to use your own QuickMark server binary:
    ```bash
    git clone https://github.com/quickmark/quickmark.git
    cd quickmark
-   cargo build --release --bin quickmark_server
+   cargo build --release --bin quickmark-server
    ```
 
 2. Configure the extension to use your binary:

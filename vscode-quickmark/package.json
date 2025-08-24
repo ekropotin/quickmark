@@ -10,8 +10,8 @@
     "directory": "vscode-quickmark"
   },
   "engines": {
-    "vscode": "^1.74.0",
-    "node": ">=18.0.0"
+    "vscode": "^1.85.0",
+    "node": ">=20.0.0"
   },
   "categories": [
     "Linters",
@@ -25,7 +25,7 @@
     "performance"
   ],
   "icon": "icon.png",
-  "main": "./out/extension.js",
+  "main": "./dist/extension.js",
   "activationEvents": [
     "onLanguage:markdown"
   ],
@@ -107,9 +107,11 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile && npm run copy-local-binary",
+    "vscode:prepublish": "npm run package-extension",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
+    "package-extension": "webpack --mode production --devtool hidden-source-map",
+    "watch-extension": "webpack --watch",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
@@ -118,17 +120,20 @@
     "copy-local-binary": "node scripts/copy-local-binary.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.74.0",
-    "@types/node": "18.x",
-    "@typescript-eslint/eslint-plugin": "^5.45.0",
-    "@typescript-eslint/parser": "^5.45.0",
-    "eslint": "^8.28.0",
-    "typescript": "^4.9.4",
-    "@vscode/test-electron": "^2.2.0",
-    "vsce": "1.103.1"
+    "@types/node": "20.x",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vscode/test-electron": "^2.4.0",
+    "@vscode/vsce": "^3.1.0",
+    "eslint": "^9.0.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.6.0",
+    "webpack": "^5.95.0",
+    "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "vscode-languageclient": "^8.1.0"
+    "vscode-languageclient": "^9.0.1"
   },
   "overrides": {
     "cheerio": "1.0.0-rc.12",
