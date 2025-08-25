@@ -77,7 +77,7 @@ brew install quickmark-cli
 ##### Option 2 - from crates
 
 ```shell
-cargo install quickmark-cli --version 1.0.0-beta.1
+cargo install quickmark-cli --version 1.0.0-beta.2
 ```
 
 ##### Option 3 - download from the release page
@@ -171,7 +171,7 @@ Or just drug and drop the file to the Extensions Pane in the editor.
 Install via cargo:
 
 ```bash
-cargo install quickmark-server --version 1.0.0-beta.1
+cargo install quickmark-server --version 1.0.0-beta.2
 ```
 
 Or download the binary for your platform from the latest [release page](https://github.com/ekropotin/quickmark/releases)
