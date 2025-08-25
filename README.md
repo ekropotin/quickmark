@@ -2,9 +2,7 @@
 
 [![image](https://img.shields.io/badge/license-MIT-blue)](https://github.com/ekropotin/quickmark/blob/main/LICENSE)
 
-> **Notice:** This project is at super early stage of development. Expect frequent updates and breaking changes.
-
-An lightning-fast linter for Markdown/[CommonMark](https://commonmark.org/) files, written in Rust.
+Quickmark is a Markdown/[CommonMark](https://commonmark.org/) linter written in Rust with first-class LSP support, giving you fast, seamless feedback in any editor.
 
 QuickMark is not just another Markdown linter; it's a tool designed with the modern developer in mind. By prioritizing speed and integrating seamlessly with your development environment, QuickMark enhances your productivity and makes Markdown linting an effortless part of your workflow.
 
@@ -13,10 +11,16 @@ This project takes a lot of inspiration from David Anson's [markdownlint](https:
 - [CommonMark](https://spec.commonmark.org/current/)
 - [GitHub Flavored Markdown Spec](https://github.github.com/gfm/)
 
+## AI Disclaimer
+
+Quickmark is designed, architected, and primarily written by a human. AI tools (e.g., Claude) were used to speed up routine tasks — such as drafting documentation, refining commit messages, scaffolding GitHub Actions, or generating test boilerplate.
+
+All design decisions, core implementation, and linter logic are written and maintained by real people. Think of the AI as an assistant for the repetitive parts, not as the author of the project.
+
 ## Key features
 
 - ⚡️ **Rust-Powered Speed**: Leveraging the power of Rust, QuickMark offers exceptional performance, making linting operations swift and efficient, even for large Markdown files.
-- 🧵 **Parallel Processing**: Process multiple files simultaneously using Rust's parallel processing capabilities, dramatically reducing lint times for large projects.
+- 🧵 **Parallel Processing**: Process multiple files simultaneously, dramatically reducing lint times for large projects.
 - 🔎 **Smart File Discovery**: Automatically discover markdown files using glob patterns, directory traversal, and intelligent filtering.
 - ⚙️ **LSP Integration**: QuickMark integrates effortlessly with your favorite code editors through LSP, providing real-time feedback and linting suggestions directly within your editor.
 - 🧩 **Customizable Rules**: Tailor the linting rules to fit your project's specific needs, ensuring that your Markdown files adhere to your preferred style and standards.
