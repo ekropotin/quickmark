@@ -365,7 +365,7 @@ pub fn config_in_path_or_default(path: &Path) -> Result<QuickmarkConfig> {
         let config = fs::read_to_string(config_file)?;
         return parse_toml_config(&config);
     }
-    println!(
+    eprintln!(
         "Config file was not found at {}. Default config will be used.",
         config_file.to_string_lossy()
     );
