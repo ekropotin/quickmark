@@ -156,15 +156,7 @@ QuickMark automatically:
 
 #### VSCode-base editors (VsCode, Cursor, Windsurf, etc)
 
-Download `vsix` extension from the [release page](https://github.com/ekropotin/quickmark/releases)
-
-Install:
-
-```shell
-<code/cursor/etc> --install-extension <path_to_vsix_file>
-```
-
-Or just drug and drop the file to the Extensions Pane in the editor.
+Install the extension from the [VSCode marketplace](https://marketplace.visualstudio.com/items?itemName=ekropotin.vscode-quickmark)
 
 #### NeoVIM
 
