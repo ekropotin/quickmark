@@ -209,20 +209,28 @@ impl LanguageServer for Backend {
     }
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
-        eprintln!("[QUICKMARK] did_open: {} (len: {})", params.text_document.uri, params.text_document.text.len());
+        eprintln!(
+            "[QUICKMARK] did_open: {} (len: {})",
+            params.text_document.uri,
+            params.text_document.text.len()
+        );
         self.publish_diagnostics(params.text_document.uri, &params.text_document.text)
             .await;
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
-        eprintln!("[QUICKMARK] did_change: {} ({} changes)", params.text_document.uri, params.content_changes.len());
+        eprintln!(
+            "[QUICKMARK] did_change: {} ({} changes)",
+            params.text_document.uri,
+            params.content_changes.len()
+        );
         //do nothing on changes, only lint on save
     }
 
     async fn did_save(&self, params: DidSaveTextDocumentParams) {
         eprintln!("[QUICKMARK] did_save: {}", params.text_document.uri);
         eprintln!("[QUICKMARK] text provided: {}", params.text.is_some());
-        
+
         let content = if let Some(text) = params.text {
             eprintln!("[QUICKMARK] using provided text (len: {})", text.len());
             // Use text content provided by the LSP client
@@ -236,7 +244,10 @@ impl LanguageServer for Backend {
                     eprintln!("[QUICKMARK] reading file: {:?}", path);
                     match std::fs::read_to_string(&path) {
                         Ok(content) => {
-                            eprintln!("[QUICKMARK] successfully read {} chars from disk", content.len());
+                            eprintln!(
+                                "[QUICKMARK] successfully read {} chars from disk",
+                                content.len()
+                            );
                             content
                         }
                         Err(err) => {
@@ -244,16 +255,23 @@ impl LanguageServer for Backend {
                             return;
                         }
                     }
-                },
+                }
                 Err(_) => {
-                    eprintln!("[QUICKMARK] invalid file path: {}", params.text_document.uri);
+                    eprintln!(
+                        "[QUICKMARK] invalid file path: {}",
+                        params.text_document.uri
+                    );
                     return;
                 }
             }
         };
 
-        eprintln!("[QUICKMARK] publishing diagnostics for {} chars", content.len());
-        self.publish_diagnostics(params.text_document.uri, &content).await;
+        eprintln!(
+            "[QUICKMARK] publishing diagnostics for {} chars",
+            content.len()
+        );
+        self.publish_diagnostics(params.text_document.uri, &content)
+            .await;
         eprintln!("[QUICKMARK] diagnostics published");
     }
 

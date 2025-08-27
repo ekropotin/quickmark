@@ -2,7 +2,7 @@ class QuickmarkCli < Formula
   desc "Lightning-fast Markdown/CommonMark linter CLI tool with tree-sitter based parsing"
   homepage "https://github.com/ekropotin/quickmark"
   license "MIT"
-  version "1.0.0-alpha.1"
+  version "1.0.0"
 
   on_macos do
     if Hardware::CPU.intel?

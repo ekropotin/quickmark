@@ -77,7 +77,7 @@ brew install quickmark-cli
 ##### Option 2 - from crates
 
 ```shell
-cargo install quickmark-cli --version 1.0.0-beta.2
+cargo install quickmark-cli
 ```
 
 ##### Option 3 - download from the release page
@@ -163,7 +163,7 @@ Install the extension from the [VSCode marketplace](https://marketplace.visualst
 Install via cargo:
 
 ```bash
-cargo install quickmark-server --version 1.0.0-beta.2
+cargo install quickmark-server
 ```
 
 Or download the binary for your platform from the latest [release page](https://github.com/ekropotin/quickmark/releases)
@@ -189,9 +189,11 @@ end
 lspconfig.quickmark.setup({})
 ```
 
-#### IntelliJ IDEA
+#### Jetbrains IDEs
 
-WIP
+Install from the [Marketplace](https://plugins.jetbrains.com/plugin/28305-quickmark/)
+
+**Note**: Only paid versions of IDEs are supported (like Idea Ultimate) at the moment. This may change in the future.
 
 ### Configuration
 
