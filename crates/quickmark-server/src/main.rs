@@ -209,19 +209,52 @@ impl LanguageServer for Backend {
     }
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
+        eprintln!("[QUICKMARK] did_open: {} (len: {})", params.text_document.uri, params.text_document.text.len());
         self.publish_diagnostics(params.text_document.uri, &params.text_document.text)
             .await;
     }
 
-    async fn did_change(&self, _params: DidChangeTextDocumentParams) {
+    async fn did_change(&self, params: DidChangeTextDocumentParams) {
+        eprintln!("[QUICKMARK] did_change: {} ({} changes)", params.text_document.uri, params.content_changes.len());
         //do nothing on changes, only lint on save
     }
 
     async fn did_save(&self, params: DidSaveTextDocumentParams) {
-        if let Some(text) = params.text {
-            self.publish_diagnostics(params.text_document.uri, &text)
-                .await;
-        }
+        eprintln!("[QUICKMARK] did_save: {}", params.text_document.uri);
+        eprintln!("[QUICKMARK] text provided: {}", params.text.is_some());
+        
+        let content = if let Some(text) = params.text {
+            eprintln!("[QUICKMARK] using provided text (len: {})", text.len());
+            // Use text content provided by the LSP client
+            text
+        } else {
+            eprintln!("[QUICKMARK] no text provided, reading from disk...");
+            // Fallback: read file from disk if client doesn't send text content
+            // Some LSP clients don't send text despite server requesting include_text: true
+            match params.text_document.uri.to_file_path() {
+                Ok(path) => {
+                    eprintln!("[QUICKMARK] reading file: {:?}", path);
+                    match std::fs::read_to_string(&path) {
+                        Ok(content) => {
+                            eprintln!("[QUICKMARK] successfully read {} chars from disk", content.len());
+                            content
+                        }
+                        Err(err) => {
+                            eprintln!("[QUICKMARK] failed to read file {:?}: {}", path, err);
+                            return;
+                        }
+                    }
+                },
+                Err(_) => {
+                    eprintln!("[QUICKMARK] invalid file path: {}", params.text_document.uri);
+                    return;
+                }
+            }
+        };
+
+        eprintln!("[QUICKMARK] publishing diagnostics for {} chars", content.len());
+        self.publish_diagnostics(params.text_document.uri, &content).await;
+        eprintln!("[QUICKMARK] diagnostics published");
     }
 
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
