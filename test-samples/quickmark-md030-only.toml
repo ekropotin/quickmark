@@ -1,0 +1,46 @@
+# Configuration for testing MD030 rule only
+
+[linters.severity]
+# Disable all other rules
+heading-increment = 'off'
+heading-style = 'off'
+list-indent = 'off'
+ul-style = 'off'
+ul-indent = 'off'
+no-trailing-spaces = 'off'
+no-hard-tabs = 'off'
+no-reversed-links = 'off'
+no-multiple-blanks = 'off'
+line-length = 'off'
+no-inline-html = 'off'
+no-bare-urls = 'off'
+single-trailing-newline = 'off'
+no-emphasis-as-heading = 'off'
+first-line-heading = 'off'
+blanks-around-headings = 'off'
+heading-start-left = 'off'
+no-duplicate-heading = 'off'
+single-h1 = 'off'
+no-trailing-punctuation = 'off'
+no-multiple-space-blockquote = 'off'
+no-blanks-blockquote = 'off'
+fenced-code-language = 'off'
+blanks-around-fences = 'off'
+blanks-around-lists = 'off'
+code-block-style = 'off'
+code-fence-style = 'off'
+required-headings = 'off'
+proper-names = 'off'
+no-alt-text = 'off'
+link-fragments = 'off'
+reference-links-images = 'off'
+link-image-reference-definitions = 'off'
+
+# Enable only MD030
+list-marker-space = 'err'
+
+[linters.settings.list-marker-space]
+ul_single = 1
+ol_single = 1
+ul_multi = 1
+ol_multi = 1

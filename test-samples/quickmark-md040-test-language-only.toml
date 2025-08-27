@@ -1,0 +1,40 @@
+# MD040 configuration matching original markdownlint language_only test
+
+[linters]
+
+[linters.severity]
+# Disable all other rules
+heading-increment = "off"
+heading-style = "off"
+ul-style = "off"
+list-indent = "off"
+trailing-spaces = "off"
+hard-tabs = "off"
+no-reversed-links = "off"
+multiple-consecutive-blank-lines = "off"
+line-length = "off"
+commands-show-output = "off"
+atx-space = "off"
+atx-space-after = "off"
+space-after-list-markers = "off"
+space-inside-list-markers = "off"
+blanks-around-headings = "off"
+no-duplicate-heading = "off"
+single-title = "off"
+blanks-around-fences = "off"
+blanks-around-lists = "off"
+no-inline-html = "off"
+bare-url = "off"
+required-headings = "off"
+link-fragments = "off"
+reference-links-images = "off"
+link-image-reference-definitions = "off"
+
+# Enable only MD040
+fenced-code-language = "err"
+
+[linters.settings]
+
+[linters.settings.fenced-code-language]
+allowed_languages = ["html", "css"]
+language_only = true

@@ -1,0 +1,160 @@
+name: Release QuickMark Server 
+
+on:
+  push:
+    tags:
+      - 'quickmark-server@*'
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            suffix: .exe
+          - target: x86_64-apple-darwin
+            os: macos-13
+            suffix: ''
+          - target: aarch64-apple-darwin
+            os: macos-14
+            suffix: ''
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            suffix: ''
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            suffix: ''
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross-compilation tools (Linux ARM64)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build quickmark-server
+        run: cargo build --release --bin quickmark-server --target ${{ matrix.target }}
+
+      - name: Prepare binary archive
+        id: binary-archive
+        shell: bash
+        run: |
+          ARCHIVE_NAME="quickmark-server-${{ matrix.target }}.tar.gz"
+          echo "archive_name=$ARCHIVE_NAME" >> $GITHUB_OUTPUT
+          
+          # Create archive with the binary renamed to quickmark-server
+          mkdir -p archive-temp
+          cp "target/${{ matrix.target }}/release/quickmark-server${{ matrix.suffix }}" archive-temp/quickmark-server${{ matrix.suffix }}
+          tar -czf "$ARCHIVE_NAME" -C archive-temp quickmark-server${{ matrix.suffix }}
+          rm -rf archive-temp
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.binary-archive.outputs.archive_name }}
+          path: ${{ steps.binary-archive.outputs.archive_name }}
+          if-no-files-found: error
+
+  publish:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/quickmark-server@')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Publish quickmark-server to crates.io
+        run: cargo publish -p quickmark-server --token ${{ secrets.CRATES_IO_TOKEN }}
+
+      - name: Generate changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --include-path "crates/quickmark-server/**" --tag-pattern "quickmark-server@*"
+        env:
+          OUTPUT: CHANGELOG.md
+
+      - name: Upload changelog
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: CHANGELOG.md
+
+  release:
+    name: Create Release
+    needs: [build, publish]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/quickmark-server@')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Organize archives and changelog
+        run: |
+          mkdir -p release-archives
+          # Copy tar.gz archives from artifact subdirectories
+          for artifact_dir in artifacts/quickmark-server-*; do
+            if [ -d "$artifact_dir" ]; then
+              cp "$artifact_dir"/*.tar.gz release-archives/ 2>/dev/null || true
+            fi
+          done
+          # Copy changelog
+          cp artifacts/changelog/CHANGELOG.md ./ 2>/dev/null || echo "No changelog found"
+          ls -la release-archives/
+          if [ -f CHANGELOG.md ]; then ls -la CHANGELOG.md; fi
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-archives/*
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

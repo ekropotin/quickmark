@@ -3,6 +3,7 @@
 First off, thank you for considering contributing to QuickMark! Your contributions are what make this project better. Whether you're reporting bugs, adding new features, or improving documentation, we appreciate your help.
 
 ## How to Contribute
+####
 
 ### Reporting Bugs
 

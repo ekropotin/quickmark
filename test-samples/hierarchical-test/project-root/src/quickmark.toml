@@ -1,0 +1,11 @@
+# Source code specific config - stricter for code documentation
+[linters.severity]
+heading-increment = 'warn'  # MD001 as warning for src/ 
+heading-style = 'err'       # MD003 still error
+line-length = 'err'         # MD013 stricter for code docs
+
+[linters.settings.heading-style]
+style = 'atx'
+
+[linters.settings.line-length]
+line_length = 80  # Shorter lines for code docs

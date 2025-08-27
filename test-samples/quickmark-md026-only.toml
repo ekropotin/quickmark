@@ -1,0 +1,34 @@
+# QuickMark configuration for testing MD026 (no-trailing-punctuation) only
+[linters.severity]
+heading-increment = "off"
+heading-style = "off"
+ul-style = "off"
+list-indent = "off"
+no-trailing-spaces = "off"
+no-hard-tabs = "off"
+no-multiple-blanks = "off"
+line-length = "off"
+no-missing-space-atx = "off"
+no-multiple-space-atx = "off"
+no-missing-space-closed-atx = "off"
+no-multiple-space-closed-atx = "off"
+blanks-around-headings = "off"
+heading-start-left = "off"
+no-duplicate-heading = "off"
+single-h1 = "off"
+no-trailing-punctuation = "err"  # This is the rule we're testing
+blanks-around-fences = "off"
+blanks-around-lists = "off"
+no-inline-html = "off"
+no-bare-urls = "off"
+fenced-code-language = "off"
+required-headings = "off"
+code-block-style = "off"
+code-fence-style = "off"
+link-fragments = "off"
+reference-links-images = "off"
+link-image-reference-definitions = "off"
+
+[linters.settings.no-trailing-punctuation]
+# Use default punctuation: ".,;:!。，；：！"
+# Note: '?' is not included by default

@@ -16,29 +16,27 @@ This is a Rust workspace with multiple crates implementing a clean separation of
 quickmark/
 ├── Cargo.toml                 # Workspace configuration
 ├── crates/
-│   ├── quickmark_linter/      # Core linting logic (format-agnostic)
+│   ├── quickmark-core/        # Core linting logic with integrated configuration
 │   │   ├── Cargo.toml
 │   │   ├── src/
 │   │   │   ├── lib.rs
-│   │   │   ├── config/        # Configuration data structures
+│   │   │   ├── config/        # Configuration data structures and TOML parsing
 │   │   │   ├── linter.rs      # Linting engine
 │   │   │   ├── rules/         # Individual linting rules
-│   │   │   └── tree_sitter_walker.rs
+│   │   │   ├── test_utils.rs  # Testing utilities
+│   │   │   └── tree_sitter_walker.rs  # Tree-sitter AST traversal utilities
 │   │   └── tests/
-│   ├── quickmark_config/      # Shared configuration parsing
-│   │   ├── Cargo.toml
-│   │   └── src/
-│   │       └── lib.rs         # TOML parsing and validation
-│   ├── quickmark/             # CLI application
+│   ├── quickmark-cli/         # CLI application
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       └── main.rs        # CLI interface
-│   └── quickmark_server/      # Server application (LSP, etc.)
+│   └── quickmark-server/      # Server application (LSP, etc.)
 │       ├── Cargo.toml
 │       └── src/
 │           └── main.rs        # Server interface
 ├── docs/                      # Documentation
-└── tests/                     # Integration tests
+├── test-samples/              # Test files and configurations
+└── vscode-quickmark/          # VSCode extension
 ```
 
 ## Common Commands
@@ -49,7 +47,7 @@ quickmark/
 - **Build release**: `cargo build --release`
 - **Run tests**: `cargo test`
 - **Run CLI linter**: `cargo run --bin qmark -- /path/to/file.md`
-- **Run server**: `cargo run --bin quickmark_server`
+- **Run server**: `cargo run --bin quickmark-server`
 
 ### Configuration
 
@@ -60,38 +58,34 @@ quickmark/
 
 ### Crate Responsibilities
 
-**quickmark_linter** (Core Library):
+**quickmark-core** (Core Library):
 
-- Pure linting logic with no configuration format dependencies
-- Accepts `QuickmarkConfig` objects directly
+- Core linting logic with integrated configuration system
+- TOML configuration parsing and validation
+- Converts TOML structures to `QuickmarkConfig` objects  
 - Tree-sitter based Markdown parsing
 - Rule system with pluggable architecture
-- Format-agnostic design for maximum reusability
+- Rule severity normalization and validation
+- Self-contained design eliminates external configuration dependencies
 
-**quickmark_config** (Shared Configuration):
-
-- TOML configuration parsing and validation
-- Converts TOML structures to `QuickmarkConfig` objects
-- Rule severity normalization
-- Used by both CLI and server applications
-- Centralized configuration logic prevents code duplication
-
-**quickmark** (CLI Application):
+**quickmark-cli** (CLI Application):
 
 - Command-line interface using clap
 - File I/O and user interaction
-- Uses `quickmark_config` for configuration parsing
-- Uses `quickmark_linter` for actual linting
+- Uses `quickmark-core` for configuration parsing and linting
+- Parallel file processing with rayon
+- File glob and ignore pattern support
 
-**quickmark_server** (Server Application):
+**quickmark-server** (Server Application):
 
-- Server interface for LSP integration
-- Uses same configuration system as CLI
-- Demonstrates shared configuration usage
+- LSP server interface for editor integration
+- Uses `quickmark-core` for configuration and linting
+- Async processing with tokio
+- Real-time document analysis
 
 ### Core Components
 
-**Linting Engine** (`quickmark_linter/src/linter.rs`):
+**Linting Engine** (`quickmark-core/src/linter.rs`):
 
 - `MultiRuleLinter`: Orchestrates multiple rule linters
 - `RuleViolation`: Represents a linting error with location and message
@@ -99,7 +93,7 @@ quickmark/
 - Uses tree-sitter for Markdown parsing with tree-sitter-md grammar
 - Filters rules based on severity configuration (off/warn/err)
 
-**Configuration System** (`quickmark_linter/src/config/mod.rs`):
+**Configuration System** (`quickmark-core/src/config/mod.rs`):
 
 - Format-agnostic configuration data structures
 - `QuickmarkConfig`: Root configuration structure
@@ -107,14 +101,15 @@ quickmark/
 - `normalize_severities`: Validates and normalizes rule configurations
 - No serialization dependencies - pure data structures
 
-**TOML Configuration** (`quickmark_config/src/lib.rs`):
+**TOML Configuration** (`quickmark-core/src/config/mod.rs`):
 
+- Integrated TOML parsing within the core library
 - `parse_toml_config`: Parses TOML strings into `QuickmarkConfig`
 - `config_in_path_or_default`: Loads config from filesystem or defaults
 - TOML-specific data structures with serde derives
-- Conversion functions between TOML and core config types
+- Direct conversion to core configuration types
 
-**Rule System** (`quickmark_linter/src/rules/mod.rs`):
+**Rule System** (`quickmark-core/src/rules/mod.rs`):
 
 - `Rule`: Static metadata structure defining rule properties
 - `ALL_RULES`: Registry of all available rules
@@ -158,9 +153,9 @@ This architecture allows rules like MD013 to work efficiently with raw text whil
 
 **Separation of Concerns**: Each crate has a single, focused responsibility:
 
-- Core linting logic is separate from configuration formats
-- Configuration parsing is shared between applications
+- Core library integrates linting logic with configuration parsing
 - Applications handle their specific interfaces (CLI, server)
+- Clean dependency hierarchy with core as the foundation
 
 **Plugin Architecture**: Rules are registered in `ALL_RULES` and dynamically loaded based on configuration.
 
@@ -170,43 +165,45 @@ This architecture allows rules like MD013 to work efficiently with raw text whil
 
 **Configuration-Driven**: Rule severity and settings are externally configurable via TOML files.
 
-**Format Agnostic Core**: The linting engine accepts configuration objects directly, making it easy to support multiple configuration formats in the future.
+**Integrated Configuration**: The core library includes TOML configuration parsing while maintaining clean separation between configuration structures and linting logic.
 
 ## Dependencies
 
-### quickmark_linter
+### quickmark-core
 
 - `anyhow`: Error handling
-- `tree-sitter`: AST parsing
+- `tree-sitter`: AST parsing  
 - `tree-sitter-md`: Markdown grammar
-
-### quickmark_config
-
-- `anyhow`: Error handling
 - `serde`: TOML deserialization
-- `toml`: TOML parsing
-- `quickmark_linter`: Core configuration types
+- `toml`: TOML parsing and configuration
+- `regex`: Pattern matching
+- `linkify`: URL detection
+- `once_cell`: Lazy statics
 
-### quickmark
-
-- `anyhow`: Error handling
-- `clap`: CLI parsing
-- `quickmark_config`: Configuration parsing
-- `quickmark_linter`: Linting engine
-
-### quickmark_server
+### quickmark-cli
 
 - `anyhow`: Error handling
-- `quickmark_config`: Configuration parsing
-- `quickmark_linter`: Linting engine
+- `clap`: CLI parsing with derive features
+- `quickmark-core` (path = "../quickmark-core"): Linting engine and configuration
+- `glob`: File pattern matching
+- `rayon`: Parallel processing
+- `ignore`: Gitignore-style file filtering
+- `walkdir`: Directory traversal
+
+### quickmark-server
+
+- `anyhow`: Error handling
+- `quickmark-core` (path = "../quickmark-core"): Linting engine and configuration
+- `tower-lsp`: LSP server implementation
+- `tokio`: Async runtime
 
 ## Adding New Rules
 
-1. Create a new rule module in `crates/quickmark_linter/src/rules/`
+1. Create a new rule module in `crates/quickmark-core/src/rules/`
 2. Implement the `RuleLinter` trait with appropriate `RuleType` classification
-3. Add the rule to `ALL_RULES` in `crates/quickmark_linter/src/rules/mod.rs`
+3. Add the rule to `ALL_RULES` in `crates/quickmark-core/src/rules/mod.rs`
 4. Add any rule-specific configuration to the config structs
-5. Update TOML parsing in `quickmark_config` if needed
+5. Update TOML parsing in `quickmark-core/src/config/` if needed
 
 **Rule Type Guidelines**:
 
@@ -218,9 +215,10 @@ This architecture allows rules like MD013 to work efficiently with raw text whil
 
 ## Adding New Configuration Formats
 
-1. Create conversion functions in `quickmark_config`
-2. Add new public functions following the pattern of `parse_toml_config`
-3. Both CLI and server applications can immediately use the new format
+1. Add conversion functions to `quickmark-core/src/config/`
+2. Implement parsing functions following the pattern of `parse_toml_config`
+3. Both CLI and server applications inherit the new format support automatically
+4. Extend the configuration module with new format-specific dependencies as needed
 
 ## Code Guidelines
 

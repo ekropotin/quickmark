@@ -1,0 +1,4 @@
+[linters.severity]
+default = 'off'
+heading-increment = 'err'
+heading-style = 'err'

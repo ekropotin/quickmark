@@ -1,0 +1,11 @@
+[linters.severity]
+proper-names = "err"
+line-length = "off"
+no-inline-html = "off" 
+single-trailing-newline = "off"
+blanks-around-headings = "off"
+
+[linters.settings.proper-names]
+names = ["JavaScript", "GitHub", "QuickMark"]
+code_blocks = true
+html_elements = false
