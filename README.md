@@ -1,9 +1,13 @@
 # QuickMark
 
 [![image](https://img.shields.io/badge/license-MIT-blue)](https://github.com/ekropotin/quickmark/blob/main/LICENSE)
+
 [![quickmark-core](https://img.shields.io/crates/v/quickmark-core?label=quickmark-core)](https://crates.io/crates/quickmark-core)
 [![quickmark-cli](https://img.shields.io/crates/v/quickmark-cli?label=quickmark-cli)](https://crates.io/crates/quickmark-cli)
 [![quickmark-server](https://img.shields.io/crates/v/quickmark-server?label=quickmark-server)](https://crates.io/crates/quickmark-server)
+
+[![VSCode Extension](https://img.shields.io/visual-studio-marketplace/v/ekropotin.vscode-quickmark?label=VSCode%20Extension)](https://marketplace.visualstudio.com/items?itemName=ekropotin.vscode-quickmark)
+[![JetBrains Extension](https://img.shields.io/jetbrains/plugin/v/28305-quickmark?label=JetBrains%20Extension)](https://plugins.jetbrains.com/plugin/28305-quickmark)
 
 Quickmark is a Markdown/[CommonMark](https://commonmark.org/) linter written in Rust with first-class LSP support, giving you fast, seamless feedback in any editor.
 
