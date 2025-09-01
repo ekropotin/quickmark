@@ -11,8 +11,8 @@ This file tests various MD051 features and configuration options.
 ## Case Sensitivity Tests
 
 [Valid lowercase link](#test-heading-one)
-[Invalid uppercase link](#Test-Heading-One)
-[Mixed case invalid](#test-Heading-Two)
+[Invalid uppercase link](#test-heading-one)
+[Mixed case invalid](#test-heading-two)
 
 ## Custom Anchors
 
@@ -23,7 +23,7 @@ This file tests various MD051 features and configuration options.
 
 ## Punctuation in Headings
 
-### Heading: With? Special! Characters.
+### Heading: With? Special! Characters
 
 [Valid punctuation link](#heading-with-special-characters)
 [Invalid punctuation link](#heading-with-special-characters!)
@@ -77,3 +77,8 @@ This paragraph has [valid link](#test-heading-one) and [invalid link](#nonexiste
 [Fragment with spaces](#test heading one)
 [Fragment with underscores](#test_heading_one)
 [Fragment with numbers](#test-heading-123)
+
+### Should not trigger
+
+[Fragment with external link](https://developer.hashicorp.com/vault/api-docs/auth/jwt#default_role)
+[Fragment with relative link](../../project/issues/managing_issues.md#add-an-issue-to-an-iteration-starter)
