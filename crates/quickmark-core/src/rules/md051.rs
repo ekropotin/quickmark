@@ -61,10 +61,7 @@ impl MD051Linter {
         } else if node.kind() == "setext_heading" {
             node.children(&mut node.walk())
                 .find(|c| c.kind() == "paragraph")
-                .and_then(|p| {
-                    p.children(&mut p.walk())
-                        .find(|gc| gc.kind() == "inline")
-                })
+                .and_then(|p| p.children(&mut p.walk()).find(|gc| gc.kind() == "inline"))
         } else {
             None
         };
@@ -130,7 +127,11 @@ impl MD051Linter {
         link_fragments
     }
 
-    fn parse_link_at_position(&self, parent: &Node, start_idx: usize) -> Option<(LinkFragment, usize)> {
+    fn parse_link_at_position(
+        &self,
+        parent: &Node,
+        start_idx: usize,
+    ) -> Option<(LinkFragment, usize)> {
         // Parse link pattern: [ text ] ( URL# fragment )
         let document_content = self.context.document_content.borrow();
 
@@ -529,7 +530,8 @@ mod test {
 
     #[test]
     fn test_html_name_attribute() {
-        let input = "# Test Heading\n\n<a name=\"my-anchor\">Anchor</a>\n\n[Valid Link](#my-anchor)\n";
+        let input =
+            "# Test Heading\n\n<a name=\"my-anchor\">Anchor</a>\n\n[Valid Link](#my-anchor)\n";
 
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
