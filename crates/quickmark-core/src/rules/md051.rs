@@ -26,11 +26,11 @@ struct LinkFragment {
     range: tree_sitter::Range,
 }
 
-// Pre-compiled regex patterns for performance
-static LINK_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"\[([^\]]*)\]\(([^)]*#[^)]*)\)").unwrap());
-
-static RANGE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^L\d+C\d+-L\d+C\d+$").unwrap());
+// GitHub line fragment regex matching:
+// ^#(?:L\d+(?:C\d+)?-L\d+(?:C\d+)?|L\d+)$
+// This allows: L123, L12C5-L34C10. It also matches L12-L34.
+static LINE_FRAGMENT_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^L\d+(?:C\d+)?-L\d+(?:C\d+)?$|^L\d+$").unwrap());
 
 static ID_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r#"id\s*=\s*["']([^"']+)["']"#).unwrap());
 
@@ -55,88 +55,45 @@ impl MD051Linter {
     }
 
     fn extract_heading_text(&self, node: &Node) -> Option<String> {
-        // Get the text content of the heading, excluding markers
-        let start_byte = node.start_byte();
-        let end_byte = node.end_byte();
-        let document_content = self.context.document_content.borrow();
-        let _heading_content = &document_content[start_byte..end_byte];
+        let inline_node = if node.kind() == "atx_heading" {
+            node.children(&mut node.walk())
+                .find(|c| c.kind() == "inline")
+        } else if node.kind() == "setext_heading" {
+            node.children(&mut node.walk())
+                .find(|c| c.kind() == "paragraph")
+                .and_then(|p| {
+                    p.children(&mut p.walk())
+                        .find(|gc| gc.kind() == "inline")
+                })
+        } else {
+            None
+        };
 
-        // For ATX headings, remove the # markers and trim
-        if node.kind() == "atx_heading" {
-            // Find the heading text by looking for inline content
-            for i in 0..node.child_count() {
-                let child = node.child(i).unwrap();
-                if child.kind() == "inline" {
-                    let child_start = child.start_byte();
-                    let child_end = child.end_byte();
-                    let text = &document_content[child_start..child_end].trim();
-                    return Some(text.to_string());
-                }
-            }
-        }
-
-        // For setext headings, look for paragraph containing inline content
-        if node.kind() == "setext_heading" {
-            for i in 0..node.child_count() {
-                let child = node.child(i).unwrap();
-                if child.kind() == "paragraph" {
-                    // Look for inline content within the paragraph
-                    for j in 0..child.child_count() {
-                        let grandchild = child.child(j).unwrap();
-                        if grandchild.kind() == "inline" {
-                            let grandchild_start = grandchild.start_byte();
-                            let grandchild_end = grandchild.end_byte();
-                            let text = &document_content[grandchild_start..grandchild_end].trim();
-                            return Some(text.to_string());
-                        }
-                    }
-                }
-            }
-        }
-
-        None
+        inline_node.map(|n| {
+            let document_content = self.context.document_content.borrow();
+            document_content[n.start_byte()..n.end_byte()]
+                .trim()
+                .to_string()
+        })
     }
 
     fn generate_github_fragment(&self, heading_text: &str) -> String {
-        // Implementation of GitHub's heading algorithm:
+        // GitHub fragment generation rules based on reverse engineering:
         // 1. Convert to lowercase
-        // 2. Remove punctuation (keep alphanumeric, spaces, hyphens)
-        // 3. Replace spaces with hyphens
-        // 4. Remove multiple consecutive hyphens
+        // 2. Replace spaces with hyphens
+        // 3. Keep only alphanumeric, hyphens, and underscores
+        // 4. Remove leading/trailing hyphens
+        let lower = heading_text.trim().to_lowercase().replace(' ', "-");
+        let mut fragment = String::with_capacity(lower.len());
 
-        let mut result = heading_text.to_lowercase();
-
-        // Remove punctuation, keeping only alphanumeric, spaces, and hyphens
-        result = result
-            .chars()
-            .filter(|c| c.is_alphanumeric() || c.is_whitespace() || *c == '-')
-            .collect();
-
-        // Replace spaces with hyphens
-        result = result.replace(' ', "-");
-
-        // Remove multiple consecutive hyphens efficiently
-        let chars: Vec<char> = result.chars().collect();
-        let mut filtered = Vec::new();
-        let mut prev_was_dash = false;
-
-        for ch in chars {
-            if ch == '-' {
-                if !prev_was_dash {
-                    filtered.push(ch);
-                    prev_was_dash = true;
-                }
-            } else {
-                filtered.push(ch);
-                prev_was_dash = false;
+        for c in lower.chars() {
+            if c.is_alphanumeric() || c == '-' || c == '_' {
+                fragment.push(c);
             }
         }
-        result = filtered.into_iter().collect();
 
-        // Trim leading/trailing hyphens
-        result = result.trim_matches('-').to_string();
-
-        result
+        // Remove leading and trailing hyphens
+        fragment.trim_matches('-').to_string()
     }
 
     fn extract_custom_anchor(&self, heading_text: &str) -> Option<String> {
@@ -150,30 +107,113 @@ impl MD051Linter {
         None
     }
 
-    fn extract_link_fragments(&self, node: &Node) -> Vec<String> {
-        // Extract all fragments from link nodes
-        let start_byte = node.start_byte();
-        let end_byte = node.end_byte();
+    fn extract_link_fragments(&self, node: &Node) -> Vec<LinkFragment> {
+        // Extract link fragments using tree-sitter's native link structure
+        // Look for pattern: [ text ] ( URL ) where URL contains #fragment
+        let mut link_fragments = Vec::new();
+
+        // Traverse child nodes looking for link patterns
+        let mut i = 0;
+        while i < node.child_count() {
+            if let Some(child) = node.child(i) {
+                if child.kind() == "[" {
+                    // Found potential link start, look for complete link pattern
+                    if let Some((fragment_info, end_index)) = self.parse_link_at_position(node, i) {
+                        link_fragments.push(fragment_info);
+                        i = end_index;
+                    }
+                }
+                i += 1;
+            }
+        }
+
+        link_fragments
+    }
+
+    fn parse_link_at_position(&self, parent: &Node, start_idx: usize) -> Option<(LinkFragment, usize)> {
+        // Parse link pattern: [ text ] ( URL# fragment )
         let document_content = self.context.document_content.borrow();
-        let content = &document_content[start_byte..end_byte];
 
-        let mut fragments = Vec::new();
+        // Look for the sequence: [ ... ] ( ... )
+        let mut bracket_close_idx = None;
+        let mut paren_open_idx = None;
+        let mut paren_close_idx = None;
 
-        for cap in LINK_PATTERN.captures_iter(content) {
-            if let Some(url_with_fragment) = cap.get(2) {
-                let url_text = url_with_fragment.as_str();
-                if let Some(hash_pos) = url_text.rfind('#') {
-                    let fragment = &url_text[hash_pos + 1..];
-                    // Only process non-empty fragments that don't contain spaces
-                    // Fragments with spaces are likely malformed and handled by other rules
-                    if !fragment.is_empty() && !fragment.contains(' ') {
-                        fragments.push(fragment.to_string());
+        // Find ] after [
+        for i in start_idx + 1..parent.child_count() {
+            if let Some(child) = parent.child(i) {
+                if child.kind() == "]" {
+                    bracket_close_idx = Some(i);
+                    break;
+                }
+            }
+        }
+
+        if let Some(bracket_close) = bracket_close_idx {
+            // Find ( after ]
+            for i in bracket_close + 1..parent.child_count() {
+                if let Some(child) = parent.child(i) {
+                    if child.kind() == "(" {
+                        paren_open_idx = Some(i);
+                        break;
                     }
                 }
             }
         }
 
-        fragments
+        if let Some(paren_open) = paren_open_idx {
+            // Find ) after (
+            for i in paren_open + 1..parent.child_count() {
+                if let Some(child) = parent.child(i) {
+                    if child.kind() == ")" {
+                        paren_close_idx = Some(i);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // If we found a complete link pattern
+        if let (Some(paren_open), Some(paren_close)) = (paren_open_idx, paren_close_idx) {
+            // Extract URL content between ( and ) by getting the text span
+            if let (Some(paren_open_node), Some(paren_close_node)) =
+                (parent.child(paren_open), parent.child(paren_close))
+            {
+                let start_byte = paren_open_node.end_byte(); // After the (
+                let end_byte = paren_close_node.start_byte(); // Before the )
+                let url_parts = &document_content[start_byte..end_byte];
+                // Only process internal fragments (URLs starting with #)
+                if url_parts.starts_with('#') {
+                    if let Some(hash_pos) = url_parts.rfind('#') {
+                        let fragment = &url_parts[hash_pos + 1..];
+                        // Only process non-empty fragments that don't contain spaces
+                        if !fragment.is_empty() && !fragment.contains(' ') {
+                            // Get the range of the entire link for position reporting
+                            if let (Some(start_node), Some(end_node)) =
+                                (parent.child(start_idx), parent.child(paren_close))
+                            {
+                                let link_range = tree_sitter::Range {
+                                    start_byte: start_node.start_byte(),
+                                    end_byte: end_node.end_byte(),
+                                    start_point: start_node.range().start_point,
+                                    end_point: end_node.range().end_point,
+                                };
+
+                                return Some((
+                                    LinkFragment {
+                                        fragment: fragment.to_string(),
+                                        range: link_range,
+                                    },
+                                    paren_close,
+                                ));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        None
     }
 
     fn is_github_special_fragment(&self, fragment: &str) -> bool {
@@ -184,21 +224,9 @@ impl MD051Linter {
             return true;
         }
 
-        // Line number patterns: L followed by one or more digits (L123, L1, etc.)
-        if fragment.starts_with('L')
-            && fragment.len() > 1
-            && fragment[1..].chars().all(|c| c.is_ascii_digit())
-        {
+        if LINE_FRAGMENT_PATTERN.is_match(fragment) {
             return true;
         }
-
-        // Range patterns: L19C5-L21C11 (GitHub's official format for line ranges with column numbers)
-        if RANGE_PATTERN.is_match(fragment) {
-            return true;
-        }
-
-        // Note: L10-L20 format is NOT valid according to GitHub spec
-        // GitHub requires column numbers: L10C1-L20C5
 
         false
     }
@@ -277,15 +305,9 @@ impl RuleLinter for MD051Linter {
                 }
 
                 // Also look for links in inline content
-                let fragments = self.extract_link_fragments(node);
-                for fragment in fragments {
-                    // We need to store the node for later violation reporting
-                    // Note: This is a simplified approach. In a real implementation,
-                    // we'd need to handle the lifetime properly
-                    self.link_fragments.push(LinkFragment {
-                        fragment,
-                        range: node.range(),
-                    });
+                let link_fragments = self.extract_link_fragments(node);
+                for link_fragment in link_fragments {
+                    self.link_fragments.push(link_fragment);
                 }
             }
             _ => {
@@ -495,12 +517,7 @@ mod test {
 
     #[test]
     fn test_html_id_attribute() {
-        let input = "# Test Heading
-
-<div id=\"my-custom-id\">Content</div>
-
-[Valid Link](#my-custom-id)
-";
+        let input = "# Test Heading\n\n<div id=\"my-custom-id\">Content</div>\n\n[Valid Link](#my-custom-id)\n";
 
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
@@ -512,12 +529,7 @@ mod test {
 
     #[test]
     fn test_html_name_attribute() {
-        let input = "# Test Heading
-
-<a name=\"my-anchor\">Anchor</a>
-
-[Valid Link](#my-anchor)
-";
+        let input = "# Test Heading\n\n<a name=\"my-anchor\">Anchor</a>\n\n[Valid Link](#my-anchor)\n";
 
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
@@ -550,15 +562,16 @@ mod test {
 [Link to line](#L20)
 [Link to range](#L19C5-L21C11)
 [Invalid range](#L10-L20)
+[Actually invalid](#L)
 ";
 
         let config = test_config();
         let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
         let violations = linter.analyze();
 
-        // Should have 1 violation - L10-L20 is invalid per GitHub spec
+        // Should have 1 violation - #L is invalid, but L10-L20 is ignored
         assert_eq!(1, violations.len());
-        assert!(violations[0].message().contains("Link fragment 'L10-L20'"));
+        assert!(violations[0].message().contains("Link fragment 'L'"));
     }
 
     #[test]
@@ -614,8 +627,176 @@ Another Heading
         let violations = linter.analyze();
 
         // Should have 1 violation - only #L should be reported
-        // Fragments with spaces and empty fragments are ignored (consistent with markdownlint)
+        // Fragments with spaces and empty fragments are ignored
         assert_eq!(1, violations.len());
         assert!(violations[0].message().contains("Link fragment 'L'"));
+    }
+
+    #[test]
+    fn test_comprehensive() {
+        let input = r#"# Test MD051 Comprehensive
+
+This file tests various MD051 features and configuration options.
+
+## Basic Headings
+
+### Test Heading One
+
+### Test Heading Two
+
+## Case Sensitivity Tests
+
+[Valid lowercase link](#test-heading-one)
+[Invalid uppercase link](#test-heading-one)
+[Mixed case invalid](#test-heading-two)
+
+## Custom Anchors
+
+### Heading with Custom Anchor {#custom-test-anchor}
+
+[Valid custom anchor link](#custom-test-anchor)
+[Invalid custom anchor link](#wrong-custom-anchor)
+
+## Punctuation in Headings
+
+### Heading: With? Special! Characters
+
+[Valid punctuation link](#heading-with-special-characters)
+[Invalid punctuation link](#heading-with-special-characters!)
+
+## HTML Elements
+
+<div id="test-html-id">HTML content</div>
+<a name="test-html-name">Named anchor</a>
+
+[Valid HTML id link](#test-html-id)
+[Valid HTML name link](#test-html-name)
+[Invalid HTML link](#wrong-html-id)
+
+## GitHub Special Cases
+
+[Valid top link](#top)
+[Valid line link](#L123)
+[Valid range link](#L10C1-L20C5)
+[Invalid line format](#L)
+[Invalid range format](#L10-L20)
+
+## Setext Headings
+
+First Setext Heading
+====================
+
+Second Setext Heading
+---------------------
+
+[Valid setext h1 link](#first-setext-heading)
+[Valid setext h2 link](#second-setext-heading)
+[Invalid setext link](#wrong-setext-heading)
+
+## Duplicate Headings
+
+### Duplicate Name
+
+### Duplicate Name
+
+[Link to first duplicate](#duplicate-name)
+[Link to second duplicate](#duplicate-name-1)
+[Invalid duplicate link](#duplicate-name-2)
+
+## Multiple Links in Same Paragraph
+
+This paragraph has [valid link](#test-heading-one) and [invalid link](#nonexistent) and [another valid](#custom-test-anchor).
+
+## Edge Cases
+
+[Empty fragment link](#)
+[Fragment with spaces](#test heading one)
+[Fragment with underscores](#test_heading_one)
+[Fragment with numbers](#test-heading-123)
+
+### Should not trigger
+
+[Fragment with external link](https://developer.hashicorp.com/vault/api-docs/auth/jwt#default_role)
+[Fragment with relative link](../../project/issues/managing_issues.md#add-an-issue-to-an-iteration-starter)
+"#;
+
+        let config = test_config();
+        let mut linter = MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
+        let violations = linter.analyze();
+
+        // Expected violations:
+        // 1. Line 22: wrong-custom-anchor
+        // 2. Line 29: heading-with-special-characters!
+        // 3. Line 38: wrong-html-id
+        // 4. Line 45: L
+        // 5. Line 58: wrong-setext-heading
+        // 6. Line 68: duplicate-name-2
+        // 7. Line 72: nonexistent (in middle of line at position 56)
+        // 8. Line 78: test_heading_one
+        // 9. Line 79: test-heading-123
+
+        assert_eq!(9, violations.len(), "Expected exactly 9 violations");
+
+        // Specific checks for parity issues:
+        let violation_messages: Vec<String> =
+            violations.iter().map(|v| v.message().to_string()).collect();
+
+        // Should NOT contain violations for external links
+        assert!(
+            !violation_messages
+                .iter()
+                .any(|msg| msg.contains("default_role")),
+            "Should not report violations for external links"
+        );
+        assert!(
+            !violation_messages
+                .iter()
+                .any(|msg| msg.contains("add-an-issue-to-an-iteration-starter")),
+            "Should not report violations for relative links with external fragments"
+        );
+
+        // Should contain the expected invalid fragments
+        assert!(violation_messages
+            .iter()
+            .any(|msg| msg.contains("wrong-custom-anchor")));
+        assert!(violation_messages
+            .iter()
+            .any(|msg| msg.contains("heading-with-special-characters!")));
+        assert!(violation_messages
+            .iter()
+            .any(|msg| msg.contains("wrong-html-id")));
+        assert!(violation_messages.iter().any(|msg| msg.contains("'L'")));
+        assert!(violation_messages
+            .iter()
+            .any(|msg| msg.contains("wrong-setext-heading")));
+        assert!(violation_messages
+            .iter()
+            .any(|msg| msg.contains("duplicate-name-2")));
+        assert!(violation_messages
+            .iter()
+            .any(|msg| msg.contains("nonexistent")));
+        assert!(violation_messages
+            .iter()
+            .any(|msg| msg.contains("test_heading_one")));
+        assert!(violation_messages
+            .iter()
+            .any(|msg| msg.contains("test-heading-123")));
+    }
+
+    #[test]
+    fn test_colons() {
+        let input = "
+## `header:with:colons_in_it`
+
+[should be ok](#headerwithcolons_in_it)
+";
+
+        let config = test_config();
+        let mut multi_linter =
+            MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
+        let violations = multi_linter.analyze();
+
+        // Should have no violations - colons should be removed per GitHub spec
+        assert_eq!(0, violations.len());
     }
 }

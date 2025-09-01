@@ -8,7 +8,7 @@ This file contains valid link fragments that should NOT trigger MD051 violations
 
 [Link to basic heading](#basic-heading)
 
-### Heading with Punctuation!
+### Heading with Punctuation
 
 [Link to punctuation heading](#heading-with-punctuation)
 
@@ -69,3 +69,7 @@ Valid content here.
 
 [Back to main](#main-section)
 [Link to subsection](#subsection)
+
+## `header:with:colons_in_it`
+
+[should be ok](#headerwithcolons_in_it)
