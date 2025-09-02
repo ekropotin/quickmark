@@ -36,14 +36,12 @@ jobs:
         uses: orhun/git-cliff-action@v4
         with:
           config: cliff.toml
-          args: --include-path "crates/quickmark-core/**" --tag-pattern "quickmark-core@*"
-        env:
-          OUTPUT: CHANGELOG.md
+          args: --include-path "crates/quickmark-core/**" --tag-pattern "quickmark-core@*" --latest
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          body_path: CHANGELOG.md
+          body: ${{ steps.changelog.outputs.content }}
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
         env:

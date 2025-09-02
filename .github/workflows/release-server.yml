@@ -1,4 +1,4 @@
-name: Release QuickMark Server 
+name: Release QuickMark Server
 
 on:
   push:
@@ -64,7 +64,7 @@ jobs:
         run: |
           ARCHIVE_NAME="quickmark-server-${{ matrix.target }}.tar.gz"
           echo "archive_name=$ARCHIVE_NAME" >> $GITHUB_OUTPUT
-          
+
           # Create archive with the binary renamed to quickmark-server
           mkdir -p archive-temp
           cp "target/${{ matrix.target }}/release/quickmark-server${{ matrix.suffix }}" archive-temp/quickmark-server${{ matrix.suffix }}
@@ -104,20 +104,6 @@ jobs:
       - name: Publish quickmark-server to crates.io
         run: cargo publish -p quickmark-server --token ${{ secrets.CRATES_IO_TOKEN }}
 
-      - name: Generate changelog
-        uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.toml
-          args: --include-path "crates/quickmark-server/**" --tag-pattern "quickmark-server@*"
-        env:
-          OUTPUT: CHANGELOG.md
-
-      - name: Upload changelog
-        uses: actions/upload-artifact@v4
-        with:
-          name: changelog
-          path: CHANGELOG.md
-
   release:
     name: Create Release
     needs: [build, publish]
@@ -149,11 +135,18 @@ jobs:
           ls -la release-archives/
           if [ -f CHANGELOG.md ]; then ls -la CHANGELOG.md; fi
 
+      - name: Generate changelog
+        id: changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --include-path "crates/quickmark-server/**" --tag-pattern "quickmark-server@*" --latest
+
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           files: release-archives/*
-          body_path: CHANGELOG.md
+          body: ${{ steps.changelog.outputs.content }}
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
         env:
