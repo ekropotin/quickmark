@@ -130,17 +130,19 @@ jobs:
               cp "$artifact_dir"/*.tar.gz release-archives/ 2>/dev/null || true
             fi
           done
-          # Copy changelog
-          cp artifacts/changelog/CHANGELOG.md ./ 2>/dev/null || echo "No changelog found"
-          ls -la release-archives/
-          if [ -f CHANGELOG.md ]; then ls -la CHANGELOG.md; fi
+
+      - name: Install cargo tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-release,git-cliff
 
       - name: Generate changelog
         id: changelog
-        uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.toml
-          args: --include-path "crates/quickmark-server/**" --tag-pattern "quickmark-server@*" --latest
+        run: |
+          changelog=$(./scripts/latest-changes.sh quickmark-server)
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$changelog" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create release
         uses: softprops/action-gh-release@v2

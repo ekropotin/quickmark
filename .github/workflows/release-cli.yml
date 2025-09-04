@@ -29,15 +29,21 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
+      - name: Install cargo tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-release,git-cliff
+
       - name: Publish quickmark-cli to crates.io
         run: cargo publish -p quickmark-cli --token ${{ secrets.CRATES_IO_TOKEN }}
 
       - name: Generate changelog
         id: changelog
-        uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.toml
-          args: --include-path "crates/quickmark-cli/**" --tag-pattern "quickmark-cli@*" --latest
+        run: |
+          changelog=$(./scripts/latest-changes.sh quickmark-cli)
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$changelog" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
