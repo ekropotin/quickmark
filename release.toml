@@ -1,0 +1,6 @@
+# pre-release-commit-message = "chore: Release {{crate_name}} version {{version}}"
+tag-name = "{{crate_name}}@{{version}}"
+verify = false
+push = false
+publish = false
+consolidate-commits = true

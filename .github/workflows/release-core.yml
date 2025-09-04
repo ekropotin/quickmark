@@ -33,10 +33,12 @@ jobs:
         run: cargo publish -p quickmark-core --token ${{ secrets.CRATES_IO_TOKEN }}
 
       - name: Generate changelog
-        uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.toml
-          args: --include-path "crates/quickmark-core/**" --tag-pattern "quickmark-core@*" --latest
+        id: changelog
+        run: |
+          changelog=$(./scripts/latest-changes.sh quickmark-core)
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$changelog" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2

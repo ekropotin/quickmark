@@ -32,22 +32,10 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache cargo tools
-        uses: actions/cache@v3
-        id: cache-cargo-tools
-        with:
-          path: |
-            ~/.cargo/bin/cargo-workspaces
-            ~/.cargo/bin/git-cliff
-          key: cargo-tools-${{ runner.os }}-v1
-          restore-keys: |
-            cargo-tools-${{ runner.os }}-
-
       - name: Install cargo tools
-        if: steps.cache-cargo-tools.outputs.cache-hit != 'true'
-        run: |
-          cargo install cargo-workspaces
-          cargo install git-cliff
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-release,git-cliff
 
       - name: Setup Git
         run: |
@@ -59,50 +47,12 @@ jobs:
           BRANCH="${GITHUB_REF_NAME}"
           PRE_ID="${{ inputs.pre-id }}"
           FORCE="${{ inputs.force }}"
+          REPO_ROOT="$(git rev-parse --show-toplevel)"
 
           echo "Running on branch: $BRANCH"
           echo "Prerelease identifier: $PRE_ID"
-          echo "Force flag: $FORCE"
-          echo "Will bump version for ALL crates"
 
-          FORCE_FLAG=""
-          if [ "$FORCE" = "true" ]; then
-            FORCE_FLAG="--force '*'"
-          fi
-
-          CHANGED_CRATES=$(cargo workspaces changed)
-
-          if [[ -z "$CHANGED_CRATES" ]]; then
-              echo "No crates changed since last tag. Nothing to do."
-              exit 0
-          fi
-
-          case "$BRANCH" in
-            main)
-              cargo workspaces version --allow-branch "$BRANCH" --no-global-tag --yes $FORCE_FLAG --no-git-push
-              ;;
-            development)
-              cargo workspaces version --allow-branch "$BRANCH" --no-global-tag prerelease --pre-id "$PRE_ID" --yes $FORCE_FLAG --no-git-push
-              ;;
-            *)
-              echo "❌ This workflow can only be run on 'main' or 'development'."
-              exit 1
-              ;;
-          esac
-
-          NEW_TAGS=$(git tag --points-at HEAD)
-          echo "Tags created locally:"
-          echo "$NEW_TAGS"
-
-          ../../scripts/generate-changelogs.sh "$CHANGED_CRATES"
-
-          echo "Amending commit to include changelogs..."
-          git commit --amend --no-edit
-
-          for tag in $NEW_TAGS; do
-            echo "Re-applying tag $tag on amended commit..."
-            git tag -f "$tag"
-          done
+          $REPO_ROOT/scripts/bump-version.sh
 
           git push origin "$BRANCH"
           git push origin --tags
