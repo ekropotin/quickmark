@@ -29,6 +29,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
+      - name: Install cargo tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-release,git-cliff
+
       - name: Publish quickmark-core to crates.io
         run: cargo publish -p quickmark-core --token ${{ secrets.CRATES_IO_TOKEN }}
 
