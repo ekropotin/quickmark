@@ -1,0 +1,58 @@
+name: Update Homebrew Formula
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to update to (e.g., 1.0.1)'
+        required: true
+        type: string
+
+jobs:
+  update-homebrew:
+    name: Update Homebrew Formula
+    runs-on: macos-latest
+    if: contains(github.event.release.tag_name, 'quickmark-cli@') || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Extract version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            # Extract version from tag (quickmark-cli@1.0.0 -> 1.0.0)
+            version="${{ github.event.release.tag_name }}"
+            version="${version#quickmark-cli@}"
+            echo "version=$version" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Update Homebrew formula using bump-formula-pr
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Use brew bump-formula-pr to automatically update the formula
+          brew bump-formula-pr \
+            --tap=ekropotin/homebrew-formula \
+            --version="${{ steps.version.outputs.version }}" \
+            --message="chore(brew): quickmark-cli ${{ steps.version.outputs.version }}
+
+          Updates quickmark-cli to version ${{ steps.version.outputs.version }}.
+
+          This PR was automatically created by the quickmark release workflow." \
+            --no-browse \
+            --no-fork \
+            quickmark-cli || {
+              echo "Failed to create PR. Possible reasons:"
+              echo "1. The version is already up to date"
+              echo "2. The release assets are not yet available"
+              echo "3. There was a network issue"
+              echo "4. The formula doesn't exist or has issues"
+              exit 1
+            }

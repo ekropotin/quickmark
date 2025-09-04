@@ -2,20 +2,6 @@ name: Crates Version Bump
 
 on:
   workflow_dispatch:
-    inputs:
-      pre-id:
-        description: 'Prerelease identifier for prerelease versions'
-        required: false
-        default: 'alpha'
-        type: choice
-        options:
-          - beta
-          - rc
-      force:
-        description: 'Force version bump even if no changes detected'
-        required: false
-        default: false
-        type: boolean
 
 jobs:
   bump-version:
@@ -43,16 +29,18 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Run version bump
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
         run: |
           BRANCH="${GITHUB_REF_NAME}"
-          PRE_ID="${{ inputs.pre-id }}"
-          FORCE="${{ inputs.force }}"
           REPO_ROOT="$(git rev-parse --show-toplevel)"
 
           echo "Running on branch: $BRANCH"
-          echo "Prerelease identifier: $PRE_ID"
 
           $REPO_ROOT/scripts/bump-version.sh
+
+          echo "publishing on crates.io"
+          cargo release publish --workspace --execute
 
           git push origin "$BRANCH"
           git push origin --tags
