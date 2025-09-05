@@ -1,6 +1,6 @@
 [package]
 name = "quickmark-cli"
-version = "1.0.1"
+version = "1.1.0"
 edition = "2021"
 description = "Lightning-fast Markdown/CommonMark linter CLI tool with tree-sitter based parsing"
 license = "MIT"
@@ -17,7 +17,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1.0.86"
 clap = { version = "4.5.4", features = ["derive"] }
-quickmark-core = { path = "../quickmark-core", version = "1.0.1" }
+quickmark-core = { path = "../quickmark-core", version = "1.1.0" }
 glob = "0.3"
 rayon = "1.8"
 ignore = "0.4"
@@ -25,7 +25,7 @@ walkdir = "2.4"
 
 [dev-dependencies.quickmark-core]
 path = "../quickmark-core"
-version = "1.0.1"
+version = "1.1.0"
 features = ["testing"]
 
 [dev-dependencies]

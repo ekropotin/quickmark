@@ -1,3 +1,12 @@
+## [quickmark-server@1.1.0] - 2025-09-05
+
+### 🚀 Features
+
+- Refactor config discovery and severity handling (#142)
+
+### ⚙️ Miscellaneous Tasks
+
+- Release
 ## [quickmark-server@1.0.1] - 2025-09-04
 
 ### 🐛 Bug Fixes
