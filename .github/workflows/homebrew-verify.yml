@@ -1,0 +1,27 @@
+name: verify homebrew formula
+
+on:
+  pull_request:
+    branches: [ "main", "development" ]
+    paths:
+      - 'pkg/homebrew/Formula/quickmark-cli.rb'
+
+jobs:
+  verify_formula:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create local tap
+        run: |
+          brew tap-new local/quickmark-test
+
+      - name: Copy formula to tap
+        run: |
+          cp pkg/homebrew/Formula/quickmark-cli.rb $(brew --repo local/quickmark-test)/Formula/
+
+      - name: Install formula from source
+        run: |
+          brew install --build-from-source local/quickmark-test/quickmark-cli

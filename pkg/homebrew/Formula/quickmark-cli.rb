@@ -14,6 +14,10 @@ class QuickmarkCli < Formula
     end
   end
 
+  def install
+    bin.install "qmark"
+  end
+
   test do
     # Create a test markdown file
     (testpath/"test.md").write("# Test\n\nThis is a test.")
