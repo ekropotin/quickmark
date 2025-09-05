@@ -211,6 +211,7 @@ pub enum ConfigSearchResult {
 /// Hierarchical config discovery with workspace root stopping point
 pub struct ConfigDiscovery {
     workspace_roots: Vec<PathBuf>,
+    current_working_dir: Option<PathBuf>,
 }
 
 impl Default for ConfigDiscovery {
@@ -220,10 +221,12 @@ impl Default for ConfigDiscovery {
 }
 
 impl ConfigDiscovery {
-    /// Create a new ConfigDiscovery for CLI usage (no workspace roots)
+    /// Create a new ConfigDiscovery for CLI usage (uses current working directory as boundary)
     pub fn new() -> Self {
+        let current_working_dir = std::env::current_dir().ok();
         Self {
             workspace_roots: Vec::new(),
+            current_working_dir,
         }
     }
 
@@ -231,6 +234,7 @@ impl ConfigDiscovery {
     pub fn with_workspace_roots(roots: Vec<PathBuf>) -> Self {
         Self {
             workspace_roots: roots,
+            current_working_dir: None,
         }
     }
 
@@ -291,33 +295,23 @@ impl ConfigDiscovery {
 
     /// Determine if search should stop at the current directory
     fn should_stop_search(&self, dir: &Path) -> bool {
-        // 1. IDE Workspace Root (highest priority)
+        // Stop at workspace roots (for LSP mode)
         for workspace_root in &self.workspace_roots {
             if dir == workspace_root.as_path() {
                 return true;
             }
         }
 
-        // 2. Git Repository Root
-        if dir.join(".git").exists() {
-            return true;
-        }
-
-        // 3. Common Project Root Markers
-        let project_markers = [
-            "package.json",
-            "Cargo.toml",
-            "pyproject.toml",
-            "go.mod",
-            ".vscode",
-            ".idea",
-            ".sublime-project",
-        ];
-
-        for marker in &project_markers {
-            if dir.join(marker).exists() {
+        // Stop at current working directory (for CLI mode)
+        if let Some(cwd) = &self.current_working_dir {
+            if dir == cwd.as_path() {
                 return true;
             }
+        }
+
+        // Stop at git repository boundaries
+        if dir.join(".git").exists() {
+            return true;
         }
 
         false
@@ -1351,10 +1345,10 @@ mod test {
         let src_dir = repo_dir.join("src");
         std::fs::create_dir_all(&src_dir).unwrap();
 
-        // Create .git directory to mark as repo root
+        // Create .git directory (should stop search)
         std::fs::create_dir(repo_dir.join(".git")).unwrap();
 
-        // Create config outside repo (should not be found)
+        // Create config outside repo (should NOT be found due to .git boundary)
         let outer_config = temp_dir.path().join("quickmark.toml");
         std::fs::write(&outer_config, "[linters.severity]\nheading-style = 'warn'").unwrap();
 
@@ -1407,42 +1401,6 @@ mod test {
                 assert!(searched_dirs.contains(&src_dir.as_path()));
                 assert!(searched_dirs.contains(&project_dir.as_path()));
                 assert!(searched_dirs.contains(&workspace_dir.as_path()));
-                assert!(!searched_dirs.contains(&temp_dir.path()));
-            }
-            _ => panic!("Expected NotFound result, got: {:?}", result),
-        }
-    }
-
-    #[test]
-    fn test_config_discovery_stops_at_cargo_toml() {
-        let temp_dir = TempDir::new().unwrap();
-
-        // Create nested directories: temp_dir/project/src/
-        let project_dir = temp_dir.path().join("project");
-        let src_dir = project_dir.join("src");
-        std::fs::create_dir_all(&src_dir).unwrap();
-
-        // Create Cargo.toml to mark as project root
-        std::fs::write(project_dir.join("Cargo.toml"), "[package]\nname = \"test\"").unwrap();
-
-        // Create config outside project (should not be found)
-        let outer_config = temp_dir.path().join("quickmark.toml");
-        std::fs::write(&outer_config, "[linters.severity]\nheading-style = 'warn'").unwrap();
-
-        // Create file in src/
-        let file_path = src_dir.join("test.md");
-        std::fs::write(&file_path, "# Test").unwrap();
-
-        let discovery = ConfigDiscovery::new();
-        let result = discovery.find_config(&file_path);
-
-        match result {
-            ConfigSearchResult::NotFound { searched_paths } => {
-                // Should have searched in src/ and project/ but not in temp_dir (stopped at Cargo.toml)
-                let searched_dirs: Vec<_> =
-                    searched_paths.iter().filter_map(|p| p.parent()).collect();
-                assert!(searched_dirs.contains(&src_dir.as_path()));
-                assert!(searched_dirs.contains(&project_dir.as_path()));
                 assert!(!searched_dirs.contains(&temp_dir.path()));
             }
             _ => panic!("Expected NotFound result, got: {:?}", result),

@@ -30,6 +30,7 @@ pub struct RuleViolation {
     location: Location,
     message: String,
     rule: &'static Rule,
+    pub(crate) severity: RuleSeverity,
 }
 
 impl RuleViolation {
@@ -38,6 +39,7 @@ impl RuleViolation {
             rule,
             message,
             location: Location { file_path, range },
+            severity: RuleSeverity::Error, // Default, will be overridden by MultiRuleLinter
         }
     }
 
@@ -51,6 +53,10 @@ impl RuleViolation {
 
     pub fn rule(&self) -> &'static Rule {
         self.rule
+    }
+
+    pub fn severity(&self) -> &RuleSeverity {
+        &self.severity
     }
 }
 
@@ -266,6 +272,7 @@ pub trait RuleLinter {
 pub struct MultiRuleLinter {
     linters: Vec<Box<dyn RuleLinter>>,
     tree: Option<tree_sitter::Tree>,
+    config: QuickmarkConfig,
 }
 
 impl MultiRuleLinter {
@@ -297,6 +304,7 @@ impl MultiRuleLinter {
             return Self {
                 linters: Vec::new(),
                 tree: None,
+                config,
             };
         }
 
@@ -308,7 +316,12 @@ impl MultiRuleLinter {
         let tree = parser.parse(document, None).expect("Parse failed");
 
         // Create context with pre-initialized cache only for active rules
-        let context = Rc::new(Context::new(file_path, config, document, &tree.root_node()));
+        let context = Rc::new(Context::new(
+            file_path,
+            config.clone(),
+            document,
+            &tree.root_node(),
+        ));
 
         // Create rule linters for active rules only
         let linters = active_rules
@@ -319,6 +332,7 @@ impl MultiRuleLinter {
         Self {
             linters,
             tree: Some(tree),
+            config,
         }
     }
 
@@ -347,10 +361,21 @@ impl MultiRuleLinter {
             }
         });
 
-        // Collect all violations from finalize
+        // Collect all violations from finalize and inject severity from config
         let mut violations = Vec::new();
         for linter in &mut self.linters {
-            let linter_violations = linter.finalize();
+            let mut linter_violations = linter.finalize();
+            // Inject severity into each violation based on current config
+            for violation in &mut linter_violations {
+                let severity = self
+                    .config
+                    .linters
+                    .severity
+                    .get(violation.rule().alias)
+                    .cloned()
+                    .unwrap_or(RuleSeverity::Error);
+                violation.severity = severity;
+            }
             violations.extend(linter_violations);
         }
 

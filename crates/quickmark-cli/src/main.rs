@@ -127,11 +127,9 @@ fn is_markdown_file(path: &Path) -> bool {
 }
 
 /// Print linting errors with 1-based line numbering for CLI display
-fn print_cli_errors(results: &[RuleViolation], config: &QuickmarkConfig) -> (i32, i32) {
-    let severities = &config.linters.severity;
-
+fn print_cli_errors(results: &[RuleViolation]) -> (i32, i32) {
     let res = results.iter().fold((0, 0), |(errs, warns), v| {
-        let severity = severities.get(v.rule().alias).unwrap();
+        let severity = v.severity();
         let prefix;
         let mut new_err = errs;
         let mut new_warns = warns;
@@ -224,7 +222,7 @@ fn main() -> anyhow::Result<()> {
 
     // Use optimized single config loading only when QUICKMARK_CONFIG is set
     // Otherwise, preserve hierarchical config discovery for correctness
-    let (all_violations, config) = if std::env::var("QUICKMARK_CONFIG").is_ok() {
+    let (all_violations, _config) = if std::env::var("QUICKMARK_CONFIG").is_ok() {
         // Performance optimization: Load config once when using environment config
         let pwd = env::current_dir()?;
         let config = config_from_env_path_or_default(&pwd)?;
@@ -262,7 +260,7 @@ fn main() -> anyhow::Result<()> {
         (violations, config)
     };
 
-    let (errs, _) = print_cli_errors(&all_violations, &config);
+    let (errs, _) = print_cli_errors(&all_violations);
     let exit_code = min(errs, 1);
     exit(exit_code);
 }
@@ -271,8 +269,6 @@ fn main() -> anyhow::Result<()> {
 mod tests {
     use super::*;
     use quickmark_core::config::{HeadingStyle, LintersSettingsTable, MD003HeadingStyleTable};
-    use quickmark_core::linter::{CharPosition, Range};
-    use quickmark_core::rules::{md001::MD001, md003::MD003};
     use quickmark_core::test_utils::test_helpers::test_config_with_settings;
     use std::path::{Path, PathBuf};
 
@@ -290,41 +286,15 @@ mod tests {
                 ..Default::default()
             },
         );
-        let range = Range {
-            start: CharPosition {
-                line: 1,
-                character: 1,
-            },
-            end: CharPosition {
-                line: 1,
-                character: 5,
-            },
-        };
-        let file = PathBuf::default();
-        let results = vec![
-            RuleViolation::new(
-                &MD001,
-                "all is bad".to_string(),
-                file.clone(),
-                range.clone(),
-            ),
-            RuleViolation::new(
-                &MD003,
-                "all is even worse".to_string(),
-                file.clone(),
-                range.clone(),
-            ),
-            RuleViolation::new(
-                &MD003,
-                "all is even worse2".to_string(),
-                file.clone(),
-                range,
-            ),
-        ];
 
-        let (errs, warns) = print_cli_errors(&results, &config);
+        let file_path = PathBuf::from("test.md");
+        let file_content = "# Heading 1\n\n### Heading 3\n\nHeading 1\n=========\n";
+        let mut linter = MultiRuleLinter::new_for_document(file_path, config.clone(), file_content);
+        let results = linter.analyze();
+
+        let (errs, warns) = print_cli_errors(&results);
         assert_eq!(1, errs);
-        assert_eq!(2, warns);
+        assert_eq!(1, warns);
     }
 
     #[test]

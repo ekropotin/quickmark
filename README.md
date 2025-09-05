@@ -211,42 +211,48 @@ QuickMark uses a sophisticated hierarchical configuration discovery system that 
 
 #### Hierarchical Configuration Discovery
 
-QuickMark automatically discovers configuration files by searching upward from the target markdown file's directory, stopping at natural project boundaries. This enables different parts of your project to have their own linting rules while maintaining a sensible inheritance hierarchy.
+QuickMark automatically discovers configuration files by searching upward from the target markdown file's directory, stopping at repository boundaries. This enables different parts of your project to have their own linting rules while maintaining a sensible inheritance hierarchy.
 
 **Search Process:**
 
 - Starts from the directory containing the target markdown file
 - Searches upward through parent directories for `quickmark.toml` files
 - Uses the first configuration file found
-- Stops searching when it encounters project boundary markers
+- Stops searching when it encounters boundary markers
 
-**Project Boundary Markers** (search stops at these):
+**Boundary Markers** (search stops at these):
 
-- **IDE Workspace Roots**: Configured workspace directories (LSP integration)
+- **IDE Workspace Roots**: Configured workspace directories (LSP integration only)
 - **Git Repository Root**: Directories containing `.git`
-- **Common Project Markers**: `package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod`, `.vscode`, `.idea`, `.sublime-project`
+- **Current Working Directory**: For CLI usage (prevents searching beyond the directory where you ran the command)
 
 **Example Hierarchical Structure:**
 
 ```
 my-project/
+├── .git/                       # Git repository boundary (search stops here)
 ├── quickmark.toml              # Project-wide config (relaxed rules)
-├── Cargo.toml                  # Project boundary marker
+├── Cargo.toml                  # Regular project file (ignored during config search)
 ├── README.md                   # Uses project-wide config
 ├── src/
 │   ├── quickmark.toml          # Stricter rules for source code
 │   ├── api.md                  # Uses src/ config
 │   └── docs/
 │       └── guide.md            # Inherits src/ config (stricter)
-└── tests/
-    └── integration.md          # Uses project-wide config (relaxed)
+├── tests/
+│   └── integration.md          # Uses project-wide config (relaxed)
+└── vendor/
+    └── external-lib/
+        ├── .git/               # Another git boundary (search stops here)
+        └── README.md           # Uses default config (no inheritance from parent)
 ```
 
 In this example:
 
 - `src/api.md` and `src/docs/guide.md` use the stricter `src/quickmark.toml` configuration
-- `README.md` and `tests/integration.md` use the relaxed project-wide `quickmark.toml` configuration
-- Search stops at `Cargo.toml` level, preventing the search from going beyond the project boundary
+- `README.md` and `tests/integration.md` use the relaxed project-wide `quickmark.toml` configuration  
+- `vendor/external-lib/README.md` uses the default configuration because the search stops at the `.git` boundary
+- Only `.git` directories act as boundaries - other project markers like `Cargo.toml` are ignored
 
 #### Using QUICKMARK_CONFIG Environment Variable
 
