@@ -6,8 +6,8 @@ on:
       - 'quickmark-core@*'
 
 jobs:
-  publish:
-    name: Publish to crates.io
+  release:
+    name: Create release
     runs-on: ubuntu-latest
     permissions:
       contents: write
