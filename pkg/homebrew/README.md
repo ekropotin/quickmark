@@ -30,7 +30,7 @@ qmark --config quickmark.toml *.md
 ## Formula Details
 
 - **Location**: `Formula/quickmark-cli.rb`
-- **Binary name**: `qmark` 
+- **Binary name**: `qmark`
 - **Architecture support**: Intel and Apple Silicon Macs
 - **Installation method**: Pre-compiled binaries from GitHub releases
 
@@ -42,6 +42,14 @@ When releasing a new version:
 2. Update the SHA256 hashes for both architectures
 3. Test the formula: `brew install --build-from-source ./Formula/quickmark-cli.rb`
 4. Commit and push the changes
+
+### Testing changes locally
+
+```bash
+brew tap-new local/quickmark-test
+cp pkg/homebrew/Formula/quickmark-cli.rb $(brew --repo local/quickmark-test)/Formula/
+brew install --build-from-source local/quickmark-test/quickmark-cli
+```
 
 ## Updating
 
