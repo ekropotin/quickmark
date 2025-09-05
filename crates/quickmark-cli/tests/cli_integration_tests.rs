@@ -448,7 +448,7 @@ fn test_cli_hierarchical_config_discovery() {
 
 /// Test that config discovery stops at git repository boundaries
 #[test]
-fn test_cli_config_discovery_git_boundary() {
+fn test_cli_config_discovery_stops_at_git_boundary() {
     // Create a temporary git repository structure
     let temp_dir = TempDir::new().unwrap();
 
