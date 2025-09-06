@@ -73,7 +73,7 @@ as the dataset.
 ##### Option 1 - from Brew (OSX only)
 
 ```shell
-brew tap ekropotin/quickmark https://github.com/ekropotin/quickmark
+brew tap ekropotin/tap
 brew install quickmark-cli
 
 ```
@@ -250,7 +250,7 @@ my-project/
 In this example:
 
 - `src/api.md` and `src/docs/guide.md` use the stricter `src/quickmark.toml` configuration
-- `README.md` and `tests/integration.md` use the relaxed project-wide `quickmark.toml` configuration  
+- `README.md` and `tests/integration.md` use the relaxed project-wide `quickmark.toml` configuration
 - `vendor/external-lib/README.md` uses the default configuration because the search stops at the `.git` boundary
 - Only `.git` directories act as boundaries - other project markers like `Cargo.toml` are ignored
 
