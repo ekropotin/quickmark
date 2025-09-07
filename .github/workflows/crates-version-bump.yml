@@ -40,7 +40,7 @@ jobs:
           $REPO_ROOT/scripts/bump-version.sh
 
           echo "publishing on crates.io"
-          cargo release publish --workspace --execute
+          cargo release publish --workspace --execute --no-confirm
 
           git push origin "$BRANCH"
           git push origin --tags

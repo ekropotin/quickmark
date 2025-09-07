@@ -37,6 +37,10 @@ static ID_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r#"id\s*=\s*["']([^"']+
 static NAME_PATTERN: Lazy<Regex> =
     Lazy::new(|| Regex::new(r#"name\s*=\s*["']([^"']+)["']"#).unwrap());
 
+// Shared regex pattern for extracting markdown links: [text](url)
+static MARKDOWN_LINK_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"\[([^\]]*)\]\(([^)]*)\)").unwrap());
+
 pub(crate) struct MD051Linter {
     context: Rc<Context>,
     valid_fragments: HashSet<String>,
@@ -104,110 +108,27 @@ impl MD051Linter {
         None
     }
 
-    fn extract_link_fragments(&self, node: &Node) -> Vec<LinkFragment> {
-        // Extract link fragments using tree-sitter's native link structure
-        // Look for pattern: [ text ] ( URL ) where URL contains #fragment
-        let mut link_fragments = Vec::new();
-
-        // Traverse child nodes looking for link patterns
-        let mut i = 0;
-        while i < node.child_count() {
-            if let Some(child) = node.child(i) {
-                if child.kind() == "[" {
-                    // Found potential link start, look for complete link pattern
-                    if let Some((fragment_info, end_index)) = self.parse_link_at_position(node, i) {
-                        link_fragments.push(fragment_info);
-                        i = end_index;
-                    }
-                }
-                i += 1;
-            }
-        }
-
-        link_fragments
-    }
-
-    fn parse_link_at_position(
-        &self,
-        parent: &Node,
-        start_idx: usize,
-    ) -> Option<(LinkFragment, usize)> {
-        // Parse link pattern: [ text ] ( URL# fragment )
+    fn extract_link_fragment_from_link_node(&self, node: &Node) -> Option<LinkFragment> {
+        // Extract fragment from a tree-sitter "link" node
+        let start_byte = node.start_byte();
+        let end_byte = node.end_byte();
         let document_content = self.context.document_content.borrow();
+        let link_text = &document_content[start_byte..end_byte];
 
-        // Look for the sequence: [ ... ] ( ... )
-        let mut bracket_close_idx = None;
-        let mut paren_open_idx = None;
-        let mut paren_close_idx = None;
-
-        // Find ] after [
-        for i in start_idx + 1..parent.child_count() {
-            if let Some(child) = parent.child(i) {
-                if child.kind() == "]" {
-                    bracket_close_idx = Some(i);
-                    break;
-                }
-            }
-        }
-
-        if let Some(bracket_close) = bracket_close_idx {
-            // Find ( after ]
-            for i in bracket_close + 1..parent.child_count() {
-                if let Some(child) = parent.child(i) {
-                    if child.kind() == "(" {
-                        paren_open_idx = Some(i);
-                        break;
-                    }
-                }
-            }
-        }
-
-        if let Some(paren_open) = paren_open_idx {
-            // Find ) after (
-            for i in paren_open + 1..parent.child_count() {
-                if let Some(child) = parent.child(i) {
-                    if child.kind() == ")" {
-                        paren_close_idx = Some(i);
-                        break;
-                    }
-                }
-            }
-        }
-
-        // If we found a complete link pattern
-        if let (Some(paren_open), Some(paren_close)) = (paren_open_idx, paren_close_idx) {
-            // Extract URL content between ( and ) by getting the text span
-            if let (Some(paren_open_node), Some(paren_close_node)) =
-                (parent.child(paren_open), parent.child(paren_close))
-            {
-                let start_byte = paren_open_node.end_byte(); // After the (
-                let end_byte = paren_close_node.start_byte(); // Before the )
-                let url_parts = &document_content[start_byte..end_byte];
+        // Use regex to extract URL from inline link: [text](url)
+        for cap in MARKDOWN_LINK_PATTERN.captures_iter(link_text) {
+            if let Some(url_match) = cap.get(2) {
+                let url = url_match.as_str();
                 // Only process internal fragments (URLs starting with #)
-                if url_parts.starts_with('#') {
-                    if let Some(hash_pos) = url_parts.rfind('#') {
-                        let fragment = &url_parts[hash_pos + 1..];
+                if url.starts_with('#') {
+                    if let Some(hash_pos) = url.rfind('#') {
+                        let fragment = &url[hash_pos + 1..];
                         // Only process non-empty fragments that don't contain spaces
                         if !fragment.is_empty() && !fragment.contains(' ') {
-                            // Get the range of the entire link for position reporting
-                            if let (Some(start_node), Some(end_node)) =
-                                (parent.child(start_idx), parent.child(paren_close))
-                            {
-                                let link_range = tree_sitter::Range {
-                                    start_byte: start_node.start_byte(),
-                                    end_byte: end_node.end_byte(),
-                                    start_point: start_node.range().start_point,
-                                    end_point: end_node.range().end_point,
-                                };
-
-                                return Some((
-                                    LinkFragment {
-                                        fragment: fragment.to_string(),
-                                        range: link_range,
-                                    },
-                                    paren_close,
-                                ));
-                            }
+                            return Some(LinkFragment {
+                                fragment: fragment.to_string(),
+                                range: node.range(),
+                            });
                         }
                     }
                 }
@@ -215,6 +136,45 @@ impl MD051Linter {
         }
 
         None
+    }
+
+    fn extract_link_fragments_from_inline(&self, node: &Node) -> Vec<LinkFragment> {
+        // Extract fragments from inline text using regex - more robust than tree parsing
+        let start_byte = node.start_byte();
+        let end_byte = node.end_byte();
+        let document_content = self.context.document_content.borrow();
+        let text = &document_content[start_byte..end_byte];
+        let mut fragments = Vec::new();
+
+        // Use regex to match proper markdown links: [text](url) with no text between ] and (
+        for cap in MARKDOWN_LINK_PATTERN.captures_iter(text) {
+            if let Some(url_match) = cap.get(2) {
+                let url = url_match.as_str();
+                // Only process internal fragments (URLs starting with #)
+                if url.starts_with('#') {
+                    if let Some(hash_pos) = url.rfind('#') {
+                        let fragment = &url[hash_pos + 1..];
+                        // Only process non-empty fragments that don't contain spaces
+                        if !fragment.is_empty() && !fragment.contains(' ') {
+                            // Calculate the actual byte position of this match in the document
+                            let match_start = start_byte + cap.get(0).unwrap().start();
+                            let match_end = start_byte + cap.get(0).unwrap().end();
+                            fragments.push(LinkFragment {
+                                fragment: fragment.to_string(),
+                                range: tree_sitter::Range {
+                                    start_byte: match_start,
+                                    end_byte: match_end,
+                                    start_point: tree_sitter::Point::new(0, match_start),
+                                    end_point: tree_sitter::Point::new(0, match_end),
+                                },
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        fragments
     }
 
     fn is_github_special_fragment(&self, fragment: &str) -> bool {
@@ -297,6 +257,12 @@ impl RuleLinter for MD051Linter {
                     }
                 }
             }
+            "link" => {
+                // Extract link fragments from actual tree-sitter link nodes
+                if let Some(link_fragment) = self.extract_link_fragment_from_link_node(node) {
+                    self.link_fragments.push(link_fragment);
+                }
+            }
             "inline" | "html_block" => {
                 // Extract HTML id and name attributes
                 let ids = self.extract_html_id_or_name(node);
@@ -305,8 +271,13 @@ impl RuleLinter for MD051Linter {
                     self.valid_fragments_lowercase.insert(id.to_lowercase());
                 }
 
-                // Also look for links in inline content
-                let link_fragments = self.extract_link_fragments(node);
+                // We can't fully rely on tree-sitter "link" nodes for link extraction because:
+                // 1. Tree-sitter may not always parse all link structures as "link" nodes in complex inline contexts
+                // 2. Some markdown parsers have different interpretations of what constitutes a valid link structure
+                // 3. Tree-sitter's parsing can vary based on surrounding context and nesting
+                // 4. We need to ensure we catch all valid [text](#fragment) patterns regardless of how they're categorized
+                // Therefore, we supplement tree-sitter link nodes with regex-based extraction from inline content.
+                let link_fragments = self.extract_link_fragments_from_inline(node);
                 for link_fragment in link_fragments {
                     self.link_fragments.push(link_fragment);
                 }
@@ -791,6 +762,56 @@ This paragraph has [valid link](#test-heading-one) and [invalid link](#nonexiste
 ## `header:with:colons_in_it`
 
 [should be ok](#headerwithcolons_in_it)
+";
+
+        let config = test_config();
+        let mut multi_linter =
+            MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
+        let violations = multi_linter.analyze();
+
+        // Should have no violations - colons should be removed per GitHub spec
+        assert_eq!(0, violations.len());
+    }
+
+    #[test]
+    fn test_capital_letters() {
+        let input = "
+[FAQ](#FAQ)
+## FAQ
+";
+
+        let mut config = test_config();
+        config.linters.settings.link_fragments.ignore_case = true;
+        let mut multi_linter =
+            MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
+        let violations = multi_linter.analyze();
+
+        // Should have 0 violations - case ignored with ignore_case = true
+        assert_eq!(0, violations.len());
+    }
+
+    #[test]
+    fn test_capital_letters_case_sensitive() {
+        let input = "
+[FAQ](#FAQ)
+## FAQ
+";
+
+        let mut config = test_config();
+        config.linters.settings.link_fragments.ignore_case = false;
+        let mut multi_linter =
+            MultiRuleLinter::new_for_document(PathBuf::from("test.md"), config, input);
+        let violations = multi_linter.analyze();
+
+        // Should have 1 violation - case mismatch with ignore_case = false
+        assert_eq!(1, violations.len());
+        assert!(violations[0].message().contains("Link fragment 'FAQ'"));
+    }
+
+    #[test]
+    fn test_not_a_link() {
+        let input = "
+- [notalink] a (#491)
 ";
 
         let config = test_config();
