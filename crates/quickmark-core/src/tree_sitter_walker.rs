@@ -25,25 +25,42 @@ impl<'a> TreeSitterWalker<'a> {
     }
 
     pub fn walk(&self, mut callback: impl FnMut(Node)) {
-        let root = self.tree.root_node();
+        let mut cursor = self.tree.walk();
         match self.order {
-            TraversalOrder::PreOrder => self.walk_pre_order(root, &mut callback),
-            TraversalOrder::PostOrder => self.walk_post_order(root, &mut callback),
+            TraversalOrder::PreOrder => self.walk_pre_order(&mut cursor, &mut callback),
+            TraversalOrder::PostOrder => self.walk_post_order(&mut cursor, &mut callback),
         }
     }
 
     #[allow(clippy::only_used_in_recursion)]
-    fn walk_pre_order(&self, node: Node, callback: &mut impl FnMut(Node)) {
+    fn walk_pre_order(&self, cursor: &mut tree_sitter::TreeCursor, callback: &mut impl FnMut(Node)) {
+        let node = cursor.node();
         callback(node);
-        for child in node.children(&mut node.walk()) {
-            self.walk_pre_order(child, callback);
+        
+        if cursor.goto_first_child() {
+            loop {
+                self.walk_pre_order(cursor, callback);
+                if !cursor.goto_next_sibling() {
+                    break;
+                }
+            }
+            cursor.goto_parent();
         }
     }
+    
     #[allow(clippy::only_used_in_recursion)]
-    fn walk_post_order(&self, node: Node, callback: &mut impl FnMut(Node)) {
-        for child in node.children(&mut node.walk()) {
-            self.walk_post_order(child, callback);
+    fn walk_post_order(&self, cursor: &mut tree_sitter::TreeCursor, callback: &mut impl FnMut(Node)) {
+        if cursor.goto_first_child() {
+            loop {
+                self.walk_post_order(cursor, callback);
+                if !cursor.goto_next_sibling() {
+                    break;
+                }
+            }
+            cursor.goto_parent();
         }
+        
+        let node = cursor.node();
         callback(node);
     }
 }
