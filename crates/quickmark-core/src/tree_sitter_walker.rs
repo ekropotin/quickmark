@@ -33,10 +33,14 @@ impl<'a> TreeSitterWalker<'a> {
     }
 
     #[allow(clippy::only_used_in_recursion)]
-    fn walk_pre_order(&self, cursor: &mut tree_sitter::TreeCursor, callback: &mut impl FnMut(Node)) {
+    fn walk_pre_order(
+        &self,
+        cursor: &mut tree_sitter::TreeCursor,
+        callback: &mut impl FnMut(Node),
+    ) {
         let node = cursor.node();
         callback(node);
-        
+
         if cursor.goto_first_child() {
             loop {
                 self.walk_pre_order(cursor, callback);
@@ -47,9 +51,13 @@ impl<'a> TreeSitterWalker<'a> {
             cursor.goto_parent();
         }
     }
-    
+
     #[allow(clippy::only_used_in_recursion)]
-    fn walk_post_order(&self, cursor: &mut tree_sitter::TreeCursor, callback: &mut impl FnMut(Node)) {
+    fn walk_post_order(
+        &self,
+        cursor: &mut tree_sitter::TreeCursor,
+        callback: &mut impl FnMut(Node),
+    ) {
         if cursor.goto_first_child() {
             loop {
                 self.walk_post_order(cursor, callback);
@@ -59,7 +67,7 @@ impl<'a> TreeSitterWalker<'a> {
             }
             cursor.goto_parent();
         }
-        
+
         let node = cursor.node();
         callback(node);
     }
